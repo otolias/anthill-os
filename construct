@@ -1,0 +1,72 @@
+#!/bin/sh
+
+compiler_prefix=""
+usage="Build helper:
+Usage: construct build_dir [options]
+
+Options:
+    -c [compiler prefix]       Compiler prefix to use. Make sure it is in PATH. 
+                               Leave empty for system default. e.x. aarch-elf
+"
+
+build () {
+    # Default cflags
+    cflags="-Wall -Wextra -ffreestanding -MD"
+    ninja_file=$(printf "cflags = %s" "$cflags")
+
+    # Includes
+    ninja_file+=$(printf "\nincludes =")
+    includes=$(find src/ -name "include" -type d)
+    for inc in $includes; do
+        ninja_file+=$(printf " -I%s" "$inc")
+    done
+
+    # Rules
+    ninja_file+=$(printf "\n\nrule cc") 
+    ninja_file+=$(printf "\n    command = %sgcc \$cflags \$includes -c \$in -o \$out" "$compiler_prefix")
+    ninja_file+=$(printf "\n\nrule link")
+    ninja_file+=$(printf "\n    command = %sld -nostdlib \$in -T ../linker.ld -o \$out" "$compiler_prefix")
+    ninja_file+=$(printf "\n\nrule run")
+    ninja_file+=$(printf "\n    command = qemu-system-aarch64 -M raspi3b -kernel \$out -serial null -serial stdio")
+
+
+    # Build sources
+    ninja_file+=$(printf "\n ")
+    sources=$(find src/ -name "*.[Sc]")
+    objects=""
+    for src in $sources; do
+        dest=$(printf "%s" "$src" | sed "s/\.[Sc]/\.o/" | sed "s/src/$1/")
+        ninja_file+=$(printf "\nbuild %s: cc %s" "$dest" "$src")
+        objects+=$(printf "%s " "$dest")
+    done
+
+    # Link
+    ninja_file+=$(printf "\nbuild %s/kernel8.elf: link %s" "$1" "$objects")
+
+    printf "%s\n" "$ninja_file"
+    mkdir -p "$1"
+    printf "%s\n" "$ninja_file" > build.ninja
+}
+
+while :; do
+    case $1 in
+        -c)
+            [ -z "$2" ] && printf "Error: No compiler given\n" && exit 1
+            compiler_prefix="$2-"
+            shift
+            ;;
+        -h)
+            printf "%s" "$usage"
+            exit
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            [ -z "$1" ] && printf "%s" "$usage" && exit 1
+            build "$1"
+            break
+    esac
+    shift
+done
