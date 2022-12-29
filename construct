@@ -2,12 +2,19 @@
 
 compiler_prefix=""
 usage="Build helper:
-Usage: construct build_dir [options]
+Usage: construct [action] [options]
 
+Actions:
+    build | b
+    run | r                    Run with QEMU
 Options:
     -c [compiler prefix]       Compiler prefix to use. Make sure it is in PATH. 
                                Leave empty for system default. e.x. aarch-elf
 "
+
+colour_print () {
+    printf "[33m%s[0m\n" "$1"
+}
 
 build () {
     # Default cflags
@@ -15,36 +22,35 @@ build () {
     ninja_file=$(printf "cflags = %s" "$cflags")
 
     # Includes
+    colour_print "Generating Includes"
     ninja_file+=$(printf "\nincludes =")
     includes=$(find src/ -name "include" -type d)
     for inc in $includes; do
         ninja_file+=$(printf " -I%s" "$inc")
     done
 
+    colour_print "Generating Sources"
     # Rules
     ninja_file+=$(printf "\n\nrule cc") 
     ninja_file+=$(printf "\n    command = %sgcc \$cflags \$includes -c \$in -o \$out" "$compiler_prefix")
     ninja_file+=$(printf "\n\nrule link")
-    ninja_file+=$(printf "\n    command = %sld -nostdlib \$in -T ../linker.ld -o \$out" "$compiler_prefix")
-    ninja_file+=$(printf "\n\nrule run")
-    ninja_file+=$(printf "\n    command = qemu-system-aarch64 -M raspi3b -kernel \$out -serial null -serial stdio")
+    ninja_file+=$(printf "\n    command = %sld -nostdlib \$in -T linker.ld -o \$out" "$compiler_prefix")
 
-
-    # Build sources
+    # Generating Sources
     ninja_file+=$(printf "\n ")
     sources=$(find src/ -name "*.[Sc]")
     objects=""
     for src in $sources; do
-        dest=$(printf "%s" "$src" | sed "s/\.[Sc]/\.o/" | sed "s/src/$1/")
+        dest=$(printf "%s" "$src" | sed "s/\.[Sc]/\.o/" | sed "s/src/build/")
         ninja_file+=$(printf "\nbuild %s: cc %s" "$dest" "$src")
         objects+=$(printf "%s " "$dest")
     done
 
     # Link
-    ninja_file+=$(printf "\nbuild %s/kernel8.elf: link %s" "$1" "$objects")
+    colour_print "Linking"
+    ninja_file+=$(printf "\nbuild build/kernel8.elf: link %s" "$objects")
 
-    printf "%s\n" "$ninja_file"
-    mkdir -p "$1"
+    mkdir -p build
     printf "%s\n" "$ninja_file" > build.ninja
 }
 
@@ -59,14 +65,21 @@ while :; do
             printf "%s" "$usage"
             exit
             ;;
+        build | b)
+            build
+            exit
+            ;;
+        run | r)
+            qemu-system-aarch64 -M raspi3b -kernel build/kernel8.elf -serial null -serial stdio
+            exit
+            ;;
         --)
             shift
             break
             ;;
         *)
-            [ -z "$1" ] && printf "%s" "$usage" && exit 1
-            build "$1"
-            break
+            printf "%s" "$usage" && exit 1
+            shift
     esac
     shift
 done
