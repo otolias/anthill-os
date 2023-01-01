@@ -5,14 +5,14 @@ _start:
     // Hang all processors except the first
     mrs     x0, mpidr_el1
     and     x0, x0, #0xFF
-    cbz     x0, master
+    cbz     x0, stack
 
 hang:
     b hang
 
 stack:
     // Set stack just before _start
-    ldr     x1, _start
+    ldr     x1, =_start
     mov     sp, x1
 
     // Clear bss
