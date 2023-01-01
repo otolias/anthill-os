@@ -10,6 +10,7 @@ Actions:
     create | c                 Generate ninja file
     build | b                  Above and build Project
     run | r                    Above and run with QEMU
+    debug | d                  Above and connect gdb
 
 Options:
     -t [target]                Specify Target.
@@ -59,7 +60,7 @@ build () {
 
     # Link
     colour_print "Linking"
-    ninja_file+=$(printf "\nbuild build/kernel8.elf: link %s" "$objects")
+    ninja_file+=$(printf "\n\nbuild build/kernel8.elf: link %s" "$objects")
     ninja_file+=$(printf "\nbuild build/kernel8.bin: objcopy build/kernel8.elf")
 
     mkdir -p build
@@ -104,6 +105,10 @@ while :; do
             action="run"
             shift
             ;;
+        debug | d)
+            action="debug"
+            shift
+            ;;
         --)
             shift
             break
@@ -126,8 +131,15 @@ case $action in
         exit
         ;;
     "run")
-        qemu-system-aarch64 -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio
+        [ ! -d build ] && build 
+        ninja && \
+            qemu-system-aarch64 -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio
         exit
         ;;
+    "debug")
+        [ ! -d build ] && build
+        ninja && \
+            qemu-system-aarch64 -s -S -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio &
+        gdb --symbols=build/kernel8.elf -ex "target remote localhost:1234"
 esac
 
