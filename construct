@@ -1,15 +1,22 @@
 #!/bin/sh
 
+action=""
 compiler_prefix=""
+target="debug"
 usage="Build helper:
 Usage: construct [action] [options]
 
 Actions:
-    build | b
-    run | r                    Run with QEMU
+    create | c                 Generate ninja file
+    build | b                  Above and build Project
+    run | r                    Above and run with QEMU
+
 Options:
+    -t [target]                Specify Target.
+                               {r, rel, release} for release and
+                               {d, deb, debug} for debug
     -c [compiler prefix]       Compiler prefix to use. Make sure it is in PATH. 
-                               Leave empty for system default. e.x. aarch-elf
+                               Leave empty for system default. e.x. aarch64-elf
 "
 
 colour_print () {
@@ -18,7 +25,9 @@ colour_print () {
 
 build () {
     # Default cflags
-    cflags="-Wall -Wextra -ffreestanding -MD"
+    cflags="-Wall -Wextra -ffreestanding"
+    [ $target = "release" ] && cflags+=" -O2"
+    [ $target = "debug" ] && cflags+=" -g"
     ninja_file=$(printf "cflags = %s" "$cflags")
 
     # Includes
@@ -35,6 +44,8 @@ build () {
     ninja_file+=$(printf "\n    command = %sgcc \$cflags \$includes -c \$in -o \$out" "$compiler_prefix")
     ninja_file+=$(printf "\n\nrule link")
     ninja_file+=$(printf "\n    command = %sld -nostdlib \$in -T linker.ld -o \$out" "$compiler_prefix")
+    ninja_file+=$(printf "\n\nrule objcopy")
+    ninja_file+=$(printf "\n    command = %sobjcopy -O binary \$in \$out" "$compiler_prefix")
 
     # Generating Sources
     ninja_file+=$(printf "\n ")
@@ -49,6 +60,7 @@ build () {
     # Link
     colour_print "Linking"
     ninja_file+=$(printf "\nbuild build/kernel8.elf: link %s" "$objects")
+    ninja_file+=$(printf "\nbuild build/kernel8.bin: objcopy build/kernel8.elf")
 
     mkdir -p build
     printf "%s\n" "$ninja_file" > build.ninja
@@ -56,30 +68,66 @@ build () {
 
 while :; do
     case $1 in
-        -c)
+        -c | --compiler)
             [ -z "$2" ] && printf "Error: No compiler given\n" && exit 1
             compiler_prefix="$2-"
-            shift
+            shift 2
             ;;
-        -h)
+        -t | --target)
+            [ -z "$2" ] && printf "Error: No target given\n" && exit 1
+            case $2 in
+                "r" | "rel" | "release")
+                    target="release"
+                    ;;
+                "d" | "deb" | "debug")
+                    target="debug"
+                    ;;
+                *)
+                    printf "Error: Unknown target %s\n" "$2" && exit 1
+                    ;;
+            esac
+            shift 2
+            ;;
+        -h | --help)
             printf "%s" "$usage"
             exit
             ;;
+        create | c)
+            action="create"
+            shift
+            ;;
         build | b)
-            build
-            exit
+            action="build"
+            shift
             ;;
         run | r)
-            qemu-system-aarch64 -M raspi3b -kernel build/kernel8.elf -serial null -serial stdio
-            exit
+            action="run"
+            shift
             ;;
         --)
             shift
             break
             ;;
         *)
-            printf "%s" "$usage" && exit 1
-            shift
+            break
+            ;;
     esac
-    shift
 done
+
+[ -z $action ] && printf "Error: Invalid action\n" && exit 1
+
+case $action in
+    "create")
+        build
+        exit
+        ;;
+    "build")
+        build && ninja
+        exit
+        ;;
+    "run")
+        qemu-system-aarch64 -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio
+        exit
+        ;;
+esac
+
