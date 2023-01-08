@@ -136,15 +136,13 @@ case $action in
         exit
         ;;
     run)
-        [ ! -d build ] && build 
-        ninja && \
-            qemu-system-aarch64 -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio
+        [ ! -d build ] && build && ninja 
+        qemu-system-aarch64 -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio
         exit
         ;;
     debug)
-        [ ! -d build ] && build
-        ninja && \
-            qemu-system-aarch64 -s -S -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio &
+        [ ! -d build ] && build && ninja
+        qemu-system-aarch64 -s -S -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio &
         gdb --symbols=build/kernel8.elf -ex "target remote localhost:1234"
         ;;
     clean)
