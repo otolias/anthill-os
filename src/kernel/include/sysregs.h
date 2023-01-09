@@ -1,0 +1,38 @@
+#ifndef _SYSREGS_H
+#define _SYSREGS_H
+
+// Set reserved bits to 1
+#define SCTLR_RES   (3 << 28) | (3 << 22) | (1 << 20) | (1 << 11)
+// Set explicit data access endianness at EL1 and EL0 to little endian
+#define SCTLR_EE    (0 << 25)
+#define SCTLR_E0E   (0 << 24)
+// Disable instruction cache
+#define SCTLR_I     (0 << 12)
+// Disable data cache
+#define SCTLR_D     (0 << 2)
+// Disable MMU
+#define SCTLR_MMU   (0 << 0)
+
+/* #define SCTLR_VALUE (SCTLR_RES | SCTLR_EE | SCTLR_E0E | SCTLR_I | SCTLR_D | SCTLR_MMU) */
+#define SCTLR_VALUE (SCTLR_RES | SCTLR_EE | SCTLR_E0E)
+
+// Set execution state to AARCH64
+#define HCR_RW      (1 << 31)
+#define HCR_VALUE   HCR_RW
+
+// Set reserved bits to 1
+#define SCR_RES     (3 << 4)
+// Set execution state of to AARCH64
+#define SCR_RW      (1 << 10)
+// Set EL0 and EL1 to Non-secure state
+#define SCR_NS      (1 << 0)
+
+#define SCR_VALUE   (SCR_RES | SCR_RW | SCR_NS)
+
+// Disable interrupts
+#define SPSR_MASK   (7 << 6)
+// Use EL1 dedicated stack pointer
+#define SPSR_EL1h   (5 << 0)
+
+#define SPSR_VALUE  (SPSR_MASK | SPSR_EL1h)
+#endif

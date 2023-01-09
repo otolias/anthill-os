@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include "gpio.h"
 
 #define AUX_ENABLES     ((volatile uint32_t*) (MMIO_BASE + 0x00215004))
@@ -21,7 +20,7 @@ void uart_init();
 /*
 * Send character via uart
 */
-void uart_send_char(uint32_t c);
+void uart_send_char(char c);
 /*
 * Receive character via uart
 */

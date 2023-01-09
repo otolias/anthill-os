@@ -2,7 +2,7 @@
 
 void uart_init() {
     uint32_t reg;
-    
+
     reg = *GPFSEL1;
     reg &= ~(0b111 << 12); // Clean gpio14
     reg |= 0b10 << 12; // Set alt 5
@@ -30,7 +30,7 @@ void uart_init() {
     *AUX_MU_CNTL_REG = 0b11; // Enable receiver and transmitter
 }
 
-void uart_send_char(uint32_t c) {
+void uart_send_char(char c) {
     // Wait until transmitter is idle
     while (!(*AUX_MU_LSR_REG & 0x20)) {
         asm volatile("nop");
