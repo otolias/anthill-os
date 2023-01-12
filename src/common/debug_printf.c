@@ -50,6 +50,8 @@ void dbg_printf(char *format, ...) {
                     uart_puts(buffer);
                     *buffer = 0;
                     break;
+                case 's':
+                    uart_puts(va_arg(va, char*));
                 default:
                     break;
             }
