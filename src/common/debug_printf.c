@@ -22,7 +22,7 @@ static void integer_to_string(char* buffer, char number, uint32_t base) {
         int digit = number / div;
         number %= div;
         div /= base;
-        *buffer++ = (char) (digit > 10) ? digit + 54 : digit + 48;
+        *buffer++ = (char) (digit >= 10) ? digit + 55 : digit + 48;
     }
 }
 
@@ -52,6 +52,7 @@ void dbg_printf(char *format, ...) {
                     break;
                 case 's':
                     uart_puts(va_arg(va, char*));
+                    break;
                 default:
                     break;
             }

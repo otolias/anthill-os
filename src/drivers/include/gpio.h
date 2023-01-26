@@ -1,3 +1,5 @@
+#ifndef _GPIO_H
+#define _GPIO_H
 #include <stdint.h>
 
 #define MMIO_BASE       0x3F000000
@@ -20,3 +22,5 @@
 #define GPPUD           ((uint32_t*)(MMIO_BASE + 0x00200094))
 #define GPPUDCLK0       ((uint32_t*)(MMIO_BASE + 0x00200098))
 #define GPPUDCLK1       ((uint32_t*)(MMIO_BASE + 0x0020009C))
+
+#endif

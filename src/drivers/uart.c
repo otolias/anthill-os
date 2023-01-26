@@ -1,4 +1,6 @@
 #include "uart.h"
+#include "debug_printf.h"
+
 
 void uart_init() {
     uint32_t reg;
@@ -55,4 +57,21 @@ void uart_puts(char *string) {
         uart_send_char(*string == '\n' ? '\r' : *string);
         string++;
     }
+}
+
+void uart_dump() {
+    dbg_printf("UART dump\n");
+    dbg_printf("MMIO_BASE: %x\n", MMIO_BASE);
+    dbg_printf("AUX_ENABLES: %x -> %x\n", AUX_ENABLES, *AUX_ENABLES);
+    dbg_printf("AUX_MU_IO_REG: %x -> %x\n", AUX_MU_IO_REG, *AUX_MU_IO_REG);
+    dbg_printf("AUX_MU_IER_REG: %x -> %x\n", AUX_MU_IER_REG, *AUX_MU_IER_REG);
+    dbg_printf("AUX_MU_IIR_REG: %x -> %x\n", AUX_MU_IIR_REG, *AUX_MU_IIR_REG);
+    dbg_printf("AUX_MU_LCR_REG: %x -> %x\n", AUX_MU_LCR_REG, *AUX_MU_LCR_REG);
+    dbg_printf("AUX_MU_MCR_REG: %x -> %x\n", AUX_MU_MCR_REG, *AUX_MU_MCR_REG);
+    dbg_printf("AUX_MU_LSR_REG: %x -> %x\n", AUX_MU_LSR_REG, *AUX_MU_LSR_REG);
+    dbg_printf("AUX_MU_MSR_REG: %x -> %x\n", AUX_MU_MSR_REG, *AUX_MU_MSR_REG);
+    dbg_printf("AUX_MU_SCRATCH: %x -> %x\n", AUX_MU_SCRATCH, *AUX_MU_SCRATCH);
+    dbg_printf("AUX_MU_CNTL_REG: %x -> %x\n", AUX_MU_CNTL_REG, *AUX_MU_CNTL_REG);
+    dbg_printf("AUX_MU_STAT_REG: %x -> %x\n", AUX_MU_STAT_REG, *AUX_MU_STAT_REG);
+    dbg_printf("AUX_MU_BAUD_REG: %x -> %x\n", AUX_MU_BAUD_REG, *AUX_MU_BAUD_REG);
 }

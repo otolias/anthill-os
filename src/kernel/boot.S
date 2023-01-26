@@ -1,3 +1,5 @@
+#include "entry.h"
+
 .section ".text.boot"
 
 .global _start
@@ -25,6 +27,10 @@ bss:
     cbnz    w2, bss
 
 master:
+    // Set up exception handlers
+    ldr     x0, =vectors
+    msr     vbar_el1, x0
+
     // Jump to kernel
     bl      main
     // If it returns, hang
