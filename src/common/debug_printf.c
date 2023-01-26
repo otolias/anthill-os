@@ -6,7 +6,7 @@
 /*
 * Converts an int to a character array with base and writes it to the given buffer
 */
-static void integer_to_string(char* buffer, char number, uint32_t base) {
+static void integer_to_string(char* buffer, uint32_t number, uint32_t base) {
     uint32_t div = 1;
 
     while (number / div >= base) {
@@ -19,10 +19,10 @@ static void integer_to_string(char* buffer, char number, uint32_t base) {
     }
 
     while (div != 0) {
-        int digit = number / div;
+        uint8_t digit = number / div;
         number %= div;
         div /= base;
-        *buffer++ = (char) (digit > 10) ? digit + 54 : digit + 48;
+        *buffer++ = (char) (digit >= 10) ? digit + 55 : digit + 48;
     }
 }
 
@@ -41,12 +41,12 @@ void dbg_printf(char *format, ...) {
 
             switch (c) {
                 case 'd':
-                    integer_to_string(buffer, va_arg(va, int), 10);
+                    integer_to_string(buffer, va_arg(va, uint32_t), 10);
                     uart_puts(buffer);
                     *buffer = 0;
                     break;
                 case 'x':
-                    integer_to_string(buffer, va_arg(va, int), 16);
+                    integer_to_string(buffer, va_arg(va, uint32_t), 16);
                     uart_puts(buffer);
                     *buffer = 0;
                     break;
