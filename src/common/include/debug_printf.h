@@ -1,3 +1,6 @@
+#ifndef _DBG_PRINTF_H
+#define _DBG_PRINTF_H
+
 /*
 * A very basic implementation of printf targeting uart
 * for debugging purposes
@@ -10,3 +13,5 @@
 * formatting options.
 */
 void dbg_printf(char *format, ...);
+
+#endif
