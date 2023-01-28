@@ -49,10 +49,3 @@ char uart_get_char() {
     c = (char) (*AUX_MU_IO_REG);
     return c == '\r' ? '\n' : c;
 }
-
-void uart_puts(char *string) {
-    while (*string) {
-        uart_send_char(*string == '\n' ? '\r' : *string);
-        string++;
-    }
-}
