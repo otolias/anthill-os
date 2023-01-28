@@ -29,7 +29,9 @@ static void integer_to_string(char* buffer, uint32_t number, uint32_t base) {
 void dbg_printf(char *format, ...) {
     va_list va;
     char c;
+    char *string;
     char buffer[16];
+    uint32_t i = 0;
 
     va_start(va, format);
 
@@ -42,17 +44,26 @@ void dbg_printf(char *format, ...) {
             switch (c) {
                 case 'd':
                     integer_to_string(buffer, va_arg(va, uint32_t), 10);
-                    uart_puts(buffer);
-                    *buffer = 0;
+                    for (i = 0; i < 16; i++) {
+                        if (!buffer[i]) break;
+                        uart_send_char(buffer[i]);
+                        buffer[i] = '\x00';
+                    }
                     break;
                 case 'x':
                     integer_to_string(buffer, va_arg(va, uint32_t), 16);
-                    uart_puts(buffer);
-                    *buffer = 0;
+                    for (i = 0; i < 16; i++) {
+                        if (!buffer[i]) break;
+                        uart_send_char(buffer[i]);
+                        buffer[i] = '\x00';
+                    }
                     break;
                 case 's':
-                    uart_puts(va_arg(va, char*));
-                    break;
+                    string = va_arg(va, char*);
+                    while (*string) {
+                        uart_send_char(*string);
+                        string++;
+                    }
                 default:
                     break;
             }

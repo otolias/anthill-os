@@ -25,8 +25,4 @@ void uart_send_char(char c);
 * Receive character via uart
 */
 char uart_get_char();
-/*
-* Send string via uart
-*/
-void uart_puts(char *string);
 void uart_dump();

@@ -52,13 +52,6 @@ char uart_get_char() {
     return c == '\r' ? '\n' : c;
 }
 
-void uart_puts(char *string) {
-    while (*string) {
-        uart_send_char(*string == '\n' ? '\r' : *string);
-        string++;
-    }
-}
-
 void uart_dump() {
     dbg_printf("UART dump\n");
     dbg_printf("MMIO_BASE: %x\n", MMIO_BASE);
