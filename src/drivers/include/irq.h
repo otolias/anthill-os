@@ -15,7 +15,10 @@
 #define DISABLE_IRQS_2        ((volatile uint32_t*)(MMIO_BASE + 0x0000B220))
 #define DISABLE_BASIC_IRQS    ((volatile uint32_t*)(MMIO_BASE + 0x0000B224))
 
-#define ARM_TIMER_IRQ    (1 << 0)
+#define SYSTEM_TIMER_IRQ_0    (1 << 0)
+#define SYSTEM_TIMER_IRQ_1    (1 << 1)
+#define SYSTEM_TIMER_IRQ_2    (1 << 2)
+#define SYSTEM_TIMER_IRQ_3    (1 << 3)
 
 /*
 * Enable interrupts

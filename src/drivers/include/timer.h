@@ -4,18 +4,21 @@
 #include <stdint.h>
 #include "gpio.h"
 
-#define TIMER_LOAD         ((volatile uint32_t*) (MMIO_BASE + 0x0000B400))
-#define TIMER_VALUE        ((volatile uint32_t*) (MMIO_BASE + 0x0000B404))
-#define TIMER_CONTROL      ((volatile uint32_t*) (MMIO_BASE + 0x0000B408))
-#define TIMER_ACK          ((volatile uint32_t*) (MMIO_BASE + 0x0000B40C))
-#define TIMER_RAW_IRQ      ((volatile uint32_t*) (MMIO_BASE + 0x0000B410))
-#define TIMER_MASKED_IRQ   ((volatile uint32_t*) (MMIO_BASE + 0x0000B414))
-#define TIMER_RELOAD       ((volatile uint32_t*) (MMIO_BASE + 0x0000B418))
-#define TIMER_PRE_DIV      ((volatile uint32_t*) (MMIO_BASE + 0x0000B41C))
-#define TIMER_FREE_RUNNING ((volatile uint32_t*) (MMIO_BASE + 0x0000B420))
+#define TIMER_CS    (volatile uint32_t*) (MMIO_BASE + 0x00003000)
+#define TIMER_CLO   (volatile uint32_t*) (MMIO_BASE + 0x00003004)
+#define TIMER_CHI   (volatile uint32_t*) (MMIO_BASE + 0x00003008)
+#define TIMER_C0    (volatile uint32_t*) (MMIO_BASE + 0x0000300C)
+#define TIMER_C1    (volatile uint32_t*) (MMIO_BASE + 0x00003010)
+#define TIMER_C2    (volatile uint32_t*) (MMIO_BASE + 0x00003014)
+#define TIMER_C3    (volatile uint32_t*) (MMIO_BASE + 0x0000301C)
 
-void timer_init(uint32_t interval);
-void timer_dump();
+/*
+* Initialise System Simer 1
+*/
+void timer_init();
+/*
+* System Timer 1 interrupt handler
+*/
 void handle_timer_irq();
 
 #endif

@@ -9,7 +9,7 @@ b   \label
 kernel_entry
 mov     x0, #\type
 mrs     x1, esr_el1
-mrs     x2, esr_el1
+mrs     x2, elr_el1
 bl      show_invalid_entry_message
 b       hang
 .endm
@@ -67,7 +67,7 @@ vectors:
     vector_entry error_invalid_el1t
 
     vector_entry sync_invalid_el1t
-    vector_entry irq_invalid_el1t
+    vector_entry el1_irq
     vector_entry fiq_invalid_el1t
     vector_entry error_invalid_el1t
 
@@ -129,10 +129,10 @@ fiq_invalid_el0_32:
 error_invalid_el0_32:
     handle_invalid_entry    ERROR_INVALID_EL0_32
 
-# el1_irq:
-#     kernel_entry
-#     bl  handle_irq
-#     kernel_exit
+el1_irq:
+    kernel_entry
+    bl  handle_irq
+    kernel_exit
 
 hang:
     b hang

@@ -27,7 +27,7 @@ colour_print () {
 
 build () {
     # Default cflags
-    cflags="-Wall -Wextra -ffreestanding"
+    cflags="-Wall -Wextra -ffreestanding -mgeneral-regs-only"
     [ $target = "release" ] && cflags+=" -O2"
     [ $target = "debug" ] && cflags+=" -g"
     ninja_file=$(printf "cflags = %s" "$cflags")

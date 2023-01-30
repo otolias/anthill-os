@@ -25,7 +25,7 @@ const char *entry_error_messages[] = {
 };
 
 void enable_interrupt_controller() {
-    *ENABLE_BASIC_IRQS &= ARM_TIMER_IRQ;
+    *ENABLE_IRQS_1 |= SYSTEM_TIMER_IRQ_1;
 }
 
 void enable_irq() {
@@ -33,9 +33,9 @@ void enable_irq() {
 }
 
 void handle_irq() {
-    uint32_t irq = *IRQ_BASIC_PENDING;
+    uint32_t irq = *IRQ_PENDING_1;
     switch (irq) {
-        case (ARM_TIMER_IRQ):
+        case (SYSTEM_TIMER_IRQ_1):
             handle_timer_irq();
             break;
         default:
