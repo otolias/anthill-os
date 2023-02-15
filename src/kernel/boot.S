@@ -23,6 +23,9 @@ el1:
     ldr     x0, =SPSR_VALUE
     msr     spsr_el2, x0
 
+    ldr     x0, =CPACR_VALUE
+    msr     cpacr_el1, x0
+
     ldr     x0, =vectors
     msr     vbar_el1, x0
 

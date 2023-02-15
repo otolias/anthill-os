@@ -24,4 +24,11 @@
 #define SPSR_EL1h   (5 << 0)
 
 #define SPSR_VALUE  (SPSR_MASK | SPSR_EL1h)
+
+// Enable SIMD at EL1
+#define CPACR_FPEN  (1 << 20)
+#define CPACR_ZEN   (1 << 16)
+
+#define CPACR_VALUE (CPACR_FPEN | CPACR_ZEN)
+
 #endif
