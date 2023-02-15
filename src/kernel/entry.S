@@ -66,10 +66,10 @@ vectors:
     vector_entry fiq_invalid_el1t
     vector_entry error_invalid_el1t
 
-    vector_entry sync_invalid_el1t
+    vector_entry sync_invalid_el1h
     vector_entry el1_irq
-    vector_entry fiq_invalid_el1t
-    vector_entry error_invalid_el1t
+    vector_entry fiq_invalid_el1h
+    vector_entry error_invalid_el1h
 
     vector_entry sync_invalid_el0_64
     vector_entry irq_invalid_el0_64

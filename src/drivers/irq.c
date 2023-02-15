@@ -1,5 +1,6 @@
 #include "irq.h"
 #include "timer.h"
+#include "uart.h"
 #include "debug_printf.h"
 
 const char *entry_error_messages[] = {
@@ -25,7 +26,7 @@ const char *entry_error_messages[] = {
 };
 
 void enable_interrupt_controller() {
-    *ENABLE_IRQS_1 |= SYSTEM_TIMER_IRQ_1;
+    *ENABLE_IRQS_1 |= (SYSTEM_TIMER_IRQ_1 | UART_IRQ);
 }
 
 void enable_irq() {
@@ -34,12 +35,20 @@ void enable_irq() {
 
 void handle_irq() {
     uint32_t irq = *IRQ_PENDING_1;
-    switch (irq) {
-        case (SYSTEM_TIMER_IRQ_1):
-            handle_timer_irq();
-            break;
-        default:
-            dbg_printf("Unknown pending irq: %x\n", irq);
+    while (irq) {
+        switch (irq) {
+            case SYSTEM_TIMER_IRQ_1:
+                handle_timer_irq();
+                irq &= ~SYSTEM_TIMER_IRQ_1;
+                break;
+            case UART_IRQ:
+                handle_uart_irq();
+                irq &= ~UART_IRQ;
+                break;
+            default:
+                dbg_printf("Unknown pending irq: %x\n", irq);
+                break;
+        }
     }
 }
 

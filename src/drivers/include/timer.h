@@ -13,11 +13,13 @@
 #define TIMER_C3    (volatile uint32_t*) (MMIO_BASE + 0x0000301C)
 
 /*
-* Initialise System Simer 1
+* Generate System Timer 1 interrupt in given seconds
 */
-void timer_init();
+void timer_init(uint32_t seconds);
 /*
-* System Timer 1 interrupt handler
+* System Timer interrupt handler
+*
+* Currently handles only System Timer 1 interrupts
 */
 void handle_timer_irq();
 

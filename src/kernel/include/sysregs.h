@@ -13,21 +13,10 @@
 // Disable MMU
 #define SCTLR_MMU   (0 << 0)
 
-/* #define SCTLR_VALUE (SCTLR_RES | SCTLR_EE | SCTLR_E0E | SCTLR_I | SCTLR_D | SCTLR_MMU) */
-#define SCTLR_VALUE (SCTLR_RES | SCTLR_EE | SCTLR_E0E)
+#define SCTLR_VALUE (SCTLR_RES | SCTLR_EE | SCTLR_E0E | SCTLR_I | SCTLR_D | SCTLR_MMU)
 
 // Set execution state to AARCH64
-#define HCR_RW      (1 << 31)
-#define HCR_VALUE   HCR_RW
-
-// Set reserved bits to 1
-#define SCR_RES     (3 << 4)
-// Set execution state of to AARCH64
-#define SCR_RW      (1 << 10)
-// Set EL0 and EL1 to Non-secure state
-#define SCR_NS      (1 << 0)
-
-#define SCR_VALUE   (SCR_RES | SCR_RW | SCR_NS)
+#define HCR_VALUE   (1 << 31)
 
 // Disable interrupts
 #define SPSR_MASK   (7 << 6)

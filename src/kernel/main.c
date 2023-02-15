@@ -7,7 +7,7 @@ void main() {
     uint64_t el;
 
     uart_init();
-    timer_init();
+    timer_init(2);
 
     enable_interrupt_controller();
     enable_irq();
@@ -17,10 +17,5 @@ void main() {
         [el] "=r" (el) : :
         "x0");
 
-    // Print Exception level
-    dbg_printf("Exception Level: %d!\n", el);
-
-    while (1) {
-        uart_send_char(uart_get_char());
-    }
+    while (1) {;}
 }
