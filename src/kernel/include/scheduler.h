@@ -9,19 +9,19 @@
 * Registers to be stored when switching tasks
 */
 struct cpu_context {
-    uint64_t x19;
-    uint64_t x20;
-    uint64_t x21;
-    uint64_t x22;
-    uint64_t x23;
-    uint64_t x24;
-    uint64_t x25;
-    uint64_t x26;
-    uint64_t x27;
-    uint64_t x28;
-    uint64_t fp;
-    uint64_t sp;
-    uint64_t pc;
+    uintptr_t x19;
+    uintptr_t x20;
+    uintptr_t x21;
+    uintptr_t x22;
+    uintptr_t x23;
+    uintptr_t x24;
+    uintptr_t x25;
+    uintptr_t x26;
+    uintptr_t x27;
+    uintptr_t x28;
+    uintptr_t fp;
+    uintptr_t sp;
+    uintptr_t pc;
 };
 
 /*
@@ -36,10 +36,10 @@ enum task_state {
 */
 struct task {
     struct cpu_context cpu_context;
-    enum task_state state; // Current task state
     int64_t counter; // How long the task has been running (decreases)
     int64_t priority; // How much time the task is given
-    int64_t preempt_count; // If non-zero, task must not be interrupted
+    int32_t preempt_count; // If non-zero, task must not be interrupted
+    enum task_state state; // Current task state
 };
 
 /*

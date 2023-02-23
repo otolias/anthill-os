@@ -3,7 +3,7 @@
 
 static uint8_t memory_map [PAGING_PAGES] = {0,};
 
-uint64_t get_free_page() {
+uintptr_t get_free_page() {
     for (int i = 0; i < PAGING_PAGES; i++) {
         if (memory_map[i] == 0) {
             memory_map[i] = 1;
@@ -14,6 +14,6 @@ uint64_t get_free_page() {
     return 0;
 }
 
-void free_page(uint32_t p) {
+void free_page(uintptr_t p) {
     memory_map[(p - LOW_MEMORY) / PAGE_SIZE] = 0;
 }

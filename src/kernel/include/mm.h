@@ -14,10 +14,10 @@
 /*
 * Find and return free page
 */
-uint64_t get_free_page();
+uintptr_t get_free_page();
 /*
 * Deallocate page
 */
-void free_page(uint32_t p);
+void free_page(uintptr_t p);
 
 #endif

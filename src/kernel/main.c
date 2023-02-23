@@ -29,10 +29,10 @@ void main() {
     enable_interrupt_controller();
     enable_irq();
 
-    uint32_t res = copy_process((uint64_t) &test_process, (uint64_t) "12345");
+    uint8_t res = copy_process((uintptr_t) &test_process, (uintptr_t) "12345");
     if (res) { dbg_printf("Error while starting process 1\n"); return; }
 
-    res = copy_process((uint64_t) &test_process, (uint64_t) "abcde");
+    res = copy_process((uintptr_t) &test_process, (uintptr_t) "abcde");
     if (res) { dbg_printf("Error while starting process 2\n"); return; }
 
     while (1) {
