@@ -54,7 +54,10 @@ build () {
     sources=$(find src/ -name "*.[Sc]")
     objects=""
     for src in $sources; do
-        dest=$(printf "%s" "$src" | sed "s/\.[Sc]/\.o/" | sed "s/src/build/")
+        dest=$(printf "%s" "$src" | \
+            sed "s/\.c/\.o/" | \
+            sed "s/\.S/\_S.o/" | \
+            sed "s/src/build/")
         ninja_file+=$(printf "\nbuild %s: cc %s" "$dest" "$src")
         objects+=$(printf "%s " "$dest")
     done
@@ -143,7 +146,7 @@ case $action in
     debug)
         [ ! -d build ] && build && ninja
         qemu-system-aarch64 -s -S -M raspi3b -kernel build/kernel8.bin -serial null -serial stdio &
-        gdb --symbols=build/kernel8.elf -ex "target remote localhost:1234"
+        aarch64-elf-gdb --symbols=build/kernel8.elf -ex "target remote localhost:1234"
         ;;
     clean)
         rm -rf build build.ninja cache .ninja_log
