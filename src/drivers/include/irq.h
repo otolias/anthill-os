@@ -39,6 +39,6 @@ void disable_irq();
 /*
 * Print invalid interrupt message
 */
-void show_invalid_entry_message(int8_t type, uint32_t esr, uint32_t address);
+void show_invalid_entry_message(int32_t type, uint64_t esr, uint64_t address);
 
 #endif

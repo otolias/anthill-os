@@ -56,6 +56,6 @@ void disable_irq() {
     asm volatile("msr daifset, #2");
 }
 
-void show_invalid_entry_message(int8_t type, uint32_t esr, uint32_t address) {
+void show_invalid_entry_message(int32_t type, uint64_t esr, uint64_t address) {
     dbg_printf("%s, ESR: %x, address: %x\n", entry_error_messages[type], esr, address);
 }
