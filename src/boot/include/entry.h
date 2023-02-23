@@ -21,4 +21,13 @@
 #define FIQ_INVALID_EL0_32    14
 #define ERROR_INVALID_EL0_32  15
 
+#ifndef __ASSEMBLER__
+
+/*
+* Adds parameters and starts coroutine
+*/
+void start_coroutine();
+
+#endif /* __ASSEMBLER__ */
+
 #endif

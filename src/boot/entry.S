@@ -16,7 +16,7 @@ b       hang
 
 // Store general registers to stack
 .macro kernel_entry
-sub     sp, sp, #256
+sub     sp, sp, #272
 stp     x0, x1, [sp]
 stp     x2, x3, [sp, #16]
 stp     x4, x5, [sp, #16 * 2]
@@ -32,11 +32,22 @@ stp     x22, x23, [sp, #16 * 11]
 stp     x24, x25, [sp, #16 * 12]
 stp     x26, x27, [sp, #16 * 13]
 stp     x28, x29, [sp, #16 * 14]
-str     x30, [sp, #16 * 15]
+
+mrs     x28, elr_el1
+mrs     x29, spsr_el1
+
+stp     x30, x28, [sp, #16 * 15]
+str     x29, [sp, #16 * 16]
 .endm
 
 // Retrieve general registers from stack
 .macro  kernel_exit
+ldr     x29, [sp, #16 * 16]
+ldp     x30, x28, [sp, #16 * 15]
+
+msr     elr_el1, x28
+msr     spsr_el1, x29
+
 ldp     x0, x1, [sp]
 ldp     x2, x3, [sp, #16]
 ldp     x4, x5, [sp, #16 * 2]
@@ -52,8 +63,7 @@ ldp     x22, x23, [sp, #16 * 11]
 ldp     x24, x25, [sp, #16 * 12]
 ldp     x26, x27, [sp, #16 * 13]
 ldp     x28, x29, [sp, #16 * 14]
-ldr     x30, [sp, #16 * 15]
-add     sp, sp, #256
+add     sp, sp, #272
 eret
 .endm
 
@@ -133,6 +143,12 @@ el1_irq:
     kernel_entry
     bl  handle_irq
     kernel_exit
+
+.global start_coroutine
+start_coroutine:
+    bl      preempt_enable
+    mov     x0, x20
+    blr     x19
 
 hang:
     b hang
