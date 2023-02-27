@@ -1,7 +1,8 @@
 #include "scheduler.h"
+
 #include "irq.h"
 
-static struct task init_task = { {0,0,0,0,0,0,0,0,0,0,0,0,0}, TASK_RUNNING, 0, 1, 0};
+static struct task init_task = { .priority = 1};
 struct task *current = &init_task;
 struct task *tasks[TOTAL_TASKS] = {&init_task, };
 uint32_t total_tasks = 1;
