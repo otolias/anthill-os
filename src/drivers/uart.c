@@ -1,5 +1,4 @@
 #include "uart.h"
-#include "debug_printf.h"
 
 void uart_init() {
     uint32_t reg;

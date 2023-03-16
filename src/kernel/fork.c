@@ -2,7 +2,6 @@
 #include "mm.h"
 #include "entry.h"
 #include "scheduler.h"
-#include "debug_printf.h"
 
 int8_t copy_process(uintptr_t function, uintptr_t arg) {
     preempt_disable();

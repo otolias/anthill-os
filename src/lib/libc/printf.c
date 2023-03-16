@@ -1,6 +1,6 @@
+#include "stdio.h"
 #include <stdarg.h>
 #include <stdint.h>
-#include "debug_printf.h"
 #include "uart.h"
 
 /*
@@ -26,7 +26,7 @@ static void integer_to_string(char* buffer, uint32_t number, uint32_t base) {
     }
 }
 
-void dbg_printf(char *format, ...) {
+void printf(char *format, ...) {
     va_list va;
     char c;
     char *string;
