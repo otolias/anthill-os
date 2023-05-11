@@ -21,13 +21,21 @@
 #define FIQ_INVALID_EL0_32    14
 #define ERROR_INVALID_EL0_32  15
 
+#define SYNC_ERROR            16
+#define SYSCALL_ERROR         17
+
 #ifndef __ASSEMBLER__
 
 /*
 * Adds parameters and starts coroutine
 */
 void start_coroutine();
+/*
+* Starts a function in user_mode
+* Function is stored in x19
+* Stack is stored in x20
+*/
+void start_user();
 
 #endif /* __ASSEMBLER__ */
-
 #endif

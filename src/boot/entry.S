@@ -1,12 +1,14 @@
+#include "sysregs.h"
 #include "entry.h"
+#include "syscalls.h"
 
 .macro vector_entry label
 .align 7
 b   \label
 .endm
 
-.macro handle_invalid_entry type
-kernel_entry
+.macro handle_invalid_entry el, type
+kernel_entry \el
 mov     x0, #\type
 mrs     x1, esr_el1
 mrs     x2, elr_el1
@@ -15,7 +17,7 @@ b       hang
 .endm
 
 // Store general registers to stack
-.macro kernel_entry
+.macro kernel_entry el
 sub     sp, sp, #272
 stp     x0, x1, [sp]
 stp     x2, x3, [sp, #16]
@@ -33,20 +35,30 @@ stp     x24, x25, [sp, #16 * 12]
 stp     x26, x27, [sp, #16 * 13]
 stp     x28, x29, [sp, #16 * 14]
 
-mrs     x28, elr_el1
-mrs     x29, spsr_el1
+.if     \el == 0
+    mrs     x0, sp_el0
+.else
+    add     x0, sp, #272
+.endif /* \el == 0 */
 
-stp     x30, x28, [sp, #16 * 15]
-str     x29, [sp, #16 * 16]
+mrs     x1, elr_el1
+mrs     x2, spsr_el1
+
+stp     x30, x0, [sp, #16 * 15]
+stp     x1, x2, [sp, #16 * 16]
 .endm
 
 // Retrieve general registers from stack
-.macro  kernel_exit
-ldr     x29, [sp, #16 * 16]
-ldp     x30, x28, [sp, #16 * 15]
+.macro  kernel_exit el
+ldp     x1, x2, [sp, #16 * 16]
+ldp     x30, x0, [sp, #16 * 15]
 
-msr     elr_el1, x28
-msr     spsr_el1, x29
+.if     \el == 0
+msr     sp_el0, x0
+.endif /* \el == 0 */
+
+msr     elr_el1, x1
+msr     spsr_el1, x2
 
 ldp     x0, x1, [sp]
 ldp     x2, x3, [sp, #16]
@@ -81,8 +93,8 @@ vectors:
     vector_entry fiq_invalid_el1h
     vector_entry error_invalid_el1h
 
-    vector_entry sync_invalid_el0_64
-    vector_entry irq_invalid_el0_64
+    vector_entry el0_sync
+    vector_entry el0_irq
     vector_entry fiq_invalid_el0_64
     vector_entry error_invalid_el0_64
 
@@ -92,63 +104,92 @@ vectors:
     vector_entry error_invalid_el0_32
 
 sync_invalid_el1t:
-    handle_invalid_entry    SYNC_INVALID_EL1t
+    handle_invalid_entry    1, SYNC_INVALID_EL1t
 
 irq_invalid_el1t:
-    handle_invalid_entry    IRQ_INVALID_EL1t
+    handle_invalid_entry    1, IRQ_INVALID_EL1t
 
 fiq_invalid_el1t:
-    handle_invalid_entry    FIQ_INVALID_EL1t
+    handle_invalid_entry    1, FIQ_INVALID_EL1t
 
 error_invalid_el1t:
-    handle_invalid_entry    ERROR_INVALID_EL1t
+    handle_invalid_entry    1, ERROR_INVALID_EL1t
 
 sync_invalid_el1h:
-    handle_invalid_entry    SYNC_INVALID_EL1h
-
-irq_invalid_el1h:
-    handle_invalid_entry    IRQ_INVALID_EL1h
-
-fiq_invalid_el1h:
-    handle_invalid_entry    FIQ_INVALID_EL1h
-
-error_invalid_el1h:
-    handle_invalid_entry    ERROR_INVALID_EL1h
-
-sync_invalid_el0_64:
-    handle_invalid_entry    SYNC_INVALID_EL0_64
-
-irq_invalid_el0_64:
-    handle_invalid_entry    IRQ_INVALID_EL0_64
-
-fiq_invalid_el0_64:
-    handle_invalid_entry    FIQ_INVALID_EL0_64
-
-error_invalid_el0_64:
-    handle_invalid_entry    ERROR_INVALID_EL0_64
-
-sync_invalid_el0_32:
-    handle_invalid_entry    SYNC_INVALID_EL0_32
-
-irq_invalid_el0_32:
-    handle_invalid_entry    IRQ_INVALID_EL0_32
-
-fiq_invalid_el0_32:
-    handle_invalid_entry    FIQ_INVALID_EL0_32
-
-error_invalid_el0_32:
-    handle_invalid_entry    ERROR_INVALID_EL0_32
+    handle_invalid_entry    1, SYNC_INVALID_EL1h
 
 el1_irq:
-    kernel_entry
+    kernel_entry 1
     bl  handle_irq
-    kernel_exit
+    kernel_exit 1
+
+fiq_invalid_el1h:
+    handle_invalid_entry    1, FIQ_INVALID_EL1h
+
+error_invalid_el1h:
+    handle_invalid_entry    1, ERROR_INVALID_EL1h
+
+el0_sync:
+    kernel_entry 0
+    mrs     x25, esr_el1
+    lsr     x24, x25, #ESR_ELx_EC
+    cmp     x24, #ESR_ELx_EC_SVC64
+    b.eq    el0_svc
+    handle_invalid_entry 0, SYNC_ERROR
+
+el0_irq:
+    kernel_entry 0
+    bl  handle_irq
+    kernel_exit 0
+
+fiq_invalid_el0_64:
+    handle_invalid_entry    0, FIQ_INVALID_EL0_64
+
+error_invalid_el0_64:
+    handle_invalid_entry    0, ERROR_INVALID_EL0_64
+
+sync_invalid_el0_32:
+    handle_invalid_entry    0, SYNC_INVALID_EL0_32
+
+irq_invalid_el0_32:
+    handle_invalid_entry    0, IRQ_INVALID_EL0_32
+
+fiq_invalid_el0_32:
+    handle_invalid_entry    0, FIQ_INVALID_EL0_32
+
+error_invalid_el0_32:
+    handle_invalid_entry    0, ERROR_INVALID_EL0_32
+
+el0_svc:
+    adr     x25, system_call_table
+    uxtw    x26, w8
+    bl      enable_irq
+    cmp     x26, #TOTAL_SYSCALLS
+    b.hs    syscall_error
+
+    // Find system call in system call table
+    ldr     x16, [x25, x26, lsl#3]
+    // Execute system call
+    blr     x16
+    bl      disable_irq
+    str     x0, [sp]
+    kernel_exit 0
+
+syscall_error:
+    handle_invalid_entry    0, SYSCALL_ERROR
 
 .global start_coroutine
 start_coroutine:
     bl      preempt_enable
     mov     x0, x20
     blr     x19
+
+.global start_user
+start_user:
+    bl disable_irq
+    msr     elr_el1, x19
+    msr     sp_el0, x20
+    eret
 
 hang:
     b hang

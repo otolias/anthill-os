@@ -22,6 +22,11 @@ void test_process(char *string) {
     }
 }
 
+void init_process() {
+    printf("Init process\n");
+    while (1) {;}
+}
+
 void main() {
     uart_init();
     timer_init();
@@ -29,11 +34,8 @@ void main() {
     enable_interrupt_controller();
     enable_irq();
 
-    uint8_t res = copy_process((uintptr_t) &test_process, (uintptr_t) "12345");
-    if (res) { printf("Error while starting process 1\n"); return; }
-
-    res = copy_process((uintptr_t) &test_process, (uintptr_t) "abcde");
-    if (res) { printf("Error while starting process 2\n"); return; }
+    uint8_t err = move_to_user_mode((uintptr_t) &init_process);
+    if (err) { printf("Error while starting init process\n"); }
 
     while (1) {
         schedule();
