@@ -36,29 +36,29 @@ stp     x26, x27, [sp, #16 * 13]
 stp     x28, x29, [sp, #16 * 14]
 
 .if     \el == 0
-    mrs     x0, sp_el0
+    mrs     x9, sp_el0
 .else
-    add     x0, sp, #272
+    add     x9, sp, #272
 .endif /* \el == 0 */
 
-mrs     x1, elr_el1
-mrs     x2, spsr_el1
+mrs     x10, elr_el1
+mrs     x11, spsr_el1
 
-stp     x30, x0, [sp, #16 * 15]
-stp     x1, x2, [sp, #16 * 16]
+stp     x30, x9, [sp, #16 * 15]
+stp     x10, x11, [sp, #16 * 16]
 .endm
 
 // Retrieve general registers from stack
 .macro  kernel_exit el
-ldp     x1, x2, [sp, #16 * 16]
-ldp     x30, x0, [sp, #16 * 15]
+ldp     x10, x11, [sp, #16 * 16]
+ldp     x30, x9, [sp, #16 * 15]
 
 .if     \el == 0
-msr     sp_el0, x0
+msr     sp_el0, x9
 .endif /* \el == 0 */
 
-msr     elr_el1, x1
-msr     spsr_el1, x2
+msr     elr_el1, x10
+msr     spsr_el1, x11
 
 ldp     x0, x1, [sp]
 ldp     x2, x3, [sp, #16]
