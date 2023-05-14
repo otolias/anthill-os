@@ -1,104 +1,117 @@
 #include "stdio.h"
+
 #include <stdarg.h>
-#include <stdint.h>
+
 #include "uart.h"
 
-#define IO_BUFFER_SIZE     1024
-#define LOCAL_BUFFER_SIZE  64
-
-char io_buffer[IO_BUFFER_SIZE];
-uint32_t io_buffer_index = 0;
+#define PRINTF_BUFFER_SIZE  1024
 
 /*
-* Send buffer contents to uart
+* Puts _val_ with _base_ in location _loc_ of _buffer_
+*
+* Returns new location after application
 */
-void flush_io_buffer() {
-    for (int i = 0; i < IO_BUFFER_SIZE; i++) {
-        uart_send_char(io_buffer[i]);
-        io_buffer[i] = '\x00';
-    }
+static int _parse_int(int val, int base, char* buffer, int loc) {
+    int div = 1;
 
-    io_buffer_index = 0;
-}
-
-/*
-* Append character to io_buffer. If the buffer is full, call flush_io_buffer
-*/
-void append_to_io_buffer(char c) {
-    if (io_buffer_index == IO_BUFFER_SIZE) 
-        flush_io_buffer();
-
-    io_buffer[io_buffer_index++] = c;
-}
-
-/*
-* Converts an int to a character array with base and writes it to the given buffer
-*/
-static void integer_to_string(char* buffer, uint32_t number, uint32_t base) {
-    uint32_t div = 1;
-
-    while (number / div >= base) {
+    while (val / div >= base) {
         div *= base;
     }
 
     if (base == 16) {
-        *buffer++ = '0';
-        *buffer++ = 'x';
+        buffer[loc++] = '0';
+        buffer[loc++] = 'x';
     }
 
     while (div != 0) {
-        uint8_t digit = number / div;
-        number %= div;
+        int digit = val / div;
+        val %= div;
         div /= base;
-        *buffer++ = (char) (digit >= 10) ? digit + 55 : digit + 48;
+        buffer[loc++] = (char) (digit >= 10) ? digit + 55 : digit + 48;
     }
+
+    return loc;
 }
 
-void printf(char *format, ...) {
-    va_list va;
+/*
+* Puts _string_ in _loc_ of _buffer_
+*
+* Returns new location after application
+*/
+static int _parse_string(char *string, char* buffer, int loc) {
     char c;
-    char *string;
-    char buffer[LOCAL_BUFFER_SIZE];
-    uint32_t i = 0;
 
-    va_start(va, format);
+    while ((c = *(string++))) {
+        buffer[loc++] = c;
+    }
+
+    return loc;
+}
+
+/*
+* Formats _format_ according to _args_ and puts the result in _buffer_
+*/
+int _formatter(char* buffer, char *format, va_list args) {
+    char c;
+    int size = 0;
 
     while ((c = *(format++))) {
         if (c != '%') {
-            append_to_io_buffer(c);
-        } else {
-            c = *(format++);
+            buffer[size++] = c;
+            continue;
+        }
 
-            switch (c) {
-                case 'd':
-                    integer_to_string(buffer, va_arg(va, uint32_t), 10);
-                    for (i = 0; i < LOCAL_BUFFER_SIZE; i++) {
-                        if (!buffer[i]) break;
-                        append_to_io_buffer(buffer[i]);
-                        buffer[i] = '\x00';
-                    }
-                    break;
-                case 'x':
-                    integer_to_string(buffer, va_arg(va, uint32_t), 16);
-                    for (i = 0; i < LOCAL_BUFFER_SIZE; i++) {
-                        if (!buffer[i]) break;
-                        append_to_io_buffer(buffer[i]);
-                        buffer[i] = '\x00';
-                    }
-                    break;
-                case 's':
-                    string = va_arg(va, char*);
-                    while (*string) {
-                        append_to_io_buffer(*string);
-                        string++;
-                    }
-                default:
-                    break;
-            }
+        c = *(format++);
+
+        switch (c) {
+            case 'd':
+                size = _parse_int(va_arg(args, int), 10,  buffer, size);
+                break;
+            case 'x':
+                size = _parse_int(va_arg(args, int), 16,  buffer, size);
+                break;
+            case 's':
+                size = _parse_string(va_arg(args, char*), buffer, size);
+            default:
+                break;
         }
     }
 
-    flush_io_buffer();        
+    buffer[size] = '\x00';
+    return size;
+}
 
-    va_end(va);
+int vsprintf(char *str, char *format, va_list args) {
+    return _formatter(str, format, args);
+}
+
+int sprintf(char *str, char *format, ...) {
+    va_list args;
+    int res;
+
+    va_start(args, format);
+    res = vsprintf(str, format, args);
+    va_end(args);
+
+    return res;
+}
+
+int printf(char *format, ...) {
+    va_list args;
+    char buffer[PRINTF_BUFFER_SIZE];
+    int res;
+
+    va_start(args, format);
+    res = vsprintf(buffer, format, args);
+    va_end(args);
+
+    for (int i = 0; i < res; i++) {
+        if (buffer[i] == '\x00')
+            break;
+
+        uart_send_char(buffer[i]);
+        buffer[i] = '\x00';
+    }
+
+    return res;
 }
