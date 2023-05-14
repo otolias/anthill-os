@@ -5,7 +5,7 @@
 #include "drivers/timer.h"
 #include "drivers/uart.h"
 
-#include "stdio.h"
+#include "kernel/kprintf.h"
 
 const char *entry_error_messages[] = {
 	"SYNC_INVALID_EL1t",
@@ -50,7 +50,7 @@ void handle_irq() {
                 irq &= ~UART_IRQ;
                 break;
             default:
-                printf("Unknown pending irq: %x\n", irq);
+                kprintf("Unknown pending irq: %x\n", irq);
                 break;
         }
     }
@@ -61,5 +61,5 @@ void disable_irq() {
 }
 
 void show_invalid_entry_message(int32_t type, uint64_t esr, uint64_t address) {
-    printf("%s, ESR: %x, address: %x\n", entry_error_messages[type], esr, address);
+    kprintf("%s, ESR: %x, address: %x\n", entry_error_messages[type], esr, address);
 }

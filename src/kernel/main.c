@@ -5,6 +5,7 @@
 #include "drivers/timer.h"
 
 #include "kernel/fork.h"
+#include "kernel/kprintf.h"
 #include "kernel/scheduler.h"
 
 #include "stdio.h"
@@ -38,7 +39,7 @@ void main() {
     enable_irq();
 
     uint8_t err = move_to_user_mode((uintptr_t) &init_process);
-    if (err) { printf("Error while starting init process\n"); }
+    if (err) { kprintf("Error while starting init process\n"); }
 
     while (1) {
         schedule();
