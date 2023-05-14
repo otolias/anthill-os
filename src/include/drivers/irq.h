@@ -2,6 +2,7 @@
 #define _IRQ_H
 
 #include <stdint.h>
+
 #include "gpio.h"
 
 #define IRQ_BASIC_PENDING     ((volatile uint32_t*)(MMIO_BASE + 0x0000B200))

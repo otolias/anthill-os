@@ -1,4 +1,6 @@
-#include "uart.h"
+#include "drivers/uart.h"
+
+#include <stdint.h>
 
 void uart_init() {
     uint32_t reg;

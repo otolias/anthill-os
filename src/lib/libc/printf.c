@@ -1,6 +1,6 @@
 #include "stdio.h"
 
-#include "syscalls.h"
+#include "kernel/syscalls.h"
 
 #define PRINTF_BUFFER_SIZE  1024
 

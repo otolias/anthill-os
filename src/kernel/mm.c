@@ -1,4 +1,5 @@
-#include "mm.h"
+#include "kernel/mm.h"
+
 #include <stdint.h>
 
 static uint8_t memory_map [PAGING_PAGES] = {0,};

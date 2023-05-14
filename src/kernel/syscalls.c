@@ -1,6 +1,6 @@
-#include "syscalls.h"
+#include "kernel/syscalls.h"
 
-#include "uart.h"
+#include "drivers/uart.h"
 
 const void *system_call_table = {
     sys_write

@@ -1,9 +1,12 @@
 #include <stdint.h>
-#include "uart.h"
-#include "irq.h"
-#include "timer.h"
-#include "fork.h"
-#include "scheduler.h"
+
+#include "drivers/uart.h"
+#include "drivers/irq.h"
+#include "drivers/timer.h"
+
+#include "kernel/fork.h"
+#include "kernel/scheduler.h"
+
 #include "stdio.h"
 
 /*

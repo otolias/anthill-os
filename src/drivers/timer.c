@@ -1,5 +1,8 @@
-#include "timer.h"
-#include "scheduler.h"
+#include "drivers/timer.h"
+
+#include <stdint.h>
+
+#include "kernel/scheduler.h"
 
 uint32_t interval = 1000000;
 uint32_t current_value = 0;

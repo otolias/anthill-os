@@ -34,8 +34,8 @@ build () {
 
     # Includes
     colour_print "Generating Includes"
-    ninja_file+=$(printf "\nincludes =")
-    includes=$(find src/ -name "include" -type d)
+    ninja_file+=$(printf "\nincludes = -Isrc/include ")
+    includes=$(find src/lib/ -name "include" -type d)
     for inc in $includes; do
         ninja_file+=$(printf " -I%s" "$inc")
     done

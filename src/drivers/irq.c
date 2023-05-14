@@ -1,6 +1,10 @@
-#include "irq.h"
-#include "timer.h"
-#include "uart.h"
+#include "drivers/irq.h"
+
+#include <stdint.h>
+
+#include "drivers/timer.h"
+#include "drivers/uart.h"
+
 #include "stdio.h"
 
 const char *entry_error_messages[] = {

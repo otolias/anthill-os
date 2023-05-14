@@ -1,6 +1,6 @@
-#include "scheduler.h"
+#include "kernel/scheduler.h"
 
-#include "irq.h"
+#include "drivers/irq.h"
 
 static struct task init_task = { .priority = 1};
 struct task *current = &init_task;

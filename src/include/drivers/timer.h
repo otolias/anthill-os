@@ -2,6 +2,7 @@
 #define _TIMER_H
 
 #include <stdint.h>
+
 #include "gpio.h"
 
 #define TIMER_CS    (volatile uint32_t*) (MMIO_BASE + 0x00003000)

@@ -1,8 +1,10 @@
-#include "fork.h"
-#include "string.h"
-#include "mm.h"
-#include "entry.h"
-#include "scheduler.h"
+#include "kernel/fork.h"
+
+#include <stdint.h>
+
+#include "boot/entry.h"
+#include "kernel/mm.h"
+#include "kernel/scheduler.h"
 
 int8_t copy_process(uintptr_t function, uintptr_t arg) {
     preempt_disable();
