@@ -1,8 +1,6 @@
 #include "stdio.h"
 
-#include <stdarg.h>
-
-#include "uart.h"
+#include "syscalls.h"
 
 #define PRINTF_BUFFER_SIZE  1024
 
@@ -102,16 +100,10 @@ int printf(char *format, ...) {
     int res;
 
     va_start(args, format);
-    res = vsprintf(buffer, format, args);
+    vsprintf(buffer, format, args);
     va_end(args);
 
-    for (int i = 0; i < res; i++) {
-        if (buffer[i] == '\x00')
-            break;
-
-        uart_send_char(buffer[i]);
-        buffer[i] = '\x00';
-    }
+    res = SYSCALL_1(SYS_WRITE, (long) buffer);
 
     return res;
 }
