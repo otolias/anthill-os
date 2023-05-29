@@ -4,6 +4,12 @@
 #ifndef _K_PRINTF
 #define _K_PRINTF
 
+#ifdef DEBUG
+#define debug_log(...) kprintf(__VA_ARGS__)
+#else
+#define debug_log(...)
+#endif /* DEBUG */
+
 /*
 * Send formatted string to UART
 */

@@ -29,7 +29,7 @@ build () {
     # Default cflags
     cflags="-Wall -Wextra -ffreestanding"
     [ $target = "release" ] && cflags+=" -O2"
-    [ $target = "debug" ] && cflags+=" -g"
+    [ $target = "debug" ] && cflags+=" -g -DDEBUG"
     ninja_file=$(printf "cflags = %s" "$cflags")
 
     # Includes

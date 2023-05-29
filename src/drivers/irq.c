@@ -50,7 +50,7 @@ void handle_irq() {
                 irq &= ~UART_IRQ;
                 break;
             default:
-                kprintf("Unknown pending irq: %x\n", irq);
+                debug_log("Unknown pending irq: %x\n", irq);
                 break;
         }
     }
