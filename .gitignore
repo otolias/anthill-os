@@ -3,4 +3,6 @@
 build.ninja
 build
 compile_commands.json
+.ccls
+.ccls-cache
 notes.norg
