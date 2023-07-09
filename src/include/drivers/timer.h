@@ -22,4 +22,9 @@ void timer_init();
 */
 void handle_timer_irq();
 
+/*
+* Wait _msec_ microseconds
+*/
+void timer_wait(int msec);
+
 #endif

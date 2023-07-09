@@ -1,6 +1,7 @@
 #include <stdint.h>
 
 #include "drivers/uart.h"
+#include "drivers/emmc.h"
 #include "drivers/irq.h"
 #include "drivers/timer.h"
 
@@ -8,8 +9,7 @@
 #include "kernel/kprintf.h"
 #include "kernel/scheduler.h"
 
-#include "stdio.h"
-
+extern unsigned char bss_end;
 /*
 * A process for testing purposes.
 */
@@ -27,14 +27,18 @@ void test_process(char *string) {
 }
 
 void init_process() {
-    printf("Init process\n");
+    preempt_disable();
+
+    // Setup
+    uart_init();
+    emmc_init();
+
+    preempt_enable();
     while (1) {;}
 }
 
 void main() {
-    uart_init();
     timer_init();
-
     enable_interrupt_controller();
     enable_irq();
 
