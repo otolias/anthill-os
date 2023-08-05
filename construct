@@ -125,8 +125,7 @@ generate() {
 }
 
 package() {
-    tar -cf $DEST_DIR/kernel.tar $SYSROOT
-    qemu-img resize -f raw $DEST_DIR/kernel.tar 128K
+    tar -c "$SYSROOT" | cat $BOOT_DIR/kernel8.bin - > $DEST_DIR/kernel.bin
 }
 
 while :; do
@@ -194,8 +193,7 @@ case $action in
             package
         qemu-system-aarch64 \
             -M raspi3b \
-            -kernel "$BOOT_DIR"/kernel8.bin \
-            -drive file=$DEST_DIR/kernel.tar,if=sd,format=raw \
+            -kernel "$DEST_DIR"/kernel.bin \
             -serial null \
             -serial stdio
         exit
@@ -203,8 +201,7 @@ case $action in
     debug)
         qemu-system-aarch64 -s -S \
             -M raspi3b \
-            -kernel "$BOOT_DIR"/kernel8.bin \
-            -drive file=$DEST_DIR/kernel.tar,if=sd,format=raw \
+            -kernel "$DEST_DIR"/kernel.bin \
             -serial null \
             -serial stdio \
             &

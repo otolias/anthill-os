@@ -9,7 +9,7 @@
 #include "kernel/kprintf.h"
 #include "kernel/scheduler.h"
 
-extern unsigned char bss_end;
+extern unsigned char _end;
 /*
 * A process for testing purposes.
 */
@@ -31,7 +31,6 @@ void init_process() {
 
     // Setup
     uart_init();
-    emmc_init();
 
     preempt_enable();
     while (1) {;}
@@ -41,6 +40,8 @@ void main() {
     timer_init();
     enable_interrupt_controller();
     enable_irq();
+
+    kprintf("%x\n", &_end);
 
     uint8_t err = move_to_user_mode((uintptr_t) &init_process);
     if (err) { kprintf("Error while starting init process\n"); }
