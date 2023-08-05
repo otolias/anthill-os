@@ -8,9 +8,9 @@ LIB_DIR="$PREFIX/lib"
 INC_DIR="$PREFIX/include"
 HOST="aarch64-elf"
 CFLAGS="-Wall -Wextra -ffreestanding -O2 -g -DDEBUG"
+LFLAGS="-T linker.ld"
 CC="$HOST-gcc --sysroot=$SYSROOT -isystem=/usr/include"
 LD="$HOST-ld --sysroot=$SYSROOT"
-AR="$HOST-ar"
 action=""
 only=false
 
@@ -26,7 +26,7 @@ Actions:
 
 Options:
     -o | --only                Only run specified action.
-    -c | --compiler [prefix]   Compiler prefix to use. Make sure it is in PATH. 
+    -c | --compiler [prefix]   Compiler prefix to use. Make sure it is in PATH.
                                Default: aarch64-elf
 "
 
@@ -45,10 +45,12 @@ generate() {
         "$INC_DIR" \
 
     # Variables
-    ninja_file=""
+    export ninja_file=""
     ninja_file+=$(printf "cc = %s" "$CC")
     ninja_file+=$(printf "\nld = %s" "$LD")
-    ninja_file+=$(printf "\nar = %s" "$AR")
+    ninja_file+=$(printf "\nincludes =")
+    ninja_file+=$(printf "\ncflags =")
+    ninja_file+=$(printf "\nlflags = %s" "$LFLAGS")
 
     colour_print "Installing headers"
 
@@ -60,70 +62,64 @@ generate() {
 
     # Rules
     ninja_file+=$(printf "\n\nrule cc")
-    ninja_file+=$(printf "\n    command = \$cc %s -c \$in -o \$out" \
+    ninja_file+=$(printf "\n    command = \$cc %s \$cflags \$includes -c \$in -o \$out" \
         "$CFLAGS"
     )
     ninja_file+=$(printf "\n\nrule link")
-    ninja_file+=$(printf "\n    command = \$ld \$in -T linker.ld -o \$out")
-    ninja_file+=$(printf "\n\nrule ar")
-    ninja_file+=$(printf "\n    command = \$ar rcs \$out \$in")
+    ninja_file+=$(printf "\n    command = \$ld \$in \$lflags -o \$out")
     ninja_file+=$(printf "\n\nrule objcopy")
     ninja_file+=$(printf "\n    command = %s-objcopy --strip-debug -O binary \$in \$out" \
         "$HOST"
     )
     ninja_file+=$(printf "\n ")
 
-    # Kernel
+    # Generating sources
+
     kernel_objects=""
 
-    kernel_sources=$(find \
-        src/boot/ \
-        src/drivers/ \
-        src/kernel/ \
-        -name "*.[Sc]"
-    )
+    while read -r build_opts; do
+        source "$build_opts"
+        objects=""
 
-    for src in $kernel_sources; do
-        dest=$(printf "%s" "$src" | \
-            sed "s/\.c/\.o/" | \
-            sed "s/\.S/\_S.o/" | \
-            sed "s/src/\\$DEST_DIR/")
-        ninja_file+=$(printf "\nbuild %s: cc %s" "$dest" "$src")
-        kernel_objects+=$(printf "$\n     %s " "$dest")
-    done
+        ninja_file+=$(printf "\n ")
+        while read -r src; do
+            dest=$(printf "%s" "$src" | \
+               sed "s/\.c/\.o/" | \
+               sed "s/\.S/\_S.o/" | \
+               sed "s/src/\\$DEST_DIR/")
+
+            ninja_file+=$(printf "\nbuild %s: cc %s" "$dest" "$src")
+            [ -n "$INCLUDES" ] && ninja_file+=$(printf "\n    includes=%s" "$INCLUDES")
+            [ -n "$CFLAGS" ] && ninja_file+=$(printf "\n    cflags=%s" "$CFLAGS")
+
+            objects+=$(printf " %s" "$dest")
+        done <<< "$(find "$(dirname "$build_opts")" -type f -name "*.[Sc]")"
+
+        case "$TARGET" in
+            "lib")
+                ninja_file+=$(printf "\n\nbuild %s/%s.so: link %s" \
+                    "$LIB_DIR" \
+                    "$NAME" \
+                    "$objects" \
+                )
+                ninja_file+=$(printf "\n    lflags=--shared")
+                ;;
+            *)
+                kernel_objects+=$(printf " \$\n    %s" "$objects")
+                ;;
+        esac
+
+    done <<< "$(find src/ -type f -name build_opts)"
 
     ninja_file+=$(printf "\n\nbuild %s/kernel8.elf: link %s" \
         "$DEST_DIR" \
-        "$kernel_objects")
+        "$kernel_objects" \
+    )
 
-    ninja_file+=$(printf "\n ")
-
-    libs=" \
-        src/lib/* \
-    "
-
-    for lib in $libs; do
-        sources=$(find "$lib" -type f -name "*.c")
-        objects=""
-        for src in $sources; do
-            dest=$(printf "%s" "$src" | \
-                sed "s/\.c/\.o/" | \
-                sed "s/src/\\$DEST_DIR/")
-            ninja_file+=$(printf "\nbuild %s: cc %s" "$dest" "$src")
-            objects+=$(printf "$\n    %s " "$dest")
-        done
-
-        ninja_file+=$(printf "\n ")
-
-        ninja_file+=$(printf "\nbuild %s.a: ar %s" \
-            "$LIB_DIR/$(basename "$lib")" \
-            "$objects"
-        )
-    done
-
-    ninja_file+=$(printf "\n\nbuild %s/kernel8.bin: objcopy %s/kernel8.elf" \
-        "$BOOT_DIR" \
-        "$DEST_DIR")
+   ninja_file+=$(printf "\n\nbuild %s/kernel8.bin: objcopy %s/kernel8.elf" \
+       "$BOOT_DIR" \
+       "$DEST_DIR" \
+   )
 
     printf "%s\n" "$ninja_file" > build.ninja
 }

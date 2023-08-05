@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export NAME=""
+export TARGET=""
+export INCLUDES=""
+export CFLAGS=""
