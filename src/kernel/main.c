@@ -1,15 +1,15 @@
 #include <stdint.h>
+#include <stddef.h>
 
 #include "drivers/uart.h"
-#include "drivers/emmc.h"
 #include "drivers/irq.h"
 #include "drivers/timer.h"
-
 #include "kernel/fork.h"
 #include "kernel/kprintf.h"
 #include "kernel/scheduler.h"
 
-extern unsigned char _end;
+extern char _binary_build_ramdisk_start;
+
 /*
 * A process for testing purposes.
 */
@@ -31,6 +31,7 @@ void init_process() {
 
     // Setup
     uart_init();
+    kprintf("%x\n", _binary_build_ramdisk_start);
 
     preempt_enable();
     while (1) {;}
@@ -40,8 +41,6 @@ void main() {
     timer_init();
     enable_interrupt_controller();
     enable_irq();
-
-    kprintf("%x\n", &_end);
 
     uint8_t err = move_to_user_mode((uintptr_t) &init_process);
     if (err) { kprintf("Error while starting init process\n"); }

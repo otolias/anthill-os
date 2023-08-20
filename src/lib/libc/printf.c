@@ -1,6 +1,6 @@
-#include "stdio.h"
+#include <stdio.h>
 
-#include "kernel/syscalls.h"
+#include <kernel/syscalls.h>
 
 #define PRINTF_BUFFER_SIZE  1024
 
@@ -103,7 +103,7 @@ int printf(char *format, ...) {
     vsprintf(buffer, format, args);
     va_end(args);
 
-    res = SYSCALL_1(SYS_WRITE, (long) buffer);
+    /* res = SYSCALL_1(SYS_WRITE, (long) buffer); */
 
     return res;
 }

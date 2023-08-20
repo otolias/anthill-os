@@ -1,6 +1,6 @@
 #!/bin/sh
 
 export NAME=""
-export TARGET=""
+export TARGET="kernel"
 export INCLUDES=""
 export CFLAGS=""

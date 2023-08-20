@@ -8,7 +8,6 @@ LIB_DIR="$PREFIX/lib"
 INC_DIR="$PREFIX/include"
 HOST="aarch64-elf"
 CFLAGS="-Wall -Wextra -ffreestanding -O2 -g -DDEBUG"
-LFLAGS="-T linker.ld"
 CC="$HOST-gcc --sysroot=$SYSROOT -isystem=/usr/include"
 LD="$HOST-ld --sysroot=$SYSROOT"
 action=""
@@ -50,7 +49,7 @@ generate() {
     ninja_file+=$(printf "\nld = %s" "$LD")
     ninja_file+=$(printf "\nincludes =")
     ninja_file+=$(printf "\ncflags =")
-    ninja_file+=$(printf "\nlflags = %s" "$LFLAGS")
+    ninja_file+=$(printf "\nlflags =")
 
     colour_print "Installing headers"
 
@@ -66,12 +65,15 @@ generate() {
         "$CFLAGS"
     )
     ninja_file+=$(printf "\n\nrule link")
-    ninja_file+=$(printf "\n    command = \$ld \$in \$lflags -o \$out")
+    ninja_file+=$(printf "\n    command = \$ld \$lflags -o \$out \$in")
     ninja_file+=$(printf "\n\nrule objcopy")
     ninja_file+=$(printf "\n    command = %s-objcopy --strip-debug -O binary \$in \$out" \
         "$HOST"
     )
-    ninja_file+=$(printf "\n ")
+    ninja_file+=$(printf "\n\nrule ramdisk")
+    ninja_file+=$(printf "\n    command = tar -C %s -cf \$out ." \
+        "$SYSROOT"
+    )
 
     # Generating sources
 
@@ -96,36 +98,51 @@ generate() {
         done <<< "$(find "$(dirname "$build_opts")" -type f -name "*.[Sc]")"
 
         case "$TARGET" in
-            "lib")
+            "/usr/lib/")
                 ninja_file+=$(printf "\n\nbuild %s/%s.so: link %s" \
-                    "$LIB_DIR" \
+                    "$SYSROOT/$TARGET/" \
                     "$NAME" \
                     "$objects" \
                 )
                 ninja_file+=$(printf "\n    lflags=--shared")
                 ;;
-            *)
+            "kernel")
                 kernel_objects+=$(printf " \$\n    %s" "$objects")
+                ;;
+            *)
+                ninja_file+=$(printf "\n\nbuild %s/%s.o: link %s" \
+                    "$SYSROOT/$TARGET/" \
+                    "$NAME" \
+                    "$objects" \
+                )
                 ;;
         esac
 
     done <<< "$(find src/ -type f -name build_opts)"
 
-    ninja_file+=$(printf "\n\nbuild %s/kernel8.elf: link %s" \
+    ninja_file+=$(printf "\n\nbuild %s/ramdisk: ramdisk" \
+        "$DEST_DIR" \
+    )
+
+    ninja_file+=$(printf "\n\nbuild %s/rd.o: link %s/ramdisk " \
+        "$DEST_DIR" \
+        "$DEST_DIR" \
+    )
+    ninja_file+=$(printf "\n    lflags =-r -b binary")
+
+    ninja_file+=$(printf "\n\nbuild %s/kernel8.elf: link %s/rd.o %s" \
+        "$DEST_DIR" \
         "$DEST_DIR" \
         "$kernel_objects" \
     )
+    ninja_file+=$(printf "\n    lflags =-T linker.ld")
 
-   ninja_file+=$(printf "\n\nbuild %s/kernel8.bin: objcopy %s/kernel8.elf" \
-       "$BOOT_DIR" \
-       "$DEST_DIR" \
-   )
+    ninja_file+=$(printf "\n\nbuild %s/kernel8.bin: objcopy %s/kernel8.elf" \
+        "$DEST_DIR" \
+        "$DEST_DIR" \
+    )
 
     printf "%s\n" "$ninja_file" > build.ninja
-}
-
-package() {
-    tar -c "$SYSROOT" | cat $BOOT_DIR/kernel8.bin - > $DEST_DIR/kernel.bin
 }
 
 while :; do
@@ -177,23 +194,21 @@ done
 
 case $action in
     generate)
-        generate && \
-            ninja -t compdb cxx cc > compile_commands.json
+        generate
         exit
         ;;
     build)
         [ $only = false ] && generate
-        ninja && package
+        ninja
         exit
         ;;
     run)
         [ $only = false ] && \
             generate && \
-            ninja && \
-            package
+            ninja
         qemu-system-aarch64 \
             -M raspi3b \
-            -kernel "$DEST_DIR"/kernel.bin \
+            -kernel "$DEST_DIR"/kernel8.bin \
             -serial null \
             -serial stdio
         exit
@@ -201,7 +216,7 @@ case $action in
     debug)
         qemu-system-aarch64 -s -S \
             -M raspi3b \
-            -kernel "$DEST_DIR"/kernel.bin \
+            -kernel "$DEST_DIR"/kernel8.bin \
             -serial null \
             -serial stdio \
             &

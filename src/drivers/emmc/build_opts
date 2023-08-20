@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export NAME="emmc"
+export TARGET="/usr/modules"
+export INCLUDES=""
+export CFLAGS=""
