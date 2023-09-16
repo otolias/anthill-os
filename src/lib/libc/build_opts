@@ -1,6 +1,0 @@
-#!/bin/sh
-
-export NAME="libc"
-export TARGET="/usr/lib"
-export INCLUDES="-Iinclude"
-export CFLAGS="-fPIC"

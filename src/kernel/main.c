@@ -8,7 +8,7 @@
 #include "kernel/kprintf.h"
 #include "kernel/scheduler.h"
 
-extern char _binary_build_ramdisk_start;
+const char *ramdisk = (char *) 0x800;
 
 /*
 * A process for testing purposes.
@@ -31,7 +31,7 @@ void init_process() {
 
     // Setup
     uart_init();
-    kprintf("%x\n", _binary_build_ramdisk_start);
+    kprintf("%x\n", *ramdisk);
 
     preempt_enable();
     while (1) {;}

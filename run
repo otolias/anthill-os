@@ -1,0 +1,48 @@
+#!/bin/sh
+
+DEST_DIR="build"
+debug=false
+
+while :; do
+    case $1 in
+        --build-dir)
+            [ -z "$2" ] && printf "Error: Specify build directory\n" && exit 1
+            DEST_DIR="$2"
+            shift 2
+            ;;
+        -d | --debug)
+            debug=true
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
+
+if [ $debug = false ]; then
+    qemu-system-aarch64 \
+        -M raspi3b \
+        -kernel "$DEST_DIR/kernel8.bin" \
+        -device loader,file="$DEST_DIR/ramdisk",addr=0x800 \
+        -serial null \
+        -serial stdio
+else
+    qemu-system-aarch64 \
+        -s -S \
+        -M raspi3b \
+        -kernel "$DEST_DIR/kernel8.bin" \
+        -device loader,file="$DEST_DIR/ramdisk",addr=0x800 \
+        -serial null \
+        -serial stdio \
+        &
+
+    aarch64-elf-gdb \
+        --symbols="$DEST_DIR/kernel8.elf" \
+        -ex "target remote localhost:1234"
+
+fi

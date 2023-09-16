@@ -1,0 +1,12 @@
+[binaries]
+c       = 'aarch64-elf-gcc'
+ld      = 'aarch64-elf-ld'
+ar      = 'aarch64-elf-gcc-ar'
+strip   = 'aarch64-elf-strip'
+objcopy = 'aarch64-elf-objcopy'
+
+[host_machine]
+system     = 'none'
+cpu_family = 'aarch64'
+cpu        = 'aarch64'
+endian     = 'little'
