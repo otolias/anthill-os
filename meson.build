@@ -13,6 +13,19 @@ gcc = find_program('c')
 objcopy = find_program('objcopy')
 tar = find_program('tar')
 
+# Unit testing
+unity_dep = dependency('unity',
+  native : true,
+  required : false,
+)
+
+if unity_dep.found()
+  tests_enabled = true
+else
+  tests_enabled = false
+  message('Unity not found, disabling unit tests')
+endif
+
 kernel_sources = []
 kernel_includes = []
 
