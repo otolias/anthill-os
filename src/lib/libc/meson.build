@@ -35,3 +35,18 @@ libc_dep = declare_dependency(
   include_directories : libc_inc_directories,
   link_with : libc,
 )
+
+if tests_enabled
+  libc_test_sources = [
+    meson.source_root() / 'test' / 'lib' / 'libc' / 'printf.c',
+  ]
+
+  libc_test = executable('libc_test',
+    sources : libc_test_sources,
+    include_directories : libc_inc_directories,
+    dependencies : unity_dep,
+    native : true,
+  )
+
+  test('libc_test', libc_test)
+endif
