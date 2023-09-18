@@ -16,7 +16,7 @@ install_headers(libc_includes)
 crt = custom_target('crt0',
   input : [ 'crt0.S' ],
   output : [ 'crt0.o' ],
-  command : [gcc, '-c', '@INPUT@', '-o', '@BUILD_ROOT@' / '@OUTPUT@'],
+  command : [gcc, '-c', '@INPUT@', '-o', '@BUILD_ROOT@' / 'crt0.o'],
   install : true,
   install_dir : 'usr' / 'lib',
   build_by_default : true,
