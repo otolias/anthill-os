@@ -4,9 +4,10 @@
 * Qemu emulates Host Controller version 3, so we only deal with that
 */
 
+#include <stdint.h>
+#include <stdio.h>
+
 #include <drivers/gpio.h>
-/* #include <drivers/timer.h> */
-/* #include <kernel/kprintf.h> */
 
 #include <drivers/emmc.h>
 
@@ -78,7 +79,7 @@ static int emmc_wait_for_interrupt(uint32_t mask) {
 
     while (counter--) {
         if (*EMMC_INTERRUPT & INT_ERR) {
-            /* kprintf("EMMC Interrupt error -> %x\n", *EMMC_INTERRUPT); */
+            printf("EMMC Interrupt error -> %x\n", *EMMC_INTERRUPT);
             *EMMC_INTERRUPT &= *EMMC_INTERRUPT;
             return SD_ERROR;
         }
@@ -101,7 +102,7 @@ static int emmc_command(uint8_t code, uint32_t arg, uint32_t flags) {
     *EMMC_CMDTM = (code << 24) | flags;
 
     if ((ret = emmc_wait_for_interrupt(INT_CMD_DONE | INT_DATA_DONE))) {
-        /* kprintf("EMMC command %d failed", code); */
+        printf("EMMC command %d failed", code);
         return ret;
     }
 
@@ -142,7 +143,7 @@ int emmc_init() {
     *EMMC_CONTROL1 |= C1_SRST_HC;
 
     if (*EMMC_CONTROL1 & C1_SRST_HC) {
-        /* kprintf("Failed to reset EMMC\n"); */
+        printf("Failed to reset EMMC\n");
         return SD_ERROR;
     }
 
@@ -160,12 +161,12 @@ int emmc_init() {
 
     // Set clock
     if (*EMMC_STATUS & (STAT_DAT_INHIBIT | STAT_CMD_INHIBIT)) {
-        /* kprintf("Inhibit flags are set"); */
+        printf("Inhibit flags are set");
         return SD_ERROR;
     }
 
     if (!(*EMMC_CONTROL1 & C1_CLK_STABLE)) {
-        /* kprintf("Failed to get stable clock"); */
+        printf("Failed to get stable clock");
         return SD_ERROR;
     }
 
@@ -176,7 +177,7 @@ int emmc_init() {
         return ret;
 
     if (*EMMC_RESP0 != *EMMC_ARG1) {
-        /* kprintf("Failed to establish voltage\n"); */
+        printf("Failed to establish voltage\n");
         return SD_ERROR;
     }
 
