@@ -3,6 +3,7 @@ libc_sources = files([
 ])
 
 libc_includes = files([
+  'include' / 'stdint.h',
   'include' / 'stdio.h',
 ])
 
@@ -37,16 +38,19 @@ libc_dep = declare_dependency(
 )
 
 if tests_enabled
-  libc_test_sources = [
-    meson.source_root() / 'test' / 'lib' / 'libc' / 'printf.c',
-  ]
+  libc_tests = {
+    'printf': [ meson.source_root() / 'test' / 'lib' / 'libc' / 'printf.c' ],
+    'stdint': [ meson.source_root() / 'test' / 'lib' / 'libc' / 'stdint.c' ],
+  }
 
-  libc_test = executable('libc_test',
-    sources : libc_test_sources,
-    include_directories : libc_inc_directories,
-    dependencies : unity_dep,
-    native : true,
-  )
+  foreach name, sources : libc_tests
+    libc_test = executable(name,
+      sources : sources,
+      include_directories : libc_inc_directories,
+      dependencies : unity_dep,
+      native : true,
+    )
 
-  test('libc_test', libc_test)
+    test(name, libc_test)
+  endforeach
 endif
