@@ -18,8 +18,6 @@ crt = custom_target('crt0',
   input : [ 'crt0.S' ],
   output : [ 'crt0.o' ],
   command : [gcc, '-c', '@INPUT@', '-o', '@BUILD_ROOT@' / 'crt0.o'],
-  install : true,
-  install_dir : 'usr' / 'lib',
   build_by_default : true,
 )
 
@@ -39,18 +37,22 @@ libc_dep = declare_dependency(
 
 if tests_enabled
   libc_tests = {
-    'printf': [ meson.source_root() / 'test' / 'lib' / 'libc' / 'printf.c' ],
     'stdint': [ meson.source_root() / 'test' / 'lib' / 'libc' / 'stdint.c' ],
+    'printf': [ meson.source_root() / 'test' / 'lib' / 'libc' / 'printf.c' ],
   }
+
+  libc_test_include_directories = include_directories('.')
 
   foreach name, sources : libc_tests
     libc_test = executable(name,
       sources : sources,
-      include_directories : libc_inc_directories,
+      include_directories : [libc_inc_directories, libc_test_include_directories],
       dependencies : unity_dep,
       native : true,
     )
 
-    test(name, libc_test)
+    test(name, libc_test,
+      suite : 'libc',
+    )
   endforeach
 endif
