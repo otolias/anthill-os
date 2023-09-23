@@ -1,9 +1,11 @@
 /*
 * Current implementation supports:
 *
-* Decimals:     %d
-* Hexadecimals: %x
-* Strings:      %s
+* Characters:        %c
+* Hexadecimals:      %x
+* Signed Integers:   %d
+* Unsigned Integers: %u
+* Strings:           %s
 */
 
 #ifndef _STDIO_H
