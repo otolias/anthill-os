@@ -36,11 +36,13 @@ subdir('src' / 'kernel')
 subdir('src' / 'lib' / 'libc')
 subdir('src' / 'drivers' / 'emmc')
 
+kernel_inc_directories = include_directories('src' / 'include')
+
 install_headers(kernel_includes)
 
 kernel_elf = executable('kernel8.elf',
   sources : kernel_sources,
-  include_directories : include_directories('src' / 'include'),
+  include_directories : kernel_inc_directories,
   c_args : ['-ffreestanding'],
   link_args : ['-nostdlib', '-T', meson.source_root() / 'linker.ld'],
 )
@@ -58,3 +60,28 @@ kernel_bin = custom_target('kernel8.bin',
 
 # Generate ramdisk
 meson.add_install_script('create_ramdisk', tar)
+
+if tests_enabled
+  kernel_tests = {
+    'string' : [ meson.source_root() / 'test' / 'kernel' / 'string.c' ],
+    'tar' : [ meson.source_root() / 'test' / 'kernel' / 'tar.c' ],
+  }
+
+  kernel_test_inc_directories = include_directories('src')
+
+  # Use -ffreestanding to omit calls from native libc during compilation,
+  # but link it for Unity calls
+  foreach name, sources : kernel_tests
+    kernel_test = executable(name,
+      sources : sources,
+      include_directories : [ kernel_inc_directories, kernel_test_inc_directories ],
+      c_args: ['-ffreestanding'],
+      dependencies : unity_dep,
+      native : true,
+    )
+
+    test(name, kernel_test,
+      suite : 'kernel',
+    )
+  endforeach
+endif
