@@ -2,4 +2,4 @@
 
 TAR="$1"
 
-$TAR -C "$MESON_BUILD_ROOT/sysroot" -cf "$MESON_BUILD_ROOT/ramdisk" .
+$TAR --format=ustar -C "$MESON_BUILD_ROOT/sysroot" -cf "$MESON_BUILD_ROOT/ramdisk" .

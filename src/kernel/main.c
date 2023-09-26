@@ -7,6 +7,7 @@
 #include "kernel/fork.h"
 #include "kernel/kprintf.h"
 #include "kernel/scheduler.h"
+#include "kernel/tar.h"
 
 const char *ramdisk = (char *) 0x800;
 
@@ -31,7 +32,8 @@ void init_process() {
 
     // Setup
     uart_init();
-    kprintf("%x\n", *ramdisk);
+    void *driver = tar_lookup(ramdisk, "./usr/modules/modemmc.so");
+    kprintf("Driver -> %x\n", driver);
 
     preempt_enable();
     while (1) {;}

@@ -6,6 +6,7 @@ kernel_sources += files([
   'scheduler.c',
   'scheduler.S',
   'syscalls.c',
+  'tar.c',
 ])
 
 kernel_includes += [
@@ -14,4 +15,6 @@ kernel_includes += [
   'src' / 'include' / 'kernel' / 'mm.h',
   'src' / 'include' / 'kernel' / 'scheduler.h',
   'src' / 'include' / 'kernel' / 'syscalls.h',
+  'src' / 'include' / 'kernel' / 'string.h',
+  'src' / 'include' / 'kernel' / 'tar.h',
 ]
