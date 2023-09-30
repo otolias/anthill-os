@@ -4,25 +4,42 @@ arm-os
 ## Prerequisites
 
 * A [GCC Cross compiler](https://wiki.osdev.org/GCC_Cross-Compiler) targeted for aarch64-elf.
+* [Meson](https://github.com/mesonbuild/meson)
 * [Ninja](https://github.com/ninja-build/ninja)
-* [QEMU](https://github.com/qemu/qemu) 2.12 or newer for emulation (optional)
+* [QEMU](https://github.com/qemu/qemu) 2.12 or newer
 * GDB for debugging (optional)
+* [Unity](https://github.com/ThrowTheSwitch/Unity) for unit tests (optional)
 
-## How to build
+## Build Instructions
 
-A build helper is supplied.
-
-To build project:
 ```
-./construct build -c aarch64-elf
-```
-
-To build and run with QEMU:
-```
-./construct run -c aarch64-elf
+meson setup --cross-file aarch64-elf-txt build
+meson install -C build
 ```
 
-To build, run with QEMU and connect GDB:
+This will build the project and create the sysroot under build/sysroot
+
+## Testing
+
+To run tests, you must have Unity installed
+
 ```
-./construct debug -c aarch64-elf
+meson test -C build
 ```
+
+This will compile and run tests natively
+
+## Running
+
+To run with QEMU:
+```
+./run
+```
+
+To run with QEMU and connect GDB:
+```
+./run -d
+```
+
+This will start and halt qemu, connect gdb and load the symbols. To continue, type
+```c```
