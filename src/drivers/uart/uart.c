@@ -15,11 +15,11 @@ void uart_init() {
     // Disable pull-up/down
     *GPPUD = 0;
     reg = 150;
-    while (reg--) { asm volatile("nop"); }
+    while (reg--) { __asm__ volatile("nop"); }
     *GPPUDCLK0 = 1 << 14;
     *GPPUDCLK0 = 1 << 15;
     reg = 150;
-    while (reg--) { asm volatile("nop"); }
+    while (reg--) { __asm__ volatile("nop"); }
     *GPPUDCLK0 = 0;
 
     *AUX_ENABLES |= 1; // Enable mini uart
@@ -35,7 +35,7 @@ void uart_init() {
 void uart_send_char(char c) {
     // Wait until transmitter is idle
     while (!(*AUX_MU_LSR_REG & 0x20)) {
-        asm volatile("nop");
+        __asm__ volatile("nop");
     }
     // Write the character to the buffer
     *AUX_MU_IO_REG = c;
@@ -48,7 +48,7 @@ static char uart_get_char() {
     char c;
     // Wait until buffer isn't empty
     while (!(*AUX_MU_LSR_REG & 0x01)) {
-        asm volatile("nop");
+        __asm__ volatile("nop");
     }
     // Read it and return
     c = (char) (*AUX_MU_IO_REG);

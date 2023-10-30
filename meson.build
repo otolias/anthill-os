@@ -1,8 +1,9 @@
 project('arm_os', 'c',
   default_options : [
     'buildtype=debugoptimized',
+    'c_std=c17',
     'b_lundef=false',
-    'warning_level=2',
+    'warning_level=3',
     'prefix=' + meson.build_root() / 'sysroot',
     'libdir=usr/lib',
     'includedir=usr/include',

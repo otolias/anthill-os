@@ -130,10 +130,10 @@ int emmc_init() {
     // Enable Pull-up control
     *GPPUD = 2;
     reg = 150;
-    while (reg--) { asm volatile ("nop"); }
+    while (reg--) { __asm__ volatile ("nop"); }
     *GPPUDCLK1 = (1 << 15) | (1 << 16) | (1 << 17) | (1 << 18) | (1 << 19) | (1 << 20) | (1 << 21);
     reg = 150;
-    while (reg--) { asm volatile ("nop"); }
+    while (reg--) { __asm__ volatile ("nop"); }
     *GPPUD = 0;
     *GPPUDCLK1 = 0;
 
@@ -150,7 +150,7 @@ int emmc_init() {
     // Configure card
     *EMMC_CONTROL1 |= C1_CLK_INTLEN | C1_DATA_TOUNIT | C1_CLK_FREQ8;
     reg = 100;
-    while (reg--) { asm volatile ("nop"); }
+    while (reg--) { __asm__ volatile ("nop"); }
     *EMMC_CONTROL1 |= C1_CLK_EN;
 
     *EMMC_IRPT_MASK = INT_CMD_DONE | INT_DATA_DONE | INT_ERR | INT_CTO_ERR |

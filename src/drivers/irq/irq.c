@@ -34,7 +34,7 @@ void enable_interrupt_controller() {
 }
 
 void enable_irq() {
-    asm volatile("msr daifclr, #2");
+    __asm__ volatile("msr daifclr, #2");
 }
 
 void handle_irq() {
@@ -57,7 +57,7 @@ void handle_irq() {
 }
 
 void disable_irq() {
-    asm volatile("msr daifset, #2");
+    __asm__ volatile("msr daifset, #2");
 }
 
 void show_invalid_entry_message(int32_t type, uint64_t esr, uint64_t address) {

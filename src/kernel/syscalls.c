@@ -9,7 +9,7 @@ const void *system_call_table = {
 int sys_handler(long id, long arg1) {
     int ret;
 
-    asm(
+    __asm(
         "mov x8, %1 \n"
         "mov x0, %2 \n"
         "svc #0 \n"

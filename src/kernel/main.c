@@ -21,7 +21,7 @@ void test_process(char *string) {
 
             uart_send_char(string[i]);
             while (counter--) {
-                asm volatile("nop");
+                __asm__ volatile("nop");
             }
         }
     }
