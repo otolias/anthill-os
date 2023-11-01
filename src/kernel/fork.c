@@ -11,7 +11,7 @@ int8_t copy_process(uintptr_t function, uintptr_t arg) {
     struct task *new_task;
     struct task *current = get_current_task();
 
-    new_task = (struct task *) get_free_page();
+    new_task = (struct task *) get_free_pages(0);
     if (!new_task) { return 1; }
 
     new_task->priority = current->priority;
@@ -34,7 +34,7 @@ uint8_t move_to_user_mode(uintptr_t fn) {
     preempt_disable();
 
     struct task *current = get_current_task();
-    struct task *new_task = (struct task *) get_free_page();
+    struct task *new_task = (struct task *) get_free_pages(0);
     if (!new_task) { return 1; }
 
     new_task->priority = current->priority;

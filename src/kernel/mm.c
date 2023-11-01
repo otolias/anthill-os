@@ -1,20 +1,50 @@
 #include "kernel/mm.h"
 
-#include <stdint.h>
+#include <stddef.h>
 
-static uint8_t memory_map [PAGING_PAGES] = {0,};
+#define PAGE_FREE   0
+#define PAGE_CONS   1
+#define PAGE_END    2
 
-uintptr_t get_free_page() {
-    for (int i = 0; i < PAGING_PAGES; i++) {
-        if (memory_map[i] == 0) {
-            memory_map[i] = 1;
-            return LOW_MEMORY + i * PAGE_SIZE;
+static char memory_map[PAGING_PAGES] = {0,};
+
+void* get_free_pages(unsigned long bytes) {
+    size_t i = 0;
+    unsigned long pages_needed = (bytes / PAGE_SIZE) + 1;
+
+    while (i < PAGING_PAGES) {
+        size_t j = i + pages_needed;
+
+        if (j > PAGING_PAGES) break;
+
+        while (j-- > i) {
+            if (memory_map[j] != PAGE_FREE) {
+                i = j + 1;
+                j = 0;
+                break;
+            }
         }
+
+        if (!j) continue;
+
+        for (j = 0; j < pages_needed - 1; j++)
+            memory_map[i + j] = PAGE_CONS;
+
+        memory_map[i + j] = PAGE_END;
+
+        return (void *) (LOW_MEMORY + i * PAGE_SIZE);
     }
 
     return 0;
 }
 
-void free_page(uintptr_t p) {
-    memory_map[(p - LOW_MEMORY) / PAGE_SIZE] = 0;
+void free_pages(void *page) {
+    unsigned long p = (unsigned long) page - LOW_MEMORY;
+
+    while (memory_map[p / PAGE_SIZE] == PAGE_CONS) {
+        memory_map[p / PAGE_SIZE] = PAGE_FREE;
+        p += PAGE_SIZE;
+    }
+
+    memory_map[p / PAGE_SIZE] = PAGE_FREE;
 }

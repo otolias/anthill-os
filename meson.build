@@ -66,6 +66,7 @@ if tests_enabled
   kernel_tests = {
     'string' : [ meson.source_root() / 'test' / 'kernel' / 'string.c' ],
     'tar' : [ meson.source_root() / 'test' / 'kernel' / 'tar.c' ],
+    'mm' : [ meson.source_root() / 'test' / 'kernel' / 'mm.c' ],
   }
 
   kernel_test_inc_directories = include_directories('src')

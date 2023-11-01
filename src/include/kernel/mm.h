@@ -1,9 +1,7 @@
 #ifndef _MM_H
 #define _MM_H
 
-#include <stdint.h>
-
-#include "drivers/gpio.h"
+#include <drivers/gpio.h>
 
 #define PAGE_SIZE       4096
 
@@ -13,12 +11,15 @@
 #define PAGING_PAGES    ((HIGH_MEMORY - LOW_MEMORY) / PAGE_SIZE)
 
 /*
-* Find and return free page
+* Find and return consecutive pages to hold _bytes_ bytes.
+* If _bytes_ are 0, it returns a single page.
+*
+* Returns 0 if no consecutive pages are found
 */
-uintptr_t get_free_page();
+void* get_free_pages(unsigned long bytes);
 /*
-* Deallocate page
+* Deallocate pages starting from page _page_
 */
-void free_page(uintptr_t p);
+void free_pages(void *page);
 
 #endif
