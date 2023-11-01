@@ -29,19 +29,22 @@ if [ $debug = false ]; then
         -M raspi3b \
         -kernel "$DEST_DIR/kernel8.bin" \
         -device loader,file="$DEST_DIR/ramdisk",addr=0x800 \
+        -nographic \
         -serial null \
-        -serial stdio
+        -serial mon:stdio
 else
     qemu-system-aarch64 \
         -s -S \
         -M raspi3b \
         -kernel "$DEST_DIR/kernel8.bin" \
         -device loader,file="$DEST_DIR/ramdisk",addr=0x800 \
+        -nographic \
         -serial null \
-        -serial stdio \
+        -serial mon:stdio \
         &
 
     aarch64-elf-gdb \
+        --quiet \
         --symbols="$DEST_DIR/kernel8.elf" \
         -ex "target remote localhost:1234"
 
