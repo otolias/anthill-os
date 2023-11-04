@@ -14,18 +14,19 @@ void* get_free_pages(unsigned long bytes) {
 
     while (i < PAGING_PAGES) {
         size_t j = i + pages_needed;
+        short b = 0;
 
         if (j > PAGING_PAGES) break;
 
         while (j-- > i) {
             if (memory_map[j] != PAGE_FREE) {
                 i = j + 1;
-                j = 0;
+                b = 1;
                 break;
             }
         }
 
-        if (!j) continue;
+        if (b) continue;
 
         for (j = 0; j < pages_needed - 1; j++)
             memory_map[i + j] = PAGE_CONS;
