@@ -11,6 +11,11 @@
 #endif /* DEBUG */
 
 /*
+* Write formatted string to _str_
+*/
+int ksprintf(char *str, char *format, ...);
+
+/*
 * Send formatted string to UART
 */
 void kprintf(char *format, ...);

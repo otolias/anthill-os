@@ -1,6 +1,8 @@
 #include <stdio.h>
 
-#include <kernel/syscalls.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include "syscalls.h"
 
 #define PRINTF_BUFFER_SIZE  1024
 
@@ -59,7 +61,7 @@ static int _parse_string(char *string, char* buffer, int loc) {
 /*
 * Formats _format_ according to _args_ and puts the result in _buffer_
 */
-static int _formatter(char* buffer, char *format, va_list args) {
+static int _formatter(char* buffer, const char *format, va_list args) {
     char c;
     int size = 0;
 
@@ -92,11 +94,11 @@ static int _formatter(char* buffer, char *format, va_list args) {
         }
     }
 
-    buffer[size] = '\x00';
+    buffer[size] = 0;
     return size;
 }
 
-int vsprintf(char *str, char *format, va_list args) {
+int __attribute((noinline)) vsprintf(char *str, char *format, va_list args) {
     return _formatter(str, format, args);
 }
 
@@ -114,13 +116,12 @@ int sprintf(char *str, char *format, ...) {
 int printf(char *format, ...) {
     va_list args;
     char buffer[PRINTF_BUFFER_SIZE];
-    /* int res; */
 
     va_start(args, format);
     vsprintf(buffer, format, args);
     va_end(args);
 
-    /* res = SYSCALL_1(SYS_WRITE, (long) buffer); */
+    int size = sys_handler(SYS_WRITE, (size_t) buffer);
 
-    /* return res; */
+    return size;
 }

@@ -179,12 +179,6 @@ el0_svc:
 syscall_error:
     handle_invalid_entry    0, SYSCALL_ERROR
 
-.global start_coroutine
-start_coroutine:
-    bl      preempt_enable
-    mov     x0, x20
-    blr     x19
-
 .global start_user
 start_user:
     bl disable_irq

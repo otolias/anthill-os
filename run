@@ -28,7 +28,7 @@ if [ $debug = false ]; then
     qemu-system-aarch64 \
         -M raspi3b \
         -kernel "$DEST_DIR/kernel8.bin" \
-        -device loader,file="$DEST_DIR/ramdisk",addr=0x800 \
+        -device loader,file="$DEST_DIR/ramdisk",addr=0x3e000000 \
         -nographic \
         -serial null \
         -serial mon:stdio
@@ -37,7 +37,7 @@ else
         -s -S \
         -M raspi3b \
         -kernel "$DEST_DIR/kernel8.bin" \
-        -device loader,file="$DEST_DIR/ramdisk",addr=0x800 \
+        -device loader,file="$DEST_DIR/ramdisk",addr=0x3e000000 \
         -nographic \
         -serial null \
         -serial mon:stdio \

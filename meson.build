@@ -5,12 +5,12 @@ project('arm_os', 'c',
     'b_lundef=false',
     'warning_level=3',
     'prefix=' + meson.build_root() / 'sysroot',
-    'libdir=usr/lib',
+    'libdir=lib',
     'includedir=usr/include',
   ],
 )
 
-gcc = find_program('c')
+gcc = meson.get_compiler('c').cmd_array()
 objcopy = find_program('objcopy')
 tar = find_program('tar')
 
@@ -35,7 +35,15 @@ subdir('src' / 'drivers')
 subdir('src' / 'kernel')
 
 subdir('src' / 'lib' / 'libc')
+
 subdir('src' / 'drivers' / 'emmc')
+
+exec_link_args = [
+  '-nodefaultlibs',
+  '-B' + meson.build_root(),
+]
+
+subdir('src' / 'bin' / 'hello')
 
 kernel_inc_directories = include_directories('src' / 'include')
 
@@ -65,7 +73,6 @@ meson.add_install_script('create_ramdisk', tar)
 if tests_enabled
   kernel_tests = {
     'string' : [ meson.source_root() / 'test' / 'kernel' / 'string.c' ],
-    'tar' : [ meson.source_root() / 'test' / 'kernel' / 'tar.c' ],
     'mm' : [ meson.source_root() / 'test' / 'kernel' / 'mm.c' ],
   }
 

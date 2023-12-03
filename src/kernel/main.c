@@ -1,53 +1,32 @@
-#include <stdint.h>
-#include <stddef.h>
-
 #include "drivers/uart.h"
 #include "drivers/irq.h"
 #include "drivers/timer.h"
-#include "kernel/fork.h"
 #include "kernel/kprintf.h"
 #include "kernel/scheduler.h"
-#include "kernel/tar.h"
+#include <kernel/ramdisk.h>
+#include <kernel/task.h>
 
-const char *ramdisk = (char *) 0x800;
+void init_process(void) {
+    void *file = ramdisk_lookup("./bin/hello");
+    short err = task_exec(file);
+    if (err)
+        kprintf("There was a problem in execution. Exit code: %d\n", err);
 
-/*
-* A process for testing purposes.
-*/
-void test_process(char *string) {
-    while (1) {
-        for (int i = 0; i < 5; i++) {
-            uint32_t counter = 100000;
-
-            uart_send_char(string[i]);
-            while (counter--) {
-                __asm__ volatile("nop");
-            }
-        }
-    }
+    while (1)
+        schedule();
 }
 
-void init_process() {
-    preempt_disable();
-
-    // Setup
-    uart_init();
-    void *driver = tar_lookup(ramdisk, "./usr/modules/modemmc.so");
-    kprintf("Driver -> %x\n", driver);
-
-    preempt_enable();
-    while (1) {;}
-}
-
-void main() {
+void main(void) {
     timer_init();
     enable_interrupt_controller();
     enable_irq();
+    uart_init();
 
-    uint8_t err = move_to_user_mode((uintptr_t) &init_process);
-    if (err) { kprintf("Error while starting init process\n"); }
+    void *file = ramdisk_lookup("./bin/hello");
+    short err = task_exec(file);
+    if (err)
+        kprintf("Error while starting init process\n");
 
-    while (1) {
+    while (1)
         schedule();
-    }
 }

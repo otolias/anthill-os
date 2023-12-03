@@ -1,20 +1,22 @@
 kernel_sources += files([
-  'fork.c',
+  'elf.c',
   'kprintf.c',
   'main.c',
   'mm.c',
+  'ramdisk.c',
   'scheduler.c',
   'scheduler.S',
   'syscalls.c',
-  'tar.c',
+  'task.c',
 ])
 
 kernel_includes += [
-  'src' / 'include' / 'kernel' / 'fork.h',
+  'src' / 'include' / 'kernel' / 'elf.h',
   'src' / 'include' / 'kernel' / 'kprintf.h',
   'src' / 'include' / 'kernel' / 'mm.h',
+  'src' / 'include' / 'kernel' / 'ramdisk.h',
   'src' / 'include' / 'kernel' / 'scheduler.h',
   'src' / 'include' / 'kernel' / 'syscalls.h',
   'src' / 'include' / 'kernel' / 'string.h',
-  'src' / 'include' / 'kernel' / 'tar.h',
+  'src' / 'include' / 'kernel' / 'task.h',
 ]

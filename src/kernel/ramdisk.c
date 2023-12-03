@@ -1,11 +1,9 @@
-/*
-* tar archive related functions
-*/
+#include <kernel/ramdisk.h>
 
 #include <kernel/kprintf.h>
 #include <kernel/string.h>
 
-#include <kernel/tar.h>
+const char *ramdisk = (char *) 0x3e000000;
 
 typedef struct {
     char name[100];      // File name
@@ -33,7 +31,7 @@ typedef struct {
 * Converts file size from octal string represantation to
 * long int
 */
-static long tar_get_size(tar_header *header) {
+static long ramdisk_get_size(tar_header *header) {
     long n = 0;
     int size = sizeof(header->size);
     char *c = header->size;
@@ -47,14 +45,14 @@ static long tar_get_size(tar_header *header) {
     return n;
 }
 
-void* tar_lookup(const void *archive, const char *filename) {
-    tar_header *header = (tar_header *) archive;
+void* ramdisk_lookup(const char *filename) {
+    tar_header *header = (tar_header *) ramdisk;
 
     while(!strncmp(header->magic, "ustar", sizeof(header->magic))) {
         if (!strncmp(header->name, filename, sizeof(header->name)))
-            return header;
+            return ++header;
 
-        int blocks = ((tar_get_size(header) + 511) / 512) + 1;
+        int blocks = ((ramdisk_get_size(header) + 511) / 512) + 1;
 
         header += blocks;
     }
