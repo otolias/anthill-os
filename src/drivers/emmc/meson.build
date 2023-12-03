@@ -8,8 +8,6 @@ emmc_includes = [
 
 emmc_include_directories = include_directories('../../include')
 
-install_headers(emmc_includes)
-
 emmc = shared_library('emmc',
   sources : emmc_sources,
   include_directories : emmc_include_directories,

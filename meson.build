@@ -47,8 +47,6 @@ subdir('src' / 'bin' / 'hello')
 
 kernel_inc_directories = include_directories('src' / 'include')
 
-install_headers(kernel_includes)
-
 kernel_elf = executable('kernel8.elf',
   sources : kernel_sources,
   include_directories : kernel_inc_directories,

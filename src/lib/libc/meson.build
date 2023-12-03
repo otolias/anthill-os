@@ -14,8 +14,6 @@ libc_inc_directories = include_directories(
   is_system : true
 )
 
-install_headers(libc_includes)
-
 ld_sources = [
   'ld.c',
 ]
