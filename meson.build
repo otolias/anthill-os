@@ -1,13 +1,28 @@
 project('arm_os', 'c',
   default_options : [
-    'buildtype=debugoptimized',
+    'buildtype=minsize',
     'c_std=c17',
-    'b_lundef=false',
-    'warning_level=3',
+    'warning_level=2',
     'prefix=' + meson.build_root() / 'sysroot',
     'libdir=lib',
     'includedir=usr/include',
   ],
+)
+
+add_project_arguments(
+  '-D_FORTIFY_SOURCE=1',
+  '-ffunction-sections',
+  '-fno-common',
+  '-fno-short-enums',
+  '-Wdouble-promotion',
+  '-Wformat-security',
+  '-Wjump-misses-init',
+  '-Wmisleading-indentation',
+  '-Wnull-dereference',
+  '-Wrestrict',
+  '-Wshadow',
+  '-Wunused',
+  language: 'c',
 )
 
 gcc = meson.get_compiler('c').cmd_array()
@@ -35,8 +50,6 @@ subdir('src' / 'drivers')
 subdir('src' / 'kernel')
 
 subdir('src' / 'lib' / 'libc')
-
-subdir('src' / 'drivers' / 'emmc')
 
 exec_link_args = [
   '-nodefaultlibs',

@@ -2,14 +2,14 @@
 
 #include <stdint.h>
 
-void uart_init() {
+void uart_init(void) {
     uint32_t reg;
 
     reg = *GPFSEL1;
-    reg &= ~(0b111 << 12); // Clean gpio14
-    reg |= 0b10 << 12; // Set alt 5
-    reg &= ~(0b111 << 15); // Clean gpio15
-    reg |= 0b10 << 12; // Set alt 5
+    reg &= ~(0x7 << 12); // Clean gpio14
+    reg |= 0x2 << 12; // Set alt 5
+    reg &= ~(0x7 << 15); // Clean gpio15
+    reg |= 0x2 << 12; // Set alt 5
     *GPFSEL1 = reg;
 
     // Disable pull-up/down
@@ -44,7 +44,7 @@ void uart_send_char(char c) {
 /*
 * Receive character via uart
 */
-static char uart_get_char() {
+static char uart_get_char(void) {
     char c;
     // Wait until buffer isn't empty
     while (!(*AUX_MU_LSR_REG & 0x01)) {
@@ -55,7 +55,7 @@ static char uart_get_char() {
     return c == '\r' ? '\n' : c;
 }
 
-void handle_uart_irq() {
+void handle_uart_irq(void) {
     uart_send_char(uart_get_char());
     *AUX_MU_IIR_REG |= 0xff;
 }

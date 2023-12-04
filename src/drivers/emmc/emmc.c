@@ -2,6 +2,7 @@
 * External Mass Media Controller (EMMC) driver.
 *
 * Qemu emulates Host Controller version 3, so we only deal with that
+* Currently unused.
 */
 
 #include <stdint.h>

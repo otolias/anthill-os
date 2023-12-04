@@ -3,7 +3,7 @@
 #include "drivers/uart.h"
 
 const void *system_call_table = {
-    sys_write
+    (void *) sys_write
 };
 
 int sys_write(char *buffer) {

@@ -7,6 +7,7 @@ kernel_sources += files([
   'scheduler.c',
   'scheduler.S',
   'syscalls.c',
+  'string.c',
   'task.c',
 ])
 
