@@ -125,3 +125,7 @@ int printf(char *format, ...) {
 
     return size;
 }
+
+int puts(const char *str) {
+    return sys_handler(SYS_WRITE, (size_t) *str);
+}

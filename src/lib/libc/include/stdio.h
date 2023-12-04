@@ -31,5 +31,11 @@ int sprintf(char *str, char *format, ...);
 * Returns the length of the string
 */
 int printf(char *format, ...);
+/*
+* Send string to uart
+*
+* Returns the length of the string
+*/
+int puts(const char *str);
 
 #endif /* _STDIO_H */
