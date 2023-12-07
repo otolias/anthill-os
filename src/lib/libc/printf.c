@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+
 #include "syscalls.h"
 
 #define PRINTF_BUFFER_SIZE  1024
@@ -121,11 +122,9 @@ int printf(char *format, ...) {
     vsprintf(buffer, format, args);
     va_end(args);
 
-    int size = sys_handler(SYS_WRITE, (size_t) buffer);
-
-    return size;
+    return SYSCALL_1(SYS_WRITE, (size_t) buffer);
 }
 
 int puts(const char *str) {
-    return sys_handler(SYS_WRITE, (size_t) *str);
+    return printf("%s\n", str);
 }
