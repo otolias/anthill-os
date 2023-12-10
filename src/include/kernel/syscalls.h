@@ -1,7 +1,7 @@
-#ifndef _SYSCALLS_H
-#define _SYSCALLS_H
+#ifndef _KERNEL_SYSCALLS_H
+#define _KERNEL_SYSCALLS_H
 
-#define TOTAL_SYSCALLS 1
+#define TOTAL_SYSCALLS 2
 
 #ifndef __ASSEMBLER__
 
@@ -12,7 +12,12 @@
 */
 int sys_write(char *buffer);
 
-extern const void *system_call_table;
+/*
+* Terminate process
+*/
+void sys_exit();
+
+extern const void *system_call_table[];
 
 #endif /* __ASSEMBLER__ */
-#endif /* _SYSCALLS_H */
+#endif /* _KERNEL_SYSCALLS_H */

@@ -1,6 +1,10 @@
 #ifndef _ENTRY_H
 #define _ENTRY_H
 
+/* General and system register size, plus 0x20 that
+ * gets added to the sp on svc */
+#define STACK_FRAME_SIZE 368
+
 #define SYNC_INVALID_EL1t     0
 #define IRQ_INVALID_EL1t      1
 #define FIQ_INVALID_EL1t      2

@@ -14,21 +14,8 @@
 static struct task init_task = { .priority = 1};
 struct task *current_task = &init_task;
 struct task *tasks[TOTAL_TASKS] = {&init_task, };
-unsigned int total_tasks = 1;
 
 Elf64_Ehdr *linker_page;
-
-void task_add(struct task* new_task) {
-    tasks[++total_tasks] = new_task;
-}
-
-void task_switch(struct task *next) {
-    if (current_task == next) return;
-
-    struct task *previous = current_task;
-    current_task = next;
-    cpu_context_switch(previous, next);
-}
 
 void task_tick(void) {
     current_task->counter--;
@@ -97,8 +84,9 @@ short task_exec(const void *file) {
     *(sp--) = (size_t) process_addr;
 
     /* Create task struct */
-    struct task *new_task = (struct task*) elf_memory_size;
+    struct task *new_task = (struct task*) ELF_OFF(process_addr, elf_memory_size);
 
+    new_task->process_address =  (unsigned long) process_addr;
     new_task->priority = current_task->priority;
     new_task->state = TASK_RUNNING;
     new_task->counter = new_task->priority;
@@ -109,7 +97,14 @@ short task_exec(const void *file) {
     new_task->cpu_context.pc  = (size_t) start_user;
     new_task->cpu_context.sp  = (size_t) stack_offset;
 
-    task_add(new_task);
+    /* Add task */
+    for (size_t i = 0; i < TOTAL_TASKS; i++) {
+        if (!tasks[i]) {
+            tasks[i] = new_task;
+            break;
+        }
+    }
+
     current_task->preempt_count--;
     return TASK_OK;
 }
@@ -148,6 +143,25 @@ void task_schedule(void) {
         }
     }
 
-    task_switch(tasks[next_task]);
+    /* Switch task */
+    if (current_task != tasks[next_task]) {
+        struct task *previous_task = current_task;
+        current_task = tasks[next_task];
+        cpu_context_switch(previous_task, current_task);
+    }
+
     current_task->preempt_count--;
+}
+
+void task_exit(void) {
+    for (size_t i = 0; i < TOTAL_TASKS; i++) {
+        if (tasks[i] == current_task) {
+            tasks[i] = NULL;
+            break;
+        }
+    }
+
+    free_pages((void *) current_task->process_address);
+    current_task = NULL;
+    task_schedule();
 }

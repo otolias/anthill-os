@@ -5,16 +5,6 @@
 #include <kernel/ramdisk.h>
 #include <kernel/task.h>
 
-void init_process(void) {
-    void *file = ramdisk_lookup("./bin/hello");
-    short err = task_exec(file);
-    if (err)
-        kprintf("There was a problem in execution. Exit code: %d\n", err);
-
-    while (1)
-        task_schedule();
-}
-
 void main(void) {
     timer_init();
     enable_interrupt_controller();
@@ -22,9 +12,8 @@ void main(void) {
     uart_init();
 
     void *file = ramdisk_lookup("./bin/hello");
-    short err = task_exec(file);
-    if (err)
-        kprintf("Error while starting init process\n");
+    task_exec(file);
+    task_exec(file);
 
     while (1)
         task_schedule();

@@ -23,21 +23,12 @@ enum task_error_codes {
 */
 struct task {
     struct cpu_context cpu_context;
-    long counter; // How long the task has been running (decreases)
-    long priority; // How much time the task is given
-    int preempt_count; // If non-zero, task must not be interrupted
-    enum task_state state; // Current task state
+    unsigned long process_address; /* Page start address */
+    long counter; /* How long the task has been running (decreases) */
+    long priority; /* How much time the task is given */
+    int preempt_count; /* If non-zero, task must not be interrupted */
+    enum task_state state; /* Current task state */
 };
-
-/*
-* Add a new task
-*/
-void task_add(struct task* new_task);
-
-/*
-* Switch to given task
-*/
-void task_switch(struct task *next);
 
 /*
 * De-increment task counter and call scheduler
@@ -53,5 +44,10 @@ void task_schedule(void);
 * Load _file_ dependencies and execute
 */
 short task_exec(const void *file);
+
+/*
+* Terminate process
+*/
+void task_exit(void);
 
 #endif /* _TASK_H */

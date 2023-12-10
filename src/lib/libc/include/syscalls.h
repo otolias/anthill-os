@@ -6,6 +6,7 @@
 #include <kernel/syscalls.h>
 
 #define SYS_WRITE 0
+#define SYS_EXIT 1
 
 /* sys handler macro with arguments */
 #define SYSCALL_0(id) sys_handler(id, 0);

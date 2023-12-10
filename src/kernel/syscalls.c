@@ -1,9 +1,11 @@
 #include "kernel/syscalls.h"
 
-#include "drivers/uart.h"
+#include <drivers/uart.h>
+#include <kernel/task.h>
 
-const void *system_call_table = {
-    (void *) sys_write
+const void *system_call_table[] = {
+    (void *) sys_write,
+    (void *) sys_exit,
 };
 
 int sys_write(char *buffer) {
@@ -16,4 +18,8 @@ int sys_write(char *buffer) {
     }
 
     return written;
+}
+
+void sys_exit(void) {
+    task_exit();
 }

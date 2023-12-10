@@ -1,11 +1,14 @@
 libc_sources = files([
+  'exit.c',
   'printf.c',
   'syscalls.c',
 ])
 
 libc_includes = files([
+  'include' / 'stddef.h',
   'include' / 'stdint.h',
   'include' / 'stdio.h',
+  'include' / 'stdlib.h',
   'include' / 'syscalls.h',
 ])
 

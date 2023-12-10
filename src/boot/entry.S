@@ -19,7 +19,7 @@ b       hang
 
 // Store general registers to stack
 .macro kernel_entry el
-sub     sp, sp, #272
+sub     sp, sp, STACK_FRAME_SIZE
 stp     x0, x1, [sp]
 stp     x2, x3, [sp, #16]
 stp     x4, x5, [sp, #16 * 2]
@@ -39,7 +39,7 @@ stp     x28, x29, [sp, #16 * 14]
 .if     \el == 0
     mrs     x9, sp_el0
 .else
-    add     x9, sp, #272
+    add     x9, sp, STACK_FRAME_SIZE
 .endif /* \el == 0 */
 
 mrs     x10, elr_el1
@@ -76,7 +76,7 @@ ldp     x22, x23, [sp, #16 * 11]
 ldp     x24, x25, [sp, #16 * 12]
 ldp     x26, x27, [sp, #16 * 13]
 ldp     x28, x29, [sp, #16 * 14]
-add     sp, sp, #272
+add     sp, sp, STACK_FRAME_SIZE
 eret
 .endm
 

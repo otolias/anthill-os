@@ -5,7 +5,7 @@
 int sys_handler(long id, size_t arg1) {
     int ret;
 
-    __asm(
+    __asm__(
         "mov x8, %1 \n"
         "mov x0, %2 \n"
         "svc #0 \n"
