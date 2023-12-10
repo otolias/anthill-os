@@ -2,7 +2,6 @@
 #include "drivers/irq.h"
 #include "drivers/timer.h"
 #include "kernel/kprintf.h"
-#include "kernel/scheduler.h"
 #include <kernel/ramdisk.h>
 #include <kernel/task.h>
 
@@ -13,7 +12,7 @@ void init_process(void) {
         kprintf("There was a problem in execution. Exit code: %d\n", err);
 
     while (1)
-        schedule();
+        task_schedule();
 }
 
 void main(void) {
@@ -28,5 +27,5 @@ void main(void) {
         kprintf("Error while starting init process\n");
 
     while (1)
-        schedule();
+        task_schedule();
 }

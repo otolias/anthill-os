@@ -3,14 +3,42 @@
 #include <stddef.h>
 
 #include <boot/entry.h>
+#include <drivers/irq.h>
+#include <kernel/cpu_context.h>
 #include <kernel/elf.h>
 #include <kernel/kprintf.h>
 #include <kernel/mm.h>
-#include <kernel/scheduler.h>
 #include <kernel/string.h>
 #include <kernel/ramdisk.h>
 
+static struct task init_task = { .priority = 1};
+struct task *current_task = &init_task;
+struct task *tasks[TOTAL_TASKS] = {&init_task, };
+unsigned int total_tasks = 1;
+
 Elf64_Ehdr *linker_page;
+
+void task_add(struct task* new_task) {
+    tasks[++total_tasks] = new_task;
+}
+
+void task_switch(struct task *next) {
+    if (current_task == next) return;
+
+    struct task *previous = current_task;
+    current_task = next;
+    cpu_context_switch(previous, next);
+}
+
+void task_tick(void) {
+    current_task->counter--;
+    if (current_task->counter > 0 || current_task->preempt_count > 0) {
+        return;
+    }
+    enable_irq();
+    task_schedule();
+    disable_irq();
+}
 
 /* Load _ehdr_ in _address_ */
 static void _task_load(const Elf64_Ehdr *ehdr, const void *address) {
@@ -33,7 +61,7 @@ static void _task_load(const Elf64_Ehdr *ehdr, const void *address) {
 }
 
 short task_exec(const void *file) {
-    preempt_disable();
+    current_task->preempt_count++;
 
     /* Load linker if not already loaded*/
     if (!linker_page) {
@@ -69,7 +97,6 @@ short task_exec(const void *file) {
     *(sp--) = (size_t) process_addr;
 
     /* Create task struct */
-    const struct task *current_task = get_current_task();
     struct task *new_task = (struct task*) elf_memory_size;
 
     new_task->priority = current_task->priority;
@@ -82,7 +109,45 @@ short task_exec(const void *file) {
     new_task->cpu_context.pc  = (size_t) start_user;
     new_task->cpu_context.sp  = (size_t) stack_offset;
 
-    add_task(new_task);
-    preempt_enable();
+    task_add(new_task);
+    current_task->preempt_count--;
     return TASK_OK;
+}
+
+void task_schedule(void) {
+    long next_task;
+    struct task *p;
+
+    current_task->counter = 0;
+    current_task->preempt_count++;
+
+    while(1) {
+        long counter = -1;
+        // Find the running process with the highest priority
+        next_task = 0;
+
+        for (size_t i = 0; i < TOTAL_TASKS; i++) {
+            p = tasks[i];
+            if (p && p->state == TASK_RUNNING && p->counter > counter) {
+                counter = p->counter;
+                next_task = i;
+            }
+        }
+
+        // If such a process exists, switch to it
+        if (counter) {
+            break;
+        }
+
+        // If not, update task counters
+        for (size_t i = 0; i < TOTAL_TASKS; i++) {
+            p = tasks[i];
+            if (p) {
+                p->counter = (p->counter >> 1) + p->priority;
+            }
+        }
+    }
+
+    task_switch(tasks[next_task]);
+    current_task->preempt_count--;
 }

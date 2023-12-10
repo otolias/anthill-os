@@ -1,5 +1,5 @@
-.global switch_context
-switch_context:
+.global cpu_context_switch
+cpu_context_switch:
     // Store previous process registers
     mov     x8, x0
     mov     x9, sp
@@ -26,6 +26,7 @@ switch_context:
     stp     q30, q31, [x8], #32
     stp     x29, x9, [x8], #16
     str     x30, [x8]
+
     // Restore next process registers
     mov x8, x1
     ldp     x19, x20, [x8], #16
