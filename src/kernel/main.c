@@ -13,7 +13,6 @@ void main(void) {
 
     void *file = ramdisk_lookup("./bin/hello");
     task_exec(file);
-    task_exec(file);
 
     while (1)
         task_schedule();

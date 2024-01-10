@@ -1,5 +1,7 @@
 libc_sources = files([
   'exit.c',
+  '_malloc.c',
+  'malloc.c',
   'printf.c',
   'syscalls.c',
 ])

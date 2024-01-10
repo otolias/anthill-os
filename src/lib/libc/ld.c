@@ -14,8 +14,13 @@ struct dynamic_object {
 
 #define SP_FILE_OFFSET 0
 #define SP_ADDR_OFFSET 1
+#define SP_HEAP_OFFSET 2
 
-#define JMP(d) __asm__("mov x0, %0; br x0" : : "r"(d) : "x0")
+#define JMP(pc, sp) __asm__ ( \
+    "mov sp, %1 \n" \
+    "br %0; \n" \
+    : : "r"(pc), "r"(sp) : "memory" \
+    )
 
 /* Entry point */
 __asm__(
@@ -73,8 +78,8 @@ static void linker_rela_relocate(const Elf64_Rela *reloc_entry, const struct dyn
 
 __attribute__((__visibility__("hidden")))
 void linker_init(size_t *sp) {
-    Elf64_Ehdr *ehdr = (Elf64_Ehdr *) *(sp - SP_FILE_OFFSET);
-    size_t process_address = *(sp - SP_ADDR_OFFSET);
+    Elf64_Ehdr *ehdr = (Elf64_Ehdr *) *(sp + SP_FILE_OFFSET);
+    size_t process_address = *(sp + SP_ADDR_OFFSET);
     Elf64_Phdr *phdr_entry = (Elf64_Phdr *) ELF_OFF(ehdr, ehdr->e_phoff);
     Elf64_Dyn *dyn_entry = NULL;
 
@@ -108,5 +113,5 @@ void linker_init(size_t *sp) {
         linker_rela_relocate(reloc_entry++, &dyn_obj);
     }
 
-    JMP(ELF_OFF(dyn_obj.base, ehdr->e_entry));
+    JMP(ELF_OFF(dyn_obj.base, ehdr->e_entry), sp);
 }

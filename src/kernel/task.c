@@ -76,12 +76,14 @@ short task_exec(const void *file) {
 
     _task_load(ehdr, process_addr);
 
+    const size_t heap_offset = ELF_OFF(process_addr, elf_get_heap_offset(ehdr));
     const size_t stack_offset = ELF_OFF(process_addr, elf_get_stack_offset(ehdr));
 
     /* Add process pages to stack */
     size_t *sp = (unsigned long *) stack_offset;
-    *(sp--) = (size_t) file;
-    *(sp--) = (size_t) process_addr;
+    *(--sp) = heap_offset;
+    *(--sp) = (size_t) process_addr;
+    *(--sp) = (size_t) file;
 
     /* Create task struct */
     struct task *new_task = (struct task*) ELF_OFF(process_addr, elf_memory_size);
@@ -93,9 +95,9 @@ short task_exec(const void *file) {
     new_task->preempt_count = 1;
 
     new_task->cpu_context.x19 = (size_t) ELF_OFF(linker_page, linker_page->e_entry);
-    new_task->cpu_context.x20 = (size_t) stack_offset;
+    new_task->cpu_context.x20 = (size_t) sp;
     new_task->cpu_context.pc  = (size_t) start_user;
-    new_task->cpu_context.sp  = (size_t) stack_offset;
+    new_task->cpu_context.sp  = (size_t) sp;
 
     /* Add task */
     for (size_t i = 0; i < TOTAL_TASKS; i++) {

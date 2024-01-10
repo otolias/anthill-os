@@ -120,6 +120,11 @@ short elf_validate(const Elf64_Ehdr *ehdr);
 unsigned long elf_get_image_size(const Elf64_Ehdr *ehdr);
 
 /*
+* Calculate heap offset
+*/
+unsigned long elf_get_heap_offset(const Elf64_Ehdr *ehdr);
+
+/*
 * Calculate stack offset
 */
 unsigned long elf_get_stack_offset(const Elf64_Ehdr *ehdr);
