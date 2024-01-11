@@ -12,16 +12,14 @@
 
 block_t *first_block;
 
-block_t* _split_block(block_t *block) {
+void _split_block(block_t *block) {
     block->k--;
-    block_t *new_block = (block_t *) ((size_t) block + (1 << block->k));
+    block_t *new_block = (block_t *) ((size_t) block + (2 << block->k));
     new_block->available = 1;
     new_block->k = block->k;
     new_block->next = block->next;
     new_block->prev = block;
     block->next = new_block;
-
-    return new_block;
 }
 
 block_t* _find_available_block(char order) {
@@ -34,7 +32,7 @@ block_t* _find_available_block(char order) {
         }
 
         if (current_block->k > order) {
-            current_block = _split_block(current_block);
+            _split_block(current_block);
             continue;
         }
 

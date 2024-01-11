@@ -10,10 +10,8 @@ typedef struct {
 
 /*
 * Split the given _block_ to two blocks of lower k
-*
-* Returns the new block
 */
-block_t* _split_block(block_t *block);
+void _split_block(block_t *block);
 
 /*
 * Iterate through the available blocks and find one with k equal to _order_
