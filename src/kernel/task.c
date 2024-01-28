@@ -97,7 +97,13 @@ short task_exec(const void *file) {
     new_task->cpu_context.x19 = (size_t) ELF_OFF(linker_page, linker_page->e_entry);
     new_task->cpu_context.x20 = (size_t) sp;
     new_task->cpu_context.pc  = (size_t) start_user;
-    new_task->cpu_context.sp  = (size_t) sp;
+
+    __asm__(
+        "mov x0, sp \n"
+        "mov %x0, x0 \n"
+        : "=r" (new_task->cpu_context.sp)
+        : : "x0"
+    );
 
     /* Add task */
     for (size_t i = 0; i < TOTAL_TASKS; i++) {
