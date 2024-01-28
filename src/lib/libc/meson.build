@@ -1,12 +1,16 @@
 libc_sources = files([
+  'errno.c',
   'exit.c',
   '_malloc.c',
   'malloc.c',
+  'mqueue.c',
   'printf.c',
   'syscalls.c',
 ])
 
 libc_includes = files([
+  'include' / 'errno.h',
+  'include' / 'mqueue.h',
   'include' / 'stddef.h',
   'include' / 'stdint.h',
   'include' / 'stdio.h',

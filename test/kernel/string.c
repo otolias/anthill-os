@@ -1,6 +1,6 @@
 #include <unity/unity.h>
 
-#include <kernel/string.h>
+#include <kernel/string.c>
 
 void setUp() {}
 void tearDown() {}
@@ -32,10 +32,16 @@ void test_strncmp() {
     TEST_ASSERT_GREATER_THAN_INT(0, strncmp("Entomology", "En", 10));
 }
 
+void test_strhash(void) {
+    TEST_ASSERT_EQUAL_UINT64(strhash("test"), strhash("test"));
+    TEST_ASSERT_NOT_EQUAL_UINT64(strhash("test2"), strhash("test"));
+}
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_memcpy);
     RUN_TEST(test_memset);
     RUN_TEST(test_strncmp);
+    RUN_TEST(test_strhash);
     return UNITY_END();
 }

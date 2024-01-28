@@ -32,4 +32,9 @@ int strncmp(const char *s1, const char *s2, size_t n);
 */
 size_t strlen(const char *s);
 
+/*
+* FNV-1a string hashing
+*/
+size_t strhash(const char *s);
+
 #endif /* _KERNEL_STRING_H */

@@ -14,8 +14,13 @@
 static struct task init_task = { .priority = 1};
 struct task *current_task = &init_task;
 struct task *tasks[TOTAL_TASKS] = {&init_task, };
+long task_count = 0;
 
 Elf64_Ehdr *linker_page;
+
+pid_t task_current_pid(void) {
+    return current_task->pid;
+}
 
 void task_tick(void) {
     current_task->counter--;
@@ -88,7 +93,8 @@ short task_exec(const void *file) {
     /* Create task struct */
     struct task *new_task = (struct task*) ELF_OFF(process_addr, elf_memory_size);
 
-    new_task->process_address =  (unsigned long) process_addr;
+    new_task->pid = ++task_count;
+    new_task->process_address = (unsigned long) process_addr;
     new_task->priority = current_task->priority;
     new_task->state = TASK_RUNNING;
     new_task->counter = new_task->priority;

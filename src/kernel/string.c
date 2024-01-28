@@ -33,3 +33,16 @@ size_t strlen(const char *s) {
     while (c++) size++;
     return size;
 }
+
+size_t strhash(const char *s) {
+    size_t fnv_prime = 0x00000100000001B3;
+    size_t hash = 0xcbf29ce484222325;
+    const char *c = s;
+
+    for(; *c; c++) {
+        hash ^= *c;
+        hash *= fnv_prime;
+    }
+
+    return hash;
+}
