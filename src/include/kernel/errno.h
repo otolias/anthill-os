@@ -7,5 +7,6 @@
 #define ENOSPC 4
 #define EINVAL 5
 #define ENOENT 6
+#define EBADF  7
 
 #endif /* _KERNEL_ERRNO_H */

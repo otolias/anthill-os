@@ -13,7 +13,7 @@
 #define MQ_MAX_MSG         8
 
 struct mqueue {
-    int     id;                             /* Queue ID */
+    mqd_t   id;                             /* Queue ID */
     size_t  hash;                           /* Hashed name */
     pid_t   sub_ids[MQ_MAX_SUBSCRIBERS];    /* Subscribed process IDs */
     char    sub_flags[MQ_MAX_SUBSCRIBERS];  /* Subscibed processes' access flags */
@@ -25,6 +25,18 @@ struct mqueue {
 
 struct mqueue open_queues[MQ_MAX_OPEN];
 signed int mqueue_count = 0;
+
+/*
+* Find open mqueue by _id_
+*/
+static struct mqueue* _mqueue_find(mqd_t id) {
+    for (size_t i = 0; i < MQ_MAX_OPEN; i++) {
+        if (open_queues[i].id == id)
+            return &open_queues[i];
+    }
+
+    return NULL;
+}
 
 /*
 * Find open mqueue by _hash_
@@ -52,6 +64,26 @@ static bool _mqueue_subscribe(struct mqueue* mqueue, pid_t pid, int flags) {
 
     return false;
 };
+
+/*
+* Unsubscribe _pid_ from _mqueue_
+*/
+static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
+    size_t pid_pos;
+
+    for (pid_pos = 0; pid_pos < MQ_MAX_SUBSCRIBERS; pid_pos++) {
+        if (mqueue->sub_ids[pid_pos] == pid)
+            break;
+    }
+
+    if (pid_pos == MQ_MAX_SUBSCRIBERS)
+        return false;
+
+    mqueue->sub_ids[pid_pos] = -1;
+    mqueue->sub_flags[pid_pos] = 0;
+
+    return true;
+}
 
 int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode,
                 const mq_attr *attr) {
@@ -108,4 +140,15 @@ int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode
         return -EACCES;
 
     return mqueue->id;
+}
+
+int mqueue_close(mqd_t mqdes) {
+    struct mqueue *mqueue = _mqueue_find(mqdes);
+
+    if (!mqueue)
+        return -EBADF;
+
+    _mqueue_unsubscribe(mqueue, task_current_pid());
+
+    return 0;
 }

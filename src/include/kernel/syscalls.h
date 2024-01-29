@@ -1,7 +1,7 @@
 #ifndef _KERNEL_SYSCALLS_H
 #define _KERNEL_SYSCALLS_H
 
-#define TOTAL_SYSCALLS 3
+#define TOTAL_SYSCALLS 4
 
 #ifndef __ASSEMBLER__
 
@@ -19,10 +19,8 @@ int sys_write(char *buffer);
 */
 void sys_exit();
 
-/*
-* Open queue
-*/
 int sys_mq_open(const char *name, int oflag, mode_t mode, void *attr);
+int sys_mq_close(int mqdes);
 
 extern const void *system_call_table[];
 

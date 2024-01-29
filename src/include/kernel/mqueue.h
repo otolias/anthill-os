@@ -7,6 +7,8 @@
 
 #include <kernel/sys/types.h>
 
+typedef int mqd_t;
+
 typedef struct {
     long mq_flags; /* Message queue flags */
     long mq_maxmsg; /* Maximum number of messages */
@@ -20,6 +22,14 @@ typedef struct {
 #define O_CREAT  1 << 3
 #define O_EXCL   1 << 4
 
-int mqueue_open(const char *name, int oflag, mode_t mode, const mq_attr *attr);
+/*
+* Open mqueue connection
+*/
+mqd_t mqueue_open(const char *name, int oflag, mode_t mode, const mq_attr *attr);
+
+/*
+* Close mqueue connection with id _mqdes_
+*/
+int mqueue_close(mqd_t mqdes);
 
 #endif /* _KERNEL_MQUEUE_H */

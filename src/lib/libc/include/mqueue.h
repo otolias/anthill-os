@@ -61,4 +61,17 @@ typedef struct {
 */
 mqd_t mq_open(const char *name, int oflag, ...);
 
+/*
+* Close connection with message queue identified by
+* _mqdes_
+*
+* On success, returns 0.
+* On failure, returns -1 and sets errno to indicate
+* the error
+*
+* errno:
+* EBADF  Not a valid message queue descriptor
+*/
+int mq_close(mqd_t mqdes);
+
 #endif /* _MQUEUE_H */
