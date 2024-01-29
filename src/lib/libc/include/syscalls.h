@@ -3,10 +3,11 @@
 
 #include <stddef.h>
 
-#define SYS_WRITE    0
-#define SYS_EXIT     1
-#define SYS_MQ_OPEN  2
-#define SYS_MQ_CLOSE 3
+#define SYS_WRITE     0
+#define SYS_EXIT      1
+#define SYS_MQ_OPEN   2
+#define SYS_MQ_CLOSE  3
+#define SYS_MQ_UNLINK 4
 
 /* sys handler macro with arguments */
 #define SYSCALL_0(id) sys_handler(id, 0, 0, 0, 0);

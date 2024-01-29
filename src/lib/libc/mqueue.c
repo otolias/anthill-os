@@ -45,3 +45,14 @@ int mq_close(mqd_t mqdes) {
 
     return res;
 }
+
+int mq_unlink(const char *name) {
+    int res = SYSCALL_1(SYS_MQ_UNLINK, (size_t) name);
+
+    if (res < 0) {
+        errno = -res;
+        return -1;
+    }
+
+    return res;
+}

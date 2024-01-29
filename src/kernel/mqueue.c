@@ -14,6 +14,7 @@
 
 struct mqueue {
     mqd_t   id;                             /* Queue ID */
+    bool    open;                           /* If queue accepts connections */
     size_t  hash;                           /* Hashed name */
     pid_t   sub_ids[MQ_MAX_SUBSCRIBERS];    /* Subscribed process IDs */
     char    sub_flags[MQ_MAX_SUBSCRIBERS];  /* Subscibed processes' access flags */
@@ -79,10 +80,30 @@ static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
     if (pid_pos == MQ_MAX_SUBSCRIBERS)
         return false;
 
-    mqueue->sub_ids[pid_pos] = -1;
+    mqueue->sub_ids[pid_pos] = 0;
     mqueue->sub_flags[pid_pos] = 0;
 
     return true;
+}
+
+/*
+* Destroy _mqueue_
+*/
+static void _mqueue_destroy(struct mqueue* mqueue) {
+    mqueue->open = false;
+    bool pending = false;
+
+    /* Check if there are pending subscribed processes */
+    for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
+        if (mqueue->sub_ids[i])
+            pending = true;
+    }
+
+    if (pending)
+        return;
+
+    mqueue->id = -1;
+    mqueue->hash = 0;
 }
 
 int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode,
@@ -125,6 +146,7 @@ int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode
             }
 
             mqueue->id = ++mqueue_count;
+            mqueue->open = true;
             mqueue->hash = hash;
             mqueue->head = mqueue->messages;
             mqueue->tail = mqueue->messages;
@@ -133,7 +155,7 @@ int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode
         }
     }
 
-    if (!mqueue)
+    if (!mqueue || !mqueue->open)
         return -ENOENT;
 
     if(!_mqueue_subscribe(mqueue, task_current_pid(), oflag & 7))
@@ -149,6 +171,32 @@ int mqueue_close(mqd_t mqdes) {
         return -EBADF;
 
     _mqueue_unsubscribe(mqueue, task_current_pid());
+
+    if (!mqueue->open) {
+        bool pending = false;
+
+        /* Check if this is the last pending connection */
+        for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
+            if (mqueue->sub_ids[i]) {
+                pending = true;
+                break;
+            }
+        }
+
+        if (!pending)
+            _mqueue_destroy(mqueue);
+    }
+
+    return 0;
+}
+
+int mqueue_unlink(const char *name) {
+    struct mqueue *mqueue = _mqueue_find_hash(strhash(name));
+
+    if (!mqueue)
+        return -ENOENT;
+
+    _mqueue_destroy(mqueue);
 
     return 0;
 }

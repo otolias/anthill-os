@@ -74,4 +74,18 @@ mqd_t mq_open(const char *name, int oflag, ...);
 */
 int mq_close(mqd_t mqdes);
 
+/*
+* Remove message queue with _name_. If there are
+* pending open connections, destruction is postponed,
+* but the function returns succesfully immediately
+*
+* On success, returns 0.
+* On failure, returns -1 and sets errnp to indicate
+* the error.
+*
+* errno:
+* ENOENT  The message queue does not exist
+*/
+int mq_unlink(const char *name);
+
 #endif /* _MQUEUE_H */
