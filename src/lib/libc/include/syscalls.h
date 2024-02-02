@@ -9,6 +9,7 @@
 #define SYS_MQ_CLOSE  3
 #define SYS_MQ_UNLINK 4
 #define SYS_MQ_SEND   5
+#define SYS_MQ_RECV   6
 
 /* sys handler macro with arguments */
 #define SYSCALL_0(id) sys_handler(id, 0, 0, 0, 0);

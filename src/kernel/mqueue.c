@@ -13,7 +13,8 @@
 #define MQ_MAX_MSG         8
 
 struct mq_message {
-    char message[MQ_MAX_MSG_SIZE]; /* Message content */
+    size_t size;                     /* Message size */
+    char   message[MQ_MAX_MSG_SIZE]; /* Message content */
 };
 
 struct mq_proc {
@@ -33,7 +34,7 @@ struct mqueue {
 };
 
 struct mqueue open_queues[MQ_MAX_OPEN];
-signed int mqueue_count = 0;
+size_t mqueue_count = 0;
 
 /*
 * Find open mqueue by _id_
@@ -110,9 +111,30 @@ static void _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t m
     if (mqueue->tail == mqueue->attr.mq_maxmsg)
         mqueue->tail = -1;
 
-    memcpy(&mqueue->messages[++mqueue->tail], msg_ptr, msg_len);
+    struct mq_message *mq_message = &mqueue->messages[++mqueue->tail];
+    mq_message->size = msg_len;
+    memcpy(&mq_message->message, msg_ptr, msg_len);
 
     mqueue->attr.mq_curmsg++;
+}
+
+/*
+* Copy first message of _mqueue_ to _msg_ptr_
+*/
+static ssize_t _mqueue_dequeue(struct mqueue *mqueue, char *msg_ptr) {
+    if (mqueue->head == mqueue->attr.mq_maxmsg)
+        mqueue->head = -1;
+
+    if (!mqueue->attr.mq_curmsg)
+        return -1;
+
+    const struct mq_message *mq_message = &mqueue->messages[++mqueue->head];
+
+    memcpy(msg_ptr, &mq_message->message, mq_message->size);
+
+    mqueue->attr.mq_curmsg--;
+
+    return mq_message->size;
 }
 
 /*
@@ -125,7 +147,7 @@ static void _mqueue_destroy(struct mqueue* mqueue) {
     if (_mqueue_find_subscriber(mqueue, NULL))
         return;
 
-    mqueue->id = -1;
+    mqueue->id = 0;
     mqueue->hash = 0;
 }
 
@@ -231,10 +253,33 @@ int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
 
     const struct mq_proc *mq_proc = _mqueue_find_subscriber(mqueue, task_current_pid());
 
-    if (!mq_proc || mq_proc->flags & (O_RDONLY))
+    if (!mq_proc || mq_proc->flags & O_RDONLY)
         return -EACCES;
 
     _mqueue_enqueue(mqueue, msg_ptr, msg_len);
 
     return 0;
+}
+
+ssize_t mqueue_receive(mqd_t id, char *msg_ptr, size_t msg_len,
+                       __attribute__((unused)) unsigned *msg_prio) {
+    struct mqueue *mqueue = _mqueue_find(id);
+
+    if (!mqueue)
+        return -EBADF;
+
+    if ((long) msg_len < mqueue->attr.mq_msgsize)
+        return -EMSGSIZE;
+
+    const struct mq_proc *mq_proc = _mqueue_find_subscriber(mqueue, task_current_pid());
+
+    if (!mq_proc || mq_proc->flags & O_WRONLY)
+        return -EACCES;
+
+    ssize_t result = _mqueue_dequeue(mqueue, msg_ptr);
+
+    if (!result)
+        return -EAGAIN;
+
+    return result;
 }

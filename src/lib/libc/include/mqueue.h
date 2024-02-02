@@ -11,7 +11,7 @@
 #ifndef _MQUEUE_H
 #define _MQUEUE_H
 
-#include <stddef.h>
+#include <sys/types.h>
 
 /* Message queue descriptor */
 typedef int mqd_t;
@@ -112,5 +112,24 @@ int mq_unlink(const char *name);
 *           attribute
 */
 int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio);
+
+/*
+* Pop message from the message queue specified bt _mqdes_
+* to buffer pointed to by _msg_ptr_ with length _msg_len_
+*
+* Message priority is currently unsupported
+*
+* On success, return the length of the message in bytes.
+* On failure, returns -1 and sets errno to indicate
+* the error.
+*
+* errno:
+* EACESS    Access is denied (Non-posix)
+* EAGAIN    Message queue is empty
+* EBADF     Invalid message queue
+* EMSGSIZE  Specified message buffer size is less than
+*           the message size attribute
+*/
+ssize_t mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio);
 
 #endif /* _MQUEUE_H */

@@ -7,8 +7,6 @@
 #ifndef _KERNEL_MQUEUE_H
 #define _KERNEL_MQUEUE_H
 
-#include <stddef.h>
-
 #include <kernel/sys/types.h>
 
 typedef int mqd_t;
@@ -59,5 +57,15 @@ int mqueue_unlink(const char *name);
 * On failure, returns -errno.
 */
 int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len, unsigned msg_prio);
+
+/*
+* Pop from message queue with _id_ to buffer pointed to
+* by _msg_ptr_ with length _msg_len_, and copy message
+* priority to _msg_prio_
+*
+* On success, returns size of message in bytes.
+* On failure, returns -errno
+*/
+ssize_t mqueue_receive(mqd_t id, char *msg_ptr, size_t msg_len, unsigned *msg_prio);
 
 #endif /* _KERNEL_MQUEUE_H */
