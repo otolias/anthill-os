@@ -1,9 +1,13 @@
 /*
 * Message queueing implementation
+*
+* Priorities aren't implemented
 */
 
 #ifndef _KERNEL_MQUEUE_H
 #define _KERNEL_MQUEUE_H
+
+#include <stddef.h>
 
 #include <kernel/sys/types.h>
 
@@ -46,5 +50,14 @@ int mqueue_close(mqd_t mqdes);
 * On failure, returns -errno
 */
 int mqueue_unlink(const char *name);
+
+/*
+* Put message pointed to by _msg_ptr_ with length _msg_len_
+* in message queue _id_ with priority _msg_prio_
+*
+* On success, returns 0.
+* On failure, returns -errno.
+*/
+int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len, unsigned msg_prio);
 
 #endif /* _KERNEL_MQUEUE_H */

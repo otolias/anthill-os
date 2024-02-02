@@ -12,16 +12,24 @@
 #define MQ_MAX_MSG_SIZE    128
 #define MQ_MAX_MSG         8
 
+struct mq_message {
+    char message[MQ_MAX_MSG_SIZE]; /* Message content */
+};
+
+struct mq_proc {
+    pid_t pid;   /* Associated process pid */
+    char  flags; /* Associated process access flags */
+};
+
 struct mqueue {
-    mqd_t   id;                             /* Queue ID */
-    bool    open;                           /* If queue accepts connections */
-    size_t  hash;                           /* Hashed name */
-    pid_t   sub_ids[MQ_MAX_SUBSCRIBERS];    /* Subscribed process IDs */
-    char    sub_flags[MQ_MAX_SUBSCRIBERS];  /* Subscibed processes' access flags */
-    mq_attr attr;                           /* Queue attributes */
-    char*   head;                           /* Message head */
-    char*   tail;                           /* Message tail */
-    char    messages[MQ_MAX_MSG_SIZE];      /* Queue messages */
+    mqd_t             id;                       /* Queue ID */
+    bool              open;                     /* If queue accepts connections */
+    size_t            hash;                     /* Hashed name */
+    struct mq_proc    subs[MQ_MAX_SUBSCRIBERS]; /* Associated processes pids and flags */
+    mq_attr           attr;                     /* Queue attributes */
+    int               head;                     /* Message head */
+    int               tail;                     /* Message tail */
+    struct mq_message messages[MQ_MAX_MSG];     /* Queue messages */
 };
 
 struct mqueue open_queues[MQ_MAX_OPEN];
@@ -52,13 +60,26 @@ static struct mqueue* _mqueue_find_hash(size_t hash) {
 }
 
 /*
+* Find _mqueue_ subscriber with _pid_. If _pid_ is NULL, returns
+* any subscriber
+*/
+static struct mq_proc* _mqueue_find_subscriber(struct mqueue* mqueue, pid_t pid) {
+    for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
+        if ((pid && mqueue->subs[i].pid == pid) || (!pid && mqueue->subs[i].pid > 0))
+            return &mqueue->subs[i];
+    }
+
+    return NULL;
+}
+
+/*
 * Subscribe _pid_ to _mqueue_ with access _flags_
 */
 static bool _mqueue_subscribe(struct mqueue* mqueue, pid_t pid, int flags) {
     for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
-        if (!mqueue->sub_ids[i]) {
-            mqueue->sub_ids[i] = pid;
-            mqueue->sub_flags[i] = flags;
+        if (!mqueue->subs[i].pid) {
+            mqueue->subs[i].pid = pid;
+            mqueue->subs[i].flags = flags;
             return true;
         }
     }
@@ -70,20 +91,28 @@ static bool _mqueue_subscribe(struct mqueue* mqueue, pid_t pid, int flags) {
 * Unsubscribe _pid_ from _mqueue_
 */
 static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
-    size_t pid_pos;
+    struct mq_proc *mq_proc = _mqueue_find_subscriber(mqueue, pid);
 
-    for (pid_pos = 0; pid_pos < MQ_MAX_SUBSCRIBERS; pid_pos++) {
-        if (mqueue->sub_ids[pid_pos] == pid)
-            break;
-    }
-
-    if (pid_pos == MQ_MAX_SUBSCRIBERS)
+    if (!mq_proc)
         return false;
 
-    mqueue->sub_ids[pid_pos] = 0;
-    mqueue->sub_flags[pid_pos] = 0;
+    mq_proc->pid = -1;
+    mq_proc->flags = 0;
 
     return true;
+}
+
+/*
+* Enqueue message pointed to by _msg_ptr_ with length _msg_len_ in
+* _mqueue_
+*/
+static void _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t msg_len) {
+    if (mqueue->tail == mqueue->attr.mq_maxmsg)
+        mqueue->tail = -1;
+
+    memcpy(&mqueue->messages[++mqueue->tail], msg_ptr, msg_len);
+
+    mqueue->attr.mq_curmsg++;
 }
 
 /*
@@ -91,15 +120,9 @@ static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
 */
 static void _mqueue_destroy(struct mqueue* mqueue) {
     mqueue->open = false;
-    bool pending = false;
 
     /* Check if there are pending subscribed processes */
-    for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
-        if (mqueue->sub_ids[i])
-            pending = true;
-    }
-
-    if (pending)
+    if (_mqueue_find_subscriber(mqueue, NULL))
         return;
 
     mqueue->id = -1;
@@ -148,8 +171,8 @@ int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode
             mqueue->id = ++mqueue_count;
             mqueue->open = true;
             mqueue->hash = hash;
-            mqueue->head = mqueue->messages;
-            mqueue->tail = mqueue->messages;
+            mqueue->head = -1;
+            mqueue->tail = -1;
             mqueue->attr.mq_flags = 0;
             mqueue->attr.mq_curmsg = 0;
         }
@@ -173,17 +196,9 @@ int mqueue_close(mqd_t mqdes) {
     _mqueue_unsubscribe(mqueue, task_current_pid());
 
     if (!mqueue->open) {
-        bool pending = false;
 
         /* Check if this is the last pending connection */
-        for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
-            if (mqueue->sub_ids[i]) {
-                pending = true;
-                break;
-            }
-        }
-
-        if (!pending)
+        if (!_mqueue_find_subscriber(mqueue, NULL))
             _mqueue_destroy(mqueue);
     }
 
@@ -197,6 +212,29 @@ int mqueue_unlink(const char *name) {
         return -ENOENT;
 
     _mqueue_destroy(mqueue);
+
+    return 0;
+}
+
+int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
+                __attribute__((unused)) unsigned msg_prio) {
+    struct mqueue *mqueue = _mqueue_find(id);
+
+    if (!mqueue)
+        return -EBADF;
+
+    if ((long) msg_len > mqueue->attr.mq_msgsize)
+        return -EMSGSIZE;
+
+    if (mqueue->attr.mq_curmsg == mqueue->attr.mq_maxmsg)
+        return -EAGAIN;
+
+    const struct mq_proc *mq_proc = _mqueue_find_subscriber(mqueue, task_current_pid());
+
+    if (!mq_proc || mq_proc->flags & (O_RDONLY))
+        return -EACCES;
+
+    _mqueue_enqueue(mqueue, msg_ptr, msg_len);
 
     return 0;
 }

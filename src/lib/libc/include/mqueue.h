@@ -1,12 +1,17 @@
 /*
 * Message queueing
 *
-* Current implementation follows the POSIX standard with some limitations,
-* and with the exception of mode_t and O_NONBLOCK, which is currently unsupported
+* The implementation follows the POSIX standard with some limitations:
+*
+* - O_NONBLOCK oflag is unsupported, but current implementation works
+*   as if it's set.
+* - mode_t is unused
 */
 
 #ifndef _MQUEUE_H
 #define _MQUEUE_H
+
+#include <stddef.h>
 
 /* Message queue descriptor */
 typedef int mqd_t;
@@ -16,7 +21,7 @@ typedef struct {
     long mq_flags; /* Message queue flags */
     long mq_maxmsg; /* Maximum number of messages */
     long mq_msgsize; /* Maximum message size */
-    long mq_curmsg; /* Number of messages currently queued; */
+    long mq_curmsg; /* Number of messages currently queued */
 } mq_attr;
 
 /* Available oflags */
@@ -87,5 +92,25 @@ int mq_close(mqd_t mqdes);
 * ENOENT  The message queue does not exist
 */
 int mq_unlink(const char *name);
+
+/*
+* Add the message pointed to by _msg_ptr_ with length
+* _msg_len_ to message queue specified
+* by _mqdes_
+*
+* Message priority is currently unsupported
+*
+* On success returns 0.
+* On failure, returns -1 and sets errno to indicate
+* the error.
+*
+* errno:
+* EACESS    Access is denied (Non-posix)
+* EAGAIN    Specified message queue is full
+* EBADF     Invalid message queue
+* EMSGSIZE  Specified message length exceeds message size
+*           attribute
+*/
+int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio);
 
 #endif /* _MQUEUE_H */

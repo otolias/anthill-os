@@ -11,6 +11,7 @@ const void *system_call_table[] = {
     (void *) sys_mq_open,
     (void *) sys_mq_close,
     (void *) sys_mq_unlink,
+    (void *) sys_mq_send,
 };
 
 int sys_write(char *buffer) {
@@ -39,4 +40,8 @@ int sys_mq_close(mqd_t mqdes) {
 
 int sys_mq_unlink(const char *name) {
     return mqueue_unlink(name);
+}
+
+int sys_mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio) {
+    return mqueue_send(mqdes, msg_ptr, msg_len, msg_prio);
 }

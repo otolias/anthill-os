@@ -56,3 +56,14 @@ int mq_unlink(const char *name) {
 
     return res;
 }
+
+int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio) {
+    int res = SYSCALL_4(SYS_MQ_SEND, mqdes, (size_t) msg_ptr, msg_len, msg_prio);
+
+    if (res < 0) {
+        errno = -res;
+        return -1;
+    }
+
+    return res;
+}
