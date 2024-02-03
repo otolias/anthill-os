@@ -61,7 +61,7 @@ static struct mqueue* _mqueue_find_hash(size_t hash) {
 }
 
 /*
-* Find _mqueue_ subscriber with _pid_. If _pid_ is NULL, returns
+* Find _mqueue_ subscriber with _pid_. If _pid_ is 0, returns
 * any subscriber
 */
 static struct mq_proc* _mqueue_find_subscriber(struct mqueue* mqueue, pid_t pid) {
@@ -144,7 +144,7 @@ static void _mqueue_destroy(struct mqueue* mqueue) {
     mqueue->open = false;
 
     /* Check if there are pending subscribed processes */
-    if (_mqueue_find_subscriber(mqueue, NULL))
+    if (_mqueue_find_subscriber(mqueue, 0))
         return;
 
     mqueue->id = 0;
@@ -220,7 +220,7 @@ int mqueue_close(mqd_t mqdes) {
     if (!mqueue->open) {
 
         /* Check if this is the last pending connection */
-        if (!_mqueue_find_subscriber(mqueue, NULL))
+        if (!_mqueue_find_subscriber(mqueue, 0))
             _mqueue_destroy(mqueue);
     }
 
