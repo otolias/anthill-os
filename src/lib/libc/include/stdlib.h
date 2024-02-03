@@ -21,6 +21,6 @@ void free(void *ptr);
 *
 * Status is currently unsupported
 */
-void exit(void);
+void exit(int status);
 
 #endif /* _STDLIB_H */

@@ -2,6 +2,6 @@
 
 #include "syscalls.h"
 
-void exit() {
-    SYSCALL_0(SYS_EXIT);
+void exit(int status) {
+    SYSCALL_1(SYS_EXIT, status);
 }
