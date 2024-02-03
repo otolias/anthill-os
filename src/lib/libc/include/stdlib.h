@@ -1,25 +1,26 @@
 #ifndef _STDLIB_H
 #define _STDLIB_H
 
-#include <stddef.h>
+#include <sys/types.h>
 
 /*
-* Allocate space for an object of size _size_
+* Allocate unused space for an object of _size_ in bytes
 *
-* Returns either a null pointer or a pointer to the
-* allocated space
+* On success, returns a pointer to the allocated space.
+* On failure, retrus a null pointer
 */
 void* malloc(size_t size);
 
 /*
-* Free space pointed to by _ptr_
+* Deallocate space pointed to by _ptr_
 */
 void free(void *ptr);
 
 /*
 * Terminate process
+*
+* Status is currently unsupported
 */
-
 void exit(void);
 
 #endif /* _STDLIB_H */

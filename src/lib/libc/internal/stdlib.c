@@ -1,26 +1,8 @@
-/*
-* Memory allocation init and helper functions
-*
-* Memory allocation uses the buddy system, meaning that the available
-* memory pool starts with a single block of size 2 to the power of 12,
-* and is then split or coalesced as needed.
-*/
-
-#include "internal/malloc.h"
+#include "internal/stdlib.h"
 
 #include <stddef.h>
 
 block_t *first_block;
-
-void _split_block(block_t *block) {
-    block->k--;
-    block_t *new_block = (block_t *) ((size_t) block + (2 << block->k));
-    new_block->available = 1;
-    new_block->k = block->k;
-    new_block->next = block->next;
-    new_block->prev = block;
-    block->next = new_block;
-}
 
 block_t* _find_available_block(char order) {
     block_t *current_block = first_block;
@@ -71,4 +53,14 @@ void _malloc_init(void *malloc_start) {
     block->next = NULL;
 
     first_block = block;
+}
+
+void _split_block(block_t *block) {
+    block->k--;
+    block_t *new_block = (block_t *) ((size_t) block + (2 << block->k));
+    new_block->available = 1;
+    new_block->k = block->k;
+    new_block->next = block->next;
+    new_block->prev = block;
+    block->next = new_block;
 }
