@@ -1,7 +1,6 @@
 #include "drivers/uart.h"
 #include "drivers/irq.h"
 #include "drivers/timer.h"
-#include "kernel/kprintf.h"
 #include <kernel/ramdisk.h>
 #include <kernel/task.h>
 
@@ -11,7 +10,12 @@ void main(void) {
     enable_irq();
     uart_init();
 
-    void *file = ramdisk_lookup("./bin/hello");
+    void *file;
+
+    file = ramdisk_lookup("./bin/test_suite");
+    task_exec(file);
+
+    file = ramdisk_lookup("./bin/hello");
     task_exec(file);
 
     while (1)

@@ -56,7 +56,7 @@ exec_link_args = [
   '-B' + meson.build_root(),
 ]
 
-subdir('src' / 'bin' / 'hello')
+subdir('src' / 'bin')
 
 kernel_inc_directories = include_directories('src' / 'include')
 
