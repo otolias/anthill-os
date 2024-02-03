@@ -2,6 +2,6 @@
 
 #include "internal/stdio.h"
 
-int vsprintf(char *str, char *format, va_list args) {
-    return _formatter(str, format, args);
+int vsprintf(char *restrict s, const char *restrict format, va_list ap) {
+    return _formatter(s, format, ap);
 }

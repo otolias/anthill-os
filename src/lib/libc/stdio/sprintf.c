@@ -2,12 +2,12 @@
 
 #include <stdarg.h>
 
-int sprintf(char *str, char *format, ...) {
+int sprintf(char *restrict s, const char *restrict format, ...) {
     va_list args;
     int res;
 
     va_start(args, format);
-    res = vsprintf(str, format, args);
+    res = vsprintf(s, format, args);
     va_end(args);
 
     return res;

@@ -18,24 +18,24 @@
 *
 * Returns the length of the resulting string
 */
-int vsprintf(char *str, char *format, va_list args);
+int vsprintf(char *restrict s, const char *restrict format, va_list ap);
 /*
 * Put formatted string to _src_
 *
 * Returns the length of the resulting string
 */
-int sprintf(char *str, char *format, ...);
+int sprintf(char *restrict s, const char *restrict format, ...);
 /*
 * Send formatted string to uart
 *
 * Returns the length of the string
 */
-int printf(char *format, ...);
+int printf(const char *restrict format, ...);
 /*
 * Send string to uart
 *
 * Returns the length of the string
 */
-int puts(const char *str);
+int puts(const char *s);
 
 #endif /* _STDIO_H */

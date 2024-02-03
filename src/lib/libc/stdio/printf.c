@@ -5,7 +5,7 @@
 
 #include "internal/stdio.h"
 
-int printf(char *format, ...) {
+int printf(const char *restrict format, ...) {
     va_list args;
     char buffer[PRINTF_BUFFER_SIZE];
 
