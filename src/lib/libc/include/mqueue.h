@@ -42,27 +42,27 @@ typedef struct {
 * Available oflags:
 *
 * Mandatory and exclusive:
-* O_RDONLY   Open queue as read-only
-* O_WRONLY   Open queue as write-only
-* O_RDWR     Open queue as read and write
+* - O_RDONLY   Open queue as read-only
+* - O_WRONLY   Open queue as write-only
+* - O_RDWR     Open queue as read and write
 *
 * Optional:
-* O_CREAT    Create new message queue
-* O_EXCL     Fail if the queue name exists
-* O_NONBLOCK Currently unsupported
+* - O_CREAT    Create new message queue
+* - O_EXCL     Fail if the queue name exists
+* - O_NONBLOCK Currently unsupported
 *
-* errno values:
-* EACCES     The message queue exists but access is
-*            denied, or the message queue doesn't
-*            exist and creation is denied
-* EEXIST     O_CREAT and O_EXCL are set and the
-*            message queue exists
-* EINVAL     O_CREAT is set, attr is not null and
-*            mq_maxmsg or mq_msgsize are <= 0
-* ENOENT     Message queue doesn't exist and
-*            O_CREAT is not set
-* ENOSPC     Insufficient space for the creation
-*            of a new message queue
+* errno:
+* - EACCES     The message queue exists but access is
+*              denied, or the message queue doesn't
+*              exist and creation is denied
+* - EEXIST     O_CREAT and O_EXCL are set and the
+*              message queue exists
+* - EINVAL     O_CREAT is set, attr is not null and
+*              mq_maxmsg or mq_msgsize are <= 0
+* - ENOENT     Message queue doesn't exist and
+*              O_CREAT is not set
+* - ENOSPC     Insufficient space for the creation
+*              of a new message queue
 */
 mqd_t mq_open(const char *name, int oflag, ...);
 
@@ -75,7 +75,7 @@ mqd_t mq_open(const char *name, int oflag, ...);
 * the error
 *
 * errno:
-* EBADF  Not a valid message queue descriptor
+* - EBADF  Not a valid message queue descriptor
 */
 int mq_close(mqd_t mqdes);
 
@@ -89,7 +89,7 @@ int mq_close(mqd_t mqdes);
 * the error.
 *
 * errno:
-* ENOENT  The message queue does not exist
+* - ENOENT  The message queue does not exist
 */
 int mq_unlink(const char *name);
 
@@ -105,11 +105,11 @@ int mq_unlink(const char *name);
 * the error.
 *
 * errno:
-* EACESS    Access is denied (Non-posix)
-* EAGAIN    Specified message queue is full
-* EBADF     Invalid message queue
-* EMSGSIZE  Specified message length exceeds message size
-*           attribute
+* - EACESS    Access is denied (Non-posix)
+* - EAGAIN    Specified message queue is full
+* - EBADF     Invalid message queue
+* - EMSGSIZE  Specified message length exceeds message size
+*             attribute
 */
 int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio);
 
@@ -124,11 +124,11 @@ int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio)
 * the error.
 *
 * errno:
-* EACESS    Access is denied (Non-posix)
-* EAGAIN    Message queue is empty
-* EBADF     Invalid message queue
-* EMSGSIZE  Specified message buffer size is less than
-*           the message size attribute
+* - EACESS    Access is denied (Non-posix)
+* - EAGAIN    Message queue is empty
+* - EBADF     Invalid message queue
+* - EMSGSIZE  Specified message buffer size is less than
+*             the message size attribute
 */
 ssize_t mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio);
 
