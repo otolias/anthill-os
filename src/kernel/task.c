@@ -73,7 +73,7 @@ short task_exec(const void *file) {
     const unsigned long elf_memory_size = elf_get_image_size(ehdr);
     const unsigned long process_size = elf_memory_size + sizeof(struct task);
 
-    const void *process_addr = get_free_pages(process_size);
+    const void *process_addr = get_free_pages(process_size + STACK_SIZE);
     if (!process_addr) {
         kprintf("Error loading process\n");
         return TASK_INIT_ERROR;
@@ -83,6 +83,7 @@ short task_exec(const void *file) {
 
     const size_t heap_offset = ELF_OFF(process_addr, elf_get_heap_offset(ehdr));
     const size_t stack_offset = ELF_OFF(process_addr, elf_get_stack_offset(ehdr));
+    const size_t kernel_stack_offset = ELF_OFF(process_addr, process_size + STACK_SIZE);
 
     /* Add process pages to stack */
     size_t *sp = (unsigned long *) stack_offset;
@@ -102,14 +103,8 @@ short task_exec(const void *file) {
 
     new_task->cpu_context.x19 = (size_t) ELF_OFF(linker_page, linker_page->e_entry);
     new_task->cpu_context.x20 = (size_t) sp;
-    new_task->cpu_context.pc  = (size_t) start_user;
-
-    __asm__(
-        "mov x0, sp \n"
-        "mov %x0, x0 \n"
-        : "=r" (new_task->cpu_context.sp)
-        : : "x0"
-    );
+    new_task->cpu_context.pc = (size_t) start_user;
+    new_task->cpu_context.sp = kernel_stack_offset;
 
     /* Add task */
     for (size_t i = 0; i < TOTAL_TASKS; i++) {
