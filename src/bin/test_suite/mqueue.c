@@ -77,8 +77,8 @@ void _test_mq_send(void) {
           .mq_msgsize = 8,
     };
 
-    mqd_t readable = mq_open("readable", O_RDONLY | O_CREAT, 0, attr);
-    mqd_t writeable = mq_open("writeable", O_RDWR | O_CREAT, 0, attr);
+    mqd_t readable = mq_open("readable", O_RDONLY | O_CREAT | O_NONBLOCK, 0, attr);
+    mqd_t writeable = mq_open("writeable", O_RDWR | O_CREAT | O_NONBLOCK, 0, attr);
 
     /* --- Test --- */
 
@@ -130,8 +130,8 @@ void _test_mq_receive(void) {
         .mq_msgsize = 8,
     };
 
-    mqd_t readable = mq_open("readable", O_RDONLY | O_CREAT, 0, attr);
-    mqd_t writeable = mq_open("writeable", O_RDWR | O_CREAT, 0, attr);
+    mqd_t readable = mq_open("readable", O_RDONLY | O_CREAT | O_NONBLOCK, 0, attr);
+    mqd_t writeable = mq_open("writeable", O_RDWR | O_CREAT | O_NONBLOCK, 0, attr);
 
     mq_send(writeable, "Message", 8, 0);
 
