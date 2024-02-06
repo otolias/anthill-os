@@ -17,17 +17,17 @@ struct mq_message {
     char   message[MQ_MAX_MSG_SIZE]; /* Message content */
 };
 
-struct mq_proc {
-    pid_t pid;   /* Associated process pid */
-    char  flags; /* Associated process access flags */
+struct mq_task {
+    pid_t pid;     /* Associated task pid */
+    int   flags;   /* Associated task access flags */
 };
 
 struct mqueue {
     mqd_t             id;                       /* Queue ID */
     bool              open;                     /* If queue accepts connections */
     size_t            hash;                     /* Hashed name */
-    struct mq_proc    subs[MQ_MAX_SUBSCRIBERS]; /* Associated processes pids and flags */
-    mq_attr           attr;                     /* Queue attributes */
+    struct mq_task    subs[MQ_MAX_SUBSCRIBERS]; /* Associated task pids and flags */
+    struct mq_attr    attr;                     /* Queue attributes */
     int               head;                     /* Message head */
     int               tail;                     /* Message tail */
     struct mq_message messages[MQ_MAX_MSG];     /* Queue messages */
@@ -64,13 +64,29 @@ static struct mqueue* _mqueue_find_hash(size_t hash) {
 * Find _mqueue_ subscriber with _pid_. If _pid_ is 0, returns
 * any subscriber
 */
-static struct mq_proc* _mqueue_find_subscriber(struct mqueue* mqueue, pid_t pid) {
+static struct mq_task* _mqueue_find_subscriber(struct mqueue* mqueue, pid_t pid) {
     for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
         if ((pid && mqueue->subs[i].pid == pid) || (!pid && mqueue->subs[i].pid > 0))
             return &mqueue->subs[i];
     }
 
     return NULL;
+}
+
+/*
+* Unblock tasks subscribed to _mqueue_.
+*
+* _flag_ values:
+* - BLCK_RECV for blocked tasks waiting to receive
+* - BLCK_SEND for blocked tasks waiting to send
+*/
+static void _mqueue_unblock_subscribers(struct mqueue *mqueue, int flag) {
+    for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
+        if (mqueue->subs[i].flags & flag) {
+            mqueue->subs[i].flags ^= flag;
+            task_unblock(mqueue->subs[i].pid);
+        }
+    }
 }
 
 /*
@@ -92,13 +108,13 @@ static bool _mqueue_subscribe(struct mqueue* mqueue, pid_t pid, int flags) {
 * Unsubscribe _pid_ from _mqueue_
 */
 static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
-    struct mq_proc *mq_proc = _mqueue_find_subscriber(mqueue, pid);
+    struct mq_task *mq_task = _mqueue_find_subscriber(mqueue, pid);
 
-    if (!mq_proc)
+    if (!mq_task)
         return false;
 
-    mq_proc->pid = -1;
-    mq_proc->flags = 0;
+    mq_task->pid = -1;
+    mq_task->flags = 0;
 
     return true;
 }
@@ -107,15 +123,24 @@ static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
 * Enqueue message pointed to by _msg_ptr_ with length _msg_len_ in
 * _mqueue_
 */
-static void _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t msg_len) {
+static bool _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t msg_len) {
     if (mqueue->tail == mqueue->attr.mq_maxmsg)
         mqueue->tail = -1;
+
+    if (mqueue->attr.mq_curmsg == mqueue->attr.mq_maxmsg)
+        return false;
 
     struct mq_message *mq_message = &mqueue->messages[++mqueue->tail];
     mq_message->size = msg_len;
     memcpy(&mq_message->message, msg_ptr, msg_len);
 
+    /* Unblock any task that is waiting for a message */
+    if (mqueue->attr.mq_curmsg == 0)
+        _mqueue_unblock_subscribers(mqueue, BLCK_RECV);
+
     mqueue->attr.mq_curmsg++;
+
+    return true;
 }
 
 /*
@@ -126,7 +151,7 @@ static ssize_t _mqueue_dequeue(struct mqueue *mqueue, char *msg_ptr) {
         mqueue->head = -1;
 
     if (!mqueue->attr.mq_curmsg)
-        return -1;
+        return 0;
 
     const struct mq_message *mq_message = &mqueue->messages[++mqueue->head];
 
@@ -152,7 +177,7 @@ static void _mqueue_destroy(struct mqueue* mqueue) {
 }
 
 int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode,
-                const mq_attr *attr) {
+                const struct mq_attr *attr) {
     size_t hash = strhash(name);
     struct mqueue *mqueue = _mqueue_find_hash(hash);
 
@@ -203,7 +228,7 @@ int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode
     if (!mqueue || !mqueue->open)
         return -ENOENT;
 
-    if(!_mqueue_subscribe(mqueue, task_current_pid(), oflag & 7))
+    if(!_mqueue_subscribe(mqueue, task_current_pid(), oflag))
         return -EACCES;
 
     return mqueue->id;
@@ -248,15 +273,22 @@ int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
     if ((long) msg_len > mqueue->attr.mq_msgsize)
         return -EMSGSIZE;
 
-    if (mqueue->attr.mq_curmsg == mqueue->attr.mq_maxmsg)
-        return -EAGAIN;
+    struct mq_task *mq_task = _mqueue_find_subscriber(mqueue, task_current_pid());
 
-    const struct mq_proc *mq_proc = _mqueue_find_subscriber(mqueue, task_current_pid());
-
-    if (!mq_proc || mq_proc->flags & O_RDONLY)
+    if (!mq_task || mq_task->flags & O_RDONLY)
         return -EACCES;
 
-    _mqueue_enqueue(mqueue, msg_ptr, msg_len);
+    while(1) {
+        if(_mqueue_enqueue(mqueue, msg_ptr, msg_len))
+            break;
+
+        if (mq_task->flags & O_NONBLOCK) {
+            return -EAGAIN;
+        }
+
+        mq_task->flags |= BLCK_SEND;
+        task_current_block();
+    }
 
     return 0;
 }
@@ -271,15 +303,25 @@ ssize_t mqueue_receive(mqd_t id, char *msg_ptr, size_t msg_len,
     if ((long) msg_len < mqueue->attr.mq_msgsize)
         return -EMSGSIZE;
 
-    const struct mq_proc *mq_proc = _mqueue_find_subscriber(mqueue, task_current_pid());
+    struct mq_task *mq_task = _mqueue_find_subscriber(mqueue, task_current_pid());
 
-    if (!mq_proc || mq_proc->flags & O_WRONLY)
+    if (!mq_task || mq_task->flags & O_WRONLY)
         return -EACCES;
 
-    ssize_t result = _mqueue_dequeue(mqueue, msg_ptr);
+    ssize_t result;
 
-    if (!result)
-        return -EAGAIN;
+    while(1) {
+        result = _mqueue_dequeue(mqueue, msg_ptr);
+        if (result)
+            break;
+
+        if (mq_task->flags & O_NONBLOCK) {
+            return -EAGAIN;
+        }
+
+        mq_task->flags |= BLCK_RECV;
+        task_current_block();
+    }
 
     return result;
 }

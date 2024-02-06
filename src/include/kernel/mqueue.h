@@ -11,18 +11,23 @@
 
 typedef int mqd_t;
 
-typedef struct {
-    long mq_flags; /* Message queue flags */
-    long mq_maxmsg; /* Maximum number of messages */
+struct mq_attr {
+    long mq_flags;   /* Message queue flags */
+    long mq_maxmsg;  /* Maximum number of messages */
     long mq_msgsize; /* Maximum message size */
-    long mq_curmsg; /* Number of messages currently queued; */
-} mq_attr;
+    long mq_curmsg;  /* Number of messages currently queued; */
+};
 
-#define O_RDONLY 1 << 0
-#define O_WRONLY 1 << 1
-#define O_RDWR   1 << 2
-#define O_CREAT  1 << 3
-#define O_EXCL   1 << 4
+#define O_RDONLY   1 << 0
+#define O_WRONLY   1 << 1
+#define O_RDWR     1 << 2
+#define O_CREAT    1 << 3
+#define O_EXCL     1 << 4
+#define O_NONBLOCK 1 << 5
+/* Blocked while receiving */
+#define BLCK_RECV  1 << 6
+/* Blocked while sending */
+#define BLCK_SEND  1 << 7
 
 /*
 * Open mqueue connection
@@ -30,7 +35,7 @@ typedef struct {
 * On success, returns message queue id
 * On failure, returns -errno
 */
-mqd_t mqueue_open(const char *name, int oflag, mode_t mode, const mq_attr *attr);
+mqd_t mqueue_open(const char *name, int oflag, mode_t mode, const struct mq_attr *attr);
 
 /*
 * Close mqueue connection with id _mqdes_

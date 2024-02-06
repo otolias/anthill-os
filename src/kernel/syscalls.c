@@ -32,7 +32,7 @@ void sys_exit(void) {
 }
 
 mqd_t sys_mq_open(const char *name, int oflag, mode_t mode, void *attr) {
-    return mqueue_open(name, oflag, mode, (mq_attr *) attr);
+    return mqueue_open(name, oflag, mode, (struct mq_attr *) attr);
 }
 
 int sys_mq_close(mqd_t mqdes) {

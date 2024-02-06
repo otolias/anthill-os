@@ -3,9 +3,8 @@
 *
 * The implementation follows the POSIX standard with some limitations:
 *
-* - O_NONBLOCK oflag is unsupported, but current implementation works
-*   as if it's set.
 * - mode_t is unused
+* - Message priorities are currently unsupported
 */
 
 #ifndef _MQUEUE_H
@@ -25,11 +24,12 @@ typedef struct {
 } mq_attr;
 
 /* Available oflags */
-#define O_RDONLY 1 << 0
-#define O_WRONLY 1 << 1
-#define O_RDWR   1 << 2
-#define O_CREAT  1 << 3
-#define O_EXCL   1 << 4
+#define O_RDONLY   1 << 0
+#define O_WRONLY   1 << 1
+#define O_RDWR     1 << 2
+#define O_CREAT    1 << 3
+#define O_EXCL     1 << 4
+#define O_NONBLOCK 1 << 5
 
 /*
 * Establish a connection to the message queue with
@@ -49,7 +49,8 @@ typedef struct {
 * Optional:
 * - O_CREAT    Create new message queue
 * - O_EXCL     Fail if the queue name exists
-* - O_NONBLOCK Currently unsupported
+* - O_NONBLOCK Don't block process while waiting
+*              for resources
 *
 * errno:
 * - EACCES     The message queue exists but access is
@@ -95,8 +96,7 @@ int mq_unlink(const char *name);
 
 /*
 * Add the message pointed to by _msg_ptr_ with length
-* _msg_len_ to message queue specified
-* by _mqdes_
+* _msg_len_ to message queue specified by _mqdes_
 *
 * Message priority is currently unsupported
 *
@@ -106,7 +106,8 @@ int mq_unlink(const char *name);
 *
 * errno:
 * - EACESS    Access is denied (Non-posix)
-* - EAGAIN    Specified message queue is full
+* - EAGAIN    Specified message queue is full and O_NONBLOCK
+*             is set
 * - EBADF     Invalid message queue
 * - EMSGSIZE  Specified message length exceeds message size
 *             attribute
@@ -125,7 +126,7 @@ int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio)
 *
 * errno:
 * - EACESS    Access is denied (Non-posix)
-* - EAGAIN    Message queue is empty
+* - EAGAIN    Message queue is empty and O_NONBLOCK is set
 * - EBADF     Invalid message queue
 * - EMSGSIZE  Specified message buffer size is less than
 *             the message size attribute
