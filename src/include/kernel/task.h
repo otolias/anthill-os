@@ -11,7 +11,8 @@
 * Task states
 */
 enum task_state {
-    TASK_RUNNING
+    TASK_RUNNING,
+    TASK_BLOCKED,
 };
 
 enum task_error_codes {
@@ -37,6 +38,16 @@ struct task {
 * Returns the process ID of the current task
 */
 pid_t task_current_pid(void);
+
+/*
+* Block current task
+*/
+void task_current_block(void);
+
+/*
+* Unblock task with _pid_
+*/
+void task_unblock(pid_t pid);
 
 /*
 * De-increment task counter and call scheduler

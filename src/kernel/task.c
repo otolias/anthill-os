@@ -22,6 +22,19 @@ pid_t task_current_pid(void) {
     return current_task->pid;
 }
 
+void task_current_block(void) {
+    current_task->state = TASK_BLOCKED;
+    current_task->preempt_count--;
+    task_schedule();
+}
+
+void task_unblock(pid_t pid) {
+    for (size_t i = 0; i < TOTAL_TASKS; i++) {
+        if (tasks[i]->pid == pid)
+            tasks[i]->state = TASK_RUNNING;
+    }
+}
+
 void task_tick(void) {
     current_task->counter--;
     if (current_task->counter > 0 || current_task->preempt_count > 0) {
