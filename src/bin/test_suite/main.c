@@ -6,6 +6,7 @@ int main(void) {
     puts("Starting userspace tests...");
 
     test_mqueue();
+    test_mman();
 
     puts("Tests done");
 }

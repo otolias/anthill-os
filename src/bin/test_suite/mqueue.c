@@ -5,8 +5,6 @@
 #include <sys/types.h>
 #include <mqueue.h>
 
-char section[] = "MQUEUE:ERROR";
-
 void _test_mq_open(void) {
     /* --- Setup --- */
 
@@ -22,40 +20,40 @@ void _test_mq_open(void) {
     errno = 0;
     mqd_t mq_1 = mq_open("test", O_RDWR | O_CREAT | O_EXCL, 0, attr);
     if (!mq_1 && errno != 0)
-        printf("%s: Queue creation with attributes failed\n", section);
+        puts("MQUEUE::ERROR::Queue creation with attributes failed");
 
     errno = 0;
     mqd_t mq_2 = mq_open("test_2", O_RDWR | O_CREAT | O_EXCL, 0, 0);
     if (!mq_2 && errno != 0)
-        printf("%s: Queue creation without attributes failed\n", section);
+        puts("MQUEUE::ERROR::Queue creation without attributes failed");
 
     errno = 0;
     res = mq_open("test", O_RDONLY);
     if (res != 1 && errno != 0)
-        printf("%s: Queue open failed\n", section);
+        puts("MQUEUE::ERROR::Queue open failed");
 
     errno = 0;
     res = mq_open("test", O_RDONLY | O_CREAT | O_EXCL, 0, attr);
     if (res != 1 && errno != EEXIST)
-        printf("%s: Queue exclusivity failed\n", section);
+        puts("MQUEUE::ERROR::Queue exclusivity failed");
 
     errno = 0;
     res = mq_open("test", 0);
     if (res != -1 && errno != EACCES)
-        printf("%s: Queue flag validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue flag validation failed");
 
     attr.mq_maxmsg = 9;
     errno = 0;
     res = mq_open("test_3", O_RDWR | O_CREAT, 0, attr);
     if (res != 1 && errno != ENOSPC)
-        printf("%s: Queue flag maximum messages validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue flag maximum messages validation failed");
 
     attr.mq_maxmsg = 4;
     attr.mq_msgsize = 129;
     errno = 0;
     res = mq_open("test_3", O_RDWR | O_CREAT, 0, attr);
     if (res != 1 && errno != ENOSPC)
-        printf("%s: Queue flag message size validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue flag message size validation failed");
 
     /* --- Teardown --- */
 
@@ -85,22 +83,22 @@ void _test_mq_send(void) {
     errno = 0;
     res = mq_send(writeable, message, 8, 0);
     if (res != 0 && errno != 0)
-        printf("%s: Queue send message failed\n", section);
+        puts("MQUEUE::ERROR::Queue send message failed");
 
     errno = 0;
     res = mq_send(readable, message, 8, 0);
     if (res != -1 && errno != EACCES)
-        printf("%s: Queue send message permission validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue send message permission validation failed");
 
     errno = 0;
     res = mq_send(-1, message, 8, 0);
     if (res != -1 && errno != EBADF)
-        printf("%s: Queue send message descriptor validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue send message descriptor validation failed");
 
     errno = 0;
     res = mq_send(writeable, big_message, 12, 0);
     if (res != -1 && errno != EMSGSIZE)
-        printf("%s: Queue send message length validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue send message length validation failed");
 
     for (size_t i = 0; i < 3; i++) {
         mq_send(writeable, message, 8, 0);
@@ -109,7 +107,7 @@ void _test_mq_send(void) {
     errno = 0;
     res = mq_send(writeable, message, 8, 0);
     if (res != -1 && errno != EAGAIN)
-        printf("%s: Queue send message max validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue send message max validation failed");
 
     /* --- Teardown --- */
 
@@ -140,27 +138,27 @@ void _test_mq_receive(void) {
     errno = 0;
     res = mq_receive(writeable, buffer, 8, 0);
     if (res != 0 && errno != 0)
-        printf("%s: Queue receive message failed\n", section);
+        puts("MQUEUE::ERROR::Queue receive message failed");
 
     errno = 0;
     res = mq_receive(readable, buffer, 8, 0);
     if (res != -1 && errno != EACCES)
-        printf("%s: Queue receive message permission validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue receive message permission validation failed");
 
     errno = 0;
     res = mq_receive(-2, buffer, 8, 0);
     if (res != -1 && errno != EBADF)
-        printf("%s: Queue receive message descriptor validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue receive message descriptor validation failed");
 
     errno = 0;
     res = mq_receive(writeable, buffer, 2, 0);
     if (res != -1 && errno != EMSGSIZE)
-        printf("%s: Queue receive message length validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue receive message length validation failed");
 
     errno = 0;
     res = mq_receive(writeable, buffer, 8, 0);
     if (res != -1 && errno != EAGAIN)
-        printf("%s: Queue receive message empty validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue receive message empty validation failed");
 
     /* --- Teardown --- */
 
@@ -187,12 +185,12 @@ void _test_mq_close(void) {
     errno = 0;
     res = mq_close(-2);
     if (res != -1 && errno != EBADF)
-        printf("%s: Queue close validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue close validation failed");
 
     errno = 0;
     res = mq_close(mq);
     if (res != 0 && errno != 0)
-        printf("%s: Queue close failed\n", section);
+        puts("MQUEUE::ERROR::Queue close failed");
 
     /* --- Teardown --- */
 
@@ -218,25 +216,25 @@ void _test_mq_unlink(void) {
     errno = 0;
     res = mq_unlink("non_existent");
     if (res != -1 && errno != ENOENT)
-        printf("%s: Queue unlink validation failed\n", section);
+        puts("MQUEUE::ERROR::Queue unlink validation failed");
 
     errno = 0;
     res = mq_unlink("no_pending");
     if (res != 0 && errno != 0)
-        printf("%s: Queue unlink without pending failed\n", section);
+        puts("MQUEUE::ERROR::Queue unlink without pending failed");
 
     errno = 0;
     res = mq_unlink("pending");
     if (res != 0 && errno != 0)
-        printf("%s: Queue unlink with pending failed\n", section);
+        puts("MQUEUE::ERROR::Queue unlink with pending failed");
 
     res = mq_close(pending);
     if (res != 0 && errno != 0)
-        printf("%s: Queue close with pending failed\n", section);
+        puts("MQUEUE::ERROR::Queue close with pending failed");
 
     res = mq_close(pending);
     if (res != -1 && errno != EBADF)
-        printf("%s: Queue non-blocking unlink failed\n", section);
+        puts("MQUEUE::ERROR::Queue non-blocking unlink failed");
 }
 
 void test_mqueue(void) {
