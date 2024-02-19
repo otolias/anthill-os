@@ -1,6 +1,8 @@
 #include "kernel/syscalls.h"
 
 #include <drivers/uart.h>
+#include <kernel/errno.h>
+#include <kernel/mm.h>
 #include <kernel/mqueue.h>
 #include <kernel/task.h>
 #include <kernel/sys/types.h>
@@ -8,6 +10,7 @@
 const void *system_call_table[] = {
     (void *) sys_write,
     (void *) sys_exit,
+    (void *) sys_mmap,
     (void *) sys_mq_open,
     (void *) sys_mq_close,
     (void *) sys_mq_unlink,
@@ -29,6 +32,16 @@ int sys_write(char *buffer) {
 
 void sys_exit(void) {
     task_exit();
+}
+
+ssize_t sys_mmap(__attribute__((unused)) void *addr, size_t len,
+                 __attribute__((unused)) int prot, __attribute__((unused)) int flags,
+                 __attribute__((unused)) int fildes, __attribute__((unused)) off_t off) {
+    const void *address = get_free_pages(len);
+    if (!address)
+        return -ENOMEM;
+
+    return (ssize_t) address;
 }
 
 mqd_t sys_mq_open(const char *name, int oflag, mode_t mode, void *attr) {

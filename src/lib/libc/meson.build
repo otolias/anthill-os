@@ -1,20 +1,21 @@
 libc_sources = files([
-  'errno/errno.c',
-  'internal/stdio.c',
-  'internal/stdlib.c',
-  'stdio/printf.c',
-  'stdio/puts.c',
-  'stdio/sprintf.c',
-  'stdio/vsprintf.c',
-  'stdlib/exit.c',
-  'stdlib/malloc.c',
-  'stdlib/free.c',
-  'mqueue/mq_close.c',
-  'mqueue/mq_open.c',
-  'mqueue/mq_receive.c',
-  'mqueue/mq_send.c',
-  'mqueue/mq_unlink.c',
+  'errno' / 'errno.c',
+  'internal' / 'stdio.c',
+  'internal' / 'stdlib.c',
+  'stdio' / 'printf.c',
+  'stdio' / 'puts.c',
+  'stdio' / 'sprintf.c',
+  'stdio' / 'vsprintf.c',
+  'stdlib' / 'exit.c',
+  'stdlib' / 'malloc.c',
+  'stdlib' / 'free.c',
+  'mqueue' / 'mq_close.c',
+  'mqueue' / 'mq_open.c',
+  'mqueue' / 'mq_receive.c',
+  'mqueue' / 'mq_send.c',
+  'mqueue' / 'mq_unlink.c',
   'syscalls.c',
+  'sys' / 'mman' / 'mmap.c',
 ])
 
 libc_includes = files([
@@ -25,6 +26,8 @@ libc_includes = files([
   'include' / 'stdio.h',
   'include' / 'stdlib.h',
   'include' / 'syscalls.h',
+  'include' / 'sys' / 'mman.h',
+  'include' / 'sys' / 'types.h',
 ])
 
 libc_inc_directories = include_directories(

@@ -1,7 +1,7 @@
 #ifndef _KERNEL_SYSCALLS_H
 #define _KERNEL_SYSCALLS_H
 
-#define TOTAL_SYSCALLS 7
+#define TOTAL_SYSCALLS 8
 
 #ifndef __ASSEMBLER__
 
@@ -21,6 +21,8 @@ int sys_write(char *buffer);
 * Terminate process
 */
 void sys_exit();
+
+ssize_t sys_mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
 
 int sys_mq_open(const char *name, int oflag, mode_t mode, void *attr);
 int sys_mq_close(int mqdes);
