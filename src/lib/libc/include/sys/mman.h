@@ -30,4 +30,13 @@
 */
 void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
 
+/*
+* Remove mappings for range starting from _addr_
+*
+* - _len_ is unused
+*
+* On success, returns 0.
+*/
+int munmap(void *addr, size_t len);
+
 #endif /* _SYS_MMAN_H */

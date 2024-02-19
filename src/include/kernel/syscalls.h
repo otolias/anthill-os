@@ -1,15 +1,16 @@
 #ifndef _KERNEL_SYSCALLS_H
 #define _KERNEL_SYSCALLS_H
 
-#define SYS_WRITE     0
-#define SYS_EXIT      1
-#define SYS_MMAP      2
-#define SYS_MQ_OPEN   3
-#define SYS_MQ_CLOSE  4
-#define SYS_MQ_UNLINK 5
-#define SYS_MQ_SEND   6
-#define SYS_MQ_RECV   7
-#define TOTAL_SYSCALLS 8
+#define SYS_WRITE      0
+#define SYS_EXIT       1
+#define SYS_MMAP       2
+#define SYS_MUNMAP     3
+#define SYS_MQ_OPEN    4
+#define SYS_MQ_CLOSE   5
+#define SYS_MQ_UNLINK  6
+#define SYS_MQ_SEND    7
+#define SYS_MQ_RECV    8
+#define TOTAL_SYSCALLS 9
 
 #ifndef __ASSEMBLER__
 
@@ -31,6 +32,7 @@ int sys_write(char *buffer);
 void sys_exit();
 
 ssize_t sys_mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
+int sys_munmap(void *addr, size_t len);
 
 int sys_mq_open(const char *name, int oflag, mode_t mode, void *attr);
 int sys_mq_close(int mqdes);

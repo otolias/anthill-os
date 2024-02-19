@@ -16,6 +16,7 @@ libc_sources = files([
   'mqueue' / 'mq_unlink.c',
   'syscalls.c',
   'sys' / 'mman' / 'mmap.c',
+  'sys' / 'mman' / 'munmap.c',
 ])
 
 libc_includes = files([

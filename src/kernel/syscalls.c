@@ -11,6 +11,7 @@ const void *system_call_table[] = {
     (void *) sys_write,
     (void *) sys_exit,
     (void *) sys_mmap,
+    (void *) sys_munmap,
     (void *) sys_mq_open,
     (void *) sys_mq_close,
     (void *) sys_mq_unlink,
@@ -42,6 +43,11 @@ ssize_t sys_mmap(__attribute__((unused)) void *addr, size_t len,
         return -ENOMEM;
 
     return (ssize_t) address;
+}
+
+int sys_munmap(void *addr, __attribute__((unused))size_t len) {
+    free_pages(addr);
+    return 0;
 }
 
 mqd_t sys_mq_open(const char *name, int oflag, mode_t mode, void *attr) {
