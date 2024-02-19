@@ -1,6 +1,7 @@
 #ifndef _ELF_H
 #define _ELF_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #define Elf64_Addr   uint64_t
@@ -117,16 +118,6 @@ short elf_validate(const Elf64_Ehdr *ehdr);
 /*
 * Calculate elf image size
 */
-unsigned long elf_get_image_size(const Elf64_Ehdr *ehdr);
-
-/*
-* Calculate heap offset
-*/
-unsigned long elf_get_heap_offset(const Elf64_Ehdr *ehdr);
-
-/*
-* Calculate stack offset
-*/
-unsigned long elf_get_stack_offset(const Elf64_Ehdr *ehdr);
+size_t elf_get_image_size(const Elf64_Ehdr *ehdr);
 
 #endif /* _ELF_H */

@@ -27,7 +27,9 @@ enum task_error_codes {
 struct task {
     struct cpu_context cpu_context; /* Stored CPU context. Do not change position */
     pid_t pid;                      /* process ID */
-    unsigned long process_address;  /* Page start address */
+    size_t process_address;         /* Page start address */
+    size_t user_stack;              /* User stack address */
+    size_t kernel_stack;            /* Kernel stack address */
     long counter;                   /* How long the task has been running (decreases) */
     long priority;                  /* How much time the task is given */
     int preempt_count;              /* If non-zero, task must not be interrupted */

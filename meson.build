@@ -55,6 +55,8 @@ subdir('src' / 'lib' / 'libc')
 exec_link_args = [
   '-nodefaultlibs',
   '-B' + meson.build_root(),
+  '-z' + 'max-page-size=0x1000',
+  '-z' + 'noseparate-code',
 ]
 
 subdir('src' / 'bin')

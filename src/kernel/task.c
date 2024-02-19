@@ -1,7 +1,5 @@
 #include <kernel/task.h>
 
-#include <stddef.h>
-
 #include <boot/entry.h>
 #include <drivers/irq.h>
 #include <kernel/cpu_context.h>
@@ -9,6 +7,7 @@
 #include <kernel/kprintf.h>
 #include <kernel/mm.h>
 #include <kernel/string.h>
+#include <kernel/sys/types.h>
 #include <kernel/ramdisk.h>
 
 static struct task init_task = { .priority = 1};
@@ -94,13 +93,11 @@ short task_exec(const void *file) {
 
     _task_load(ehdr, process_addr);
 
-    const size_t heap_offset = ELF_OFF(process_addr, elf_get_heap_offset(ehdr));
-    const size_t stack_offset = ELF_OFF(process_addr, elf_get_stack_offset(ehdr));
-    const size_t kernel_stack_offset = ELF_OFF(process_addr, process_size + STACK_SIZE);
+    const size_t user_stack_offset = (size_t) get_free_pages(0);
+    const size_t kernel_stack_offset = (size_t) get_free_pages(0);
 
     /* Add process pages to stack */
-    size_t *sp = (unsigned long *) stack_offset;
-    *(--sp) = heap_offset;
+    size_t *sp = (unsigned long *) user_stack_offset;
     *(--sp) = (size_t) process_addr;
     *(--sp) = (size_t) file;
 
@@ -109,6 +106,8 @@ short task_exec(const void *file) {
 
     new_task->pid = ++task_count;
     new_task->process_address = (unsigned long) process_addr;
+    new_task->user_stack = user_stack_offset;
+    new_task->kernel_stack = kernel_stack_offset;
     new_task->priority = current_task->priority;
     new_task->state = TASK_RUNNING;
     new_task->counter = new_task->priority;
@@ -184,6 +183,8 @@ void task_exit(void) {
     }
 
     free_pages((void *) current_task->process_address);
+    free_pages((void *) current_task->user_stack);
+    free_pages((void *) current_task->kernel_stack);
     current_task = NULL;
     task_schedule();
 }

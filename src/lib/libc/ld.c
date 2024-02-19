@@ -14,7 +14,6 @@ struct dynamic_object {
 
 #define SP_FILE_OFFSET 0
 #define SP_ADDR_OFFSET 1
-#define SP_HEAP_OFFSET 2
 
 #define JMP(pc, sp) __asm__ ( \
     "mov sp, %1 \n" \
