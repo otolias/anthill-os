@@ -1,16 +1,9 @@
 #ifndef _SYSCALLS_H
 #define _SYSCALLS_H
 
-#include <stddef.h>
+#include <sys/types.h>
 
-#define SYS_WRITE     0
-#define SYS_EXIT      1
-#define SYS_MMAP      2
-#define SYS_MQ_OPEN   3
-#define SYS_MQ_CLOSE  4
-#define SYS_MQ_UNLINK 5
-#define SYS_MQ_SEND   6
-#define SYS_MQ_RECV   7
+#include <kernel/syscalls.h>
 
 /* sys handler macro with arguments */
 #define SYSCALL_0(id) sys_handler(id, 0, 0, 0, 0, 0, 0);

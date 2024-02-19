@@ -1,6 +1,14 @@
 #ifndef _KERNEL_SYSCALLS_H
 #define _KERNEL_SYSCALLS_H
 
+#define SYS_WRITE     0
+#define SYS_EXIT      1
+#define SYS_MMAP      2
+#define SYS_MQ_OPEN   3
+#define SYS_MQ_CLOSE  4
+#define SYS_MQ_UNLINK 5
+#define SYS_MQ_SEND   6
+#define SYS_MQ_RECV   7
 #define TOTAL_SYSCALLS 8
 
 #ifndef __ASSEMBLER__

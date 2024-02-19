@@ -1,6 +1,6 @@
-#include <stddef.h>
-
 #include "syscalls.h"
+
+#include <sys/types.h>
 
 long sys_handler(long id, size_t arg1, size_t arg2, size_t arg3, size_t arg4,
                 size_t arg5, size_t arg6) {
