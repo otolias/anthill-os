@@ -1,10 +1,11 @@
 #include "internal/stdlib.h"
 
 #include <stddef.h>
+#include <sys/mman.h>
 
 block_t *first_block;
 
-block_t* _find_available_block(char order) {
+block_t* find_available_block(char order) {
     block_t *current_block = first_block;
 
     while (current_block) {
@@ -14,7 +15,7 @@ block_t* _find_available_block(char order) {
         }
 
         if (current_block->k > order) {
-            _split_block(current_block);
+            split_block(current_block);
             continue;
         }
 
@@ -24,10 +25,18 @@ block_t* _find_available_block(char order) {
         }
     }
 
+    if (expand(current_block) == 0)
+        return find_available_block(order);
+
     return NULL;
 }
 
-void _coalesce_blocks(block_t *block) {
+void coalesce_blocks(block_t *block) {
+    if (block->k == MALLOC_MAX_ORDER) {
+        shrink(block);
+        return;
+    }
+
     block_t *buddy = (block_t *) ((size_t) block ^ (size_t) (1 << block->k));
 
     while (buddy && buddy->available) {
@@ -44,18 +53,37 @@ void _coalesce_blocks(block_t *block) {
     }
 }
 
-void _malloc_init(void *malloc_start) {
-    block_t *block = (block_t *) malloc_start;
+short expand(block_t *block) {
+    block_t *new_block = mmap(0, MALLOC_BLOCK_SIZE, 0, MAP_ANONYMOUS, 0, 0);
 
-    block->available = 1;
-    block->k = 12;
-    block->prev = NULL;
-    block->next = NULL;
+    if(!new_block)
+        return 1;
 
-    first_block = block;
+    new_block->available = 1;
+    new_block->k = MALLOC_MAX_ORDER;
+    new_block->next = NULL;
+
+    if (block) {
+        new_block->prev = block;
+        block->next = new_block;
+    } else {
+        first_block = new_block;
+    }
+
+    return 0;
 }
 
-void _split_block(block_t *block) {
+void shrink(block_t *block) {
+    if (block->next)
+        return;
+
+    block_t *prev = block->prev;
+    prev->next = NULL;
+
+    munmap(block, MALLOC_BLOCK_SIZE);
+}
+
+void split_block(block_t *block) {
     block->k--;
     block_t *new_block = (block_t *) ((size_t) block + (2 << block->k));
     new_block->available = 1;

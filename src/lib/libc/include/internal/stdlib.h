@@ -9,6 +9,9 @@
 #ifndef _INTERNAL_STDLIB_H
 #define _INTERNAL_STDLIB_H
 
+#define MALLOC_MAX_ORDER  12
+#define MALLOC_BLOCK_SIZE 1 << MALLOC_MAX_ORDER
+
 typedef struct {
     char available;
     char k;
@@ -19,21 +22,26 @@ typedef struct {
 /*
 * Coalesce blocks
 */
-void _coalesce_blocks(block_t *block);
+void coalesce_blocks(block_t *block);
+
+/*
+* Get more memory for the allocator from _block_
+*/
+short expand(block_t *block);
 
 /*
 * Iterate through the available blocks and find one with k equal to _order_
 */
-block_t* _find_available_block(char order);
+block_t* find_available_block(char order);
 
 /*
-* Initialise first and last blocks
+ * Release memory from the allocator from _block_
 */
-void _malloc_init(void *malloc_start);
+void shrink(block_t *block);
 
 /*
 * Split the given _block_ to two blocks of lower k
 */
-void _split_block(block_t *block);
+void split_block(block_t *block);
 
 #endif /* _INTERNAL_STDLIB_H */

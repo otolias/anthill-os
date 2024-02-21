@@ -7,7 +7,11 @@
 * Allocate unused space for an object of _size_ in bytes
 *
 * On success, returns a pointer to the allocated space.
-* On failure, retrus a null pointer
+* On failure, returns a null pointer and sets errno to
+* indicate the error
+*
+* errno:
+* - ENOMEM Not enough available storage
 */
 void* malloc(size_t size);
 
