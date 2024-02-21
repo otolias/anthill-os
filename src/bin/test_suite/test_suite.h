@@ -3,5 +3,6 @@
 
 void test_mman(void);
 void test_mqueue(void);
+void test_stdlib(void);
 
 #endif /* _TEST_SUITE_H */

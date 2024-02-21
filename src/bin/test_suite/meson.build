@@ -2,6 +2,7 @@ test_suite_sources = [
   'main.c',
   'mman.c',
   'mqueue.c',
+  'stdlib.c',
 ]
 
 hello = executable('test_suite',

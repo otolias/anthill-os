@@ -7,6 +7,7 @@ int main(void) {
 
     test_mqueue();
     test_mman();
+    test_stdlib();
 
     puts("Tests done");
 }
