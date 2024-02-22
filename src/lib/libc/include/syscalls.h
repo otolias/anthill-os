@@ -1,8 +1,6 @@
 #ifndef _SYSCALLS_H
 #define _SYSCALLS_H
 
-#include <sys/types.h>
-
 #include <kernel/syscalls.h>
 
 /* sys handler macro with arguments */
@@ -15,7 +13,7 @@
 #define SYSCALL_6(id, arg1, arg2, arg3, arg4, arg5, arg6) sys_handler(id, arg1, arg2, arg3, arg4, arg5, arg6);
 
 /* Call syscall _id_ with args */
-long sys_handler(long id, size_t arg1, size_t arg2, size_t arg3, size_t arg4,
-                size_t arg5, size_t arg6);
+long sys_handler(long id, long arg1, long arg2, long arg3, long arg4, long arg5,
+                 long arg6);
 
 #endif /* _SYSCALLS_H */

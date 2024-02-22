@@ -1,9 +1,7 @@
 #include "syscalls.h"
 
-#include <sys/types.h>
-
-long sys_handler(long id, size_t arg1, size_t arg2, size_t arg3, size_t arg4,
-                size_t arg5, size_t arg6) {
+long sys_handler(long id, long arg1, long arg2, long arg3, long arg4, long arg5,
+                 long arg6) {
     long ret;
 
     __asm__(
@@ -15,7 +13,7 @@ long sys_handler(long id, size_t arg1, size_t arg2, size_t arg3, size_t arg4,
         "mov x4, %6 \n"
         "mov x5, %7 \n"
         "svc #0 \n"
-        "mov %w0, w0 \n"
+        "mov %x0, x0 \n"
         : "=r" (ret)
         : "r"(id), "r"(arg1), "r"(arg2), "r"(arg3), "r"(arg4), "r"(arg5), "r"(arg6)
         : "memory", "cc"
