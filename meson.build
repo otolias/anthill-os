@@ -1,7 +1,7 @@
 project('arm_os', 'c',
   default_options : [
-    'buildtype=minsize',
-    'b_lto=true',
+    'c_args=-g3',
+    'optimization=s',
     'c_std=c17',
     'warning_level=2',
     'prefix=' + meson.build_root() / 'sysroot',
