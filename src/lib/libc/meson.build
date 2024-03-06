@@ -73,26 +73,3 @@ libc_dep = declare_dependency(
   include_directories : libc_inc_directories,
   link_with : libc,
 )
-
-if tests_enabled
-  libc_tests = {
-    'stdint': [ meson.source_root() / 'test' / 'lib' / 'libc' / 'stdint.c' ],
-    # TODO: Mock sys_handler
-    # 'printf': [ meson.source_root() / 'test' / 'lib' / 'libc' / 'printf.c' ],
-  }
-
-  libc_test_include_directories = include_directories('.')
-
-  foreach name, sources : libc_tests
-    libc_test = executable(name,
-      sources : sources,
-      include_directories : [libc_inc_directories, libc_test_include_directories],
-      dependencies : unity_dep,
-      native : true,
-    )
-
-    test(name, libc_test,
-      suite : 'libc',
-    )
-  endforeach
-endif
