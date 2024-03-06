@@ -10,6 +10,7 @@ libc_sources = files([
   'stdlib' / 'malloc.c',
   'stdlib' / 'free.c',
   'string' / 'strchr.c',
+  'string' / 'strcmp.c',
   'string' / 'strcpy.c',
   'string' / 'strlen.c',
   'string' / 'strncpy.c',
