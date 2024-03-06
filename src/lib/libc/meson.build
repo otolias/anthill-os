@@ -1,6 +1,6 @@
 libc_sources = files([
   'errno' / 'errno.c',
-  'internal' / 'stdio.c',
+  'internal' / 'formatter.c',
   'internal' / 'stdlib.c',
   'stdio' / 'printf.c',
   'stdio' / 'puts.c',

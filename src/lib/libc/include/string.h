@@ -13,6 +13,17 @@
 char *strchr(const char *s, int c);
 
 /*
+* Compare the string pointed to by _s1_ to the
+* string pointed to by _s2_
+*
+* Returns an integer greater than, equal to, or
+* less than 0 if the string pointed to by _s1_ is
+* greater than, equal to, or less than the string
+* pointed to by _s2_.
+*/
+int strcmp(const char *s1, const char *s2);
+
+/*
 * Copy the string pointed to by _s2_ to the string
 * pointed to by _s1_
 *

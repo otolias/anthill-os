@@ -1,10 +1,10 @@
 /*
 * Current implementation supports:
 *
+* Length modifier:   %l (not supported on %c and %s)
 * Characters:        %c
-* Hexadecimals:      %x
-* Signed Integers:   %d
-* Unsigned Integers: %u
+* Signed Integers:   %d, %i
+* Unsigned Integers: %u, %x
 * Strings:           %s
 */
 
