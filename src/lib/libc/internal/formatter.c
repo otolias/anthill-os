@@ -2,22 +2,25 @@
 
 #include <stdbool.h>
 
-static int _char(char c, char *buffer, int loc) {
-    buffer[loc++] = c;
-    return loc;
+static int _char(char c, char *buffer, int loc, const int n) {
+    if (loc < n)
+        buffer[loc] = c;
+
+    return loc + 1;
 }
 
-static int _string(const char *string, char* buffer, int loc) {
+static int _string(const char *string, char* buffer, int loc, const int n) {
     unsigned char c;
 
     while ((c = *(string++))) {
-        loc = _char(c, buffer, loc);
+        loc = _char(c, buffer, loc, n);
     }
 
     return loc;
 }
 
-static int _uint(unsigned long val, const unsigned char base, char *buffer, int loc) {
+static int _uint(unsigned long val, const unsigned char base, char *buffer, int loc,
+                 const int n) {
     unsigned long div = 1;
 
     while (val / div >= base) {
@@ -28,32 +31,34 @@ static int _uint(unsigned long val, const unsigned char base, char *buffer, int 
         long digit = val / div;
         val %= div;
         div /= base;
-        buffer[loc++] = (char) (digit >= 10) ? digit + 87 : digit + 48;
+        char c = (char) (digit >= 10) ? digit + 87 : digit + 48;
+        loc = _char(c, buffer, loc, n);
     }
 
     return loc;
 }
 
-static int _int(long val, const unsigned char base, char *buffer, int loc) {
+static int _int(long val, const unsigned char base, char *buffer, int loc, const int n) {
     if (val < 0) {
         val *= -1;
 
         if (base == 10)
-            buffer[loc++] = '-';
+            loc = _char('-', buffer, loc, n);
     }
 
-    return _uint(val, base, buffer, loc);
+    return _uint(val, base, buffer, loc, n);
 
 }
 
-int formatter(char* buffer, const char *format, va_list args) {
+int formatter(char* buffer, const char *format, va_list args, size_t max_size) {
     char c;
     int size = 0;
+    const int n = (int) max_size;
     bool is_long;
 
     while ((c = *(format++))) {
         if (c != '%') {
-            buffer[size++] = c;
+            size = _char(c, buffer, size, n);
             continue;
         }
 
@@ -68,32 +73,32 @@ int formatter(char* buffer, const char *format, va_list args) {
 
         switch (c) {
             case 'c':
-                size = _char(va_arg(args, int), buffer, size);
+                size = _char(va_arg(args, int), buffer, size, n);
                 break;
             case 's':
-                size = _string(va_arg(args, char*), buffer, size);
+                size = _string(va_arg(args, char*), buffer, size, n);
                 break;
             case 'i':
             case 'd':
                 size = is_long ?
-                    _int(va_arg(args, long), 10, buffer, size) :
-                    _int(va_arg(args, int), 10,  buffer, size);
+                    _int(va_arg(args, long), 10, buffer, size, n) :
+                    _int(va_arg(args, int), 10,  buffer, size, n);
                 break;
             case 'u':
                 size = is_long ?
-                    _uint(va_arg(args, unsigned long), 10, buffer, size) :
-                    _uint(va_arg(args, unsigned), 10, buffer, size);
+                    _uint(va_arg(args, unsigned long), 10, buffer, size, n) :
+                    _uint(va_arg(args, unsigned), 10, buffer, size, n);
                 break;
             case 'x':
                 size = is_long ?
-                    _uint(va_arg(args, unsigned long), 16,  buffer, size) :
-                    _uint(va_arg(args, unsigned), 16, buffer, size);
+                    _uint(va_arg(args, unsigned long), 16,  buffer, size, n) :
+                    _uint(va_arg(args, unsigned), 16, buffer, size, n);
                 break;
             default:
                 break;
         }
     }
 
-    buffer[size] = 0;
+    buffer[(size < n) ? size : n] = 0;
     return size;
 }

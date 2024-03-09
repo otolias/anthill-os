@@ -50,7 +50,7 @@ subdir('src' / 'boot')
 subdir('src' / 'drivers')
 subdir('src' / 'kernel')
 
-subdir('src' / 'lib' / 'libc')
+subdir('src' / 'lib')
 
 exec_link_args = [
   '-nodefaultlibs',

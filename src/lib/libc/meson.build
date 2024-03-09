@@ -4,7 +4,9 @@ libc_sources = files([
   'internal' / 'stdlib.c',
   'stdio' / 'printf.c',
   'stdio' / 'puts.c',
+  'stdio' / 'snprintf.c',
   'stdio' / 'sprintf.c',
+  'stdio' / 'vsnprintf.c',
   'stdio' / 'vsprintf.c',
   'stdlib' / 'exit.c',
   'stdlib' / 'malloc.c',
@@ -26,6 +28,7 @@ libc_sources = files([
 
 libc_includes = files([
   'include' / 'errno.h',
+  'include' / 'limits.h',
   'include' / 'mqueue.h',
   'include' / 'stddef.h',
   'include' / 'stdint.h',
