@@ -9,6 +9,7 @@ int main(void) {
     test_mman();
     test_stdio();
     test_stdlib();
+    test_string();
 
     puts("Tests done");
 }
