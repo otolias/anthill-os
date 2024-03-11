@@ -45,4 +45,34 @@ size_t strlen(const char* s);
 */
 char *strncpy(char *restrict s1, const char *restrict s2, size_t n);
 
+/*
+* Compute the number of bytes of the initial segment of the
+* string pointed to by _s1_ which does not consist of bytes
+* from the string pointed to by _s2_
+*
+* Returns the computed length
+*/
+size_t strcspn(const char *s1, const char *s2);
+
+/*
+* Compute the number of bytes of the initial segment of the
+* string pointed to by _s1_ which consists entirely of bytes
+* from the string pointed to by _s2_
+*
+* Returns the computed length
+*/
+size_t strspn(const char *s1, const char *s2);
+
+/*
+* Split the string pointed to by _s_ to a sequence of tokens,
+* delimited by a byte from the string pointed to by _sep_
+*
+* The first call splits _s_, and for each subsequent call
+* on the same string, _s_ must be a null pointer
+*
+* Returns the first byte of a token, or a null pointer if
+* there are no tokens left
+*/
+char *strtok(char *restrict s, const char *restrict sep);
+
 #endif /* _STRING_H */
