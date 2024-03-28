@@ -11,5 +11,6 @@
 #define EMSGSIZE 8
 #define EAGAIN   9
 #define ENOMEM   10
+#define ERANGE   11
 
 #endif /* _KERNEL_ERRNO_H */

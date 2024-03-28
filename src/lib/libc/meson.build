@@ -1,7 +1,10 @@
 libc_sources = files([
+  'ctype' / 'isdigit.c',
+  'ctype' / 'isspace.c',
   'errno' / 'errno.c',
   'internal' / 'formatter.c',
   'internal' / 'stdlib.c',
+  'internal' / 'strtox.c',
   'stdio' / 'printf.c',
   'stdio' / 'puts.c',
   'stdio' / 'snprintf.c',
@@ -9,8 +12,12 @@ libc_sources = files([
   'stdio' / 'vsnprintf.c',
   'stdio' / 'vsprintf.c',
   'stdlib' / 'exit.c',
-  'stdlib' / 'malloc.c',
   'stdlib' / 'free.c',
+  'stdlib' / 'malloc.c',
+  'stdlib' / 'strtol.c',
+  'stdlib' / 'strtoll.c',
+  'stdlib' / 'strtoul.c',
+  'stdlib' / 'strtoull.c',
   'string' / 'strchr.c',
   'string' / 'strcmp.c',
   'string' / 'strcpy.c',
@@ -30,6 +37,7 @@ libc_sources = files([
 ])
 
 libc_includes = files([
+  'include' / 'ctype.h',
   'include' / 'errno.h',
   'include' / 'limits.h',
   'include' / 'mqueue.h',

@@ -44,4 +44,15 @@ void shrink(block_t *block);
 */
 void split_block(block_t *block);
 
+/*
+* Convert _str_ to unsigned long long in radix _base_ and sets _endptr_ to
+* point to the rest of the string
+*
+* Only decimals are currently supported
+*
+* Return value and failure conditions are described by the strto* functions
+*/
+unsigned long long strtox(const char *restrict str, char **restrict endptr, int base,
+                          unsigned long long limit);
+
 #endif /* _INTERNAL_STDLIB_H */
