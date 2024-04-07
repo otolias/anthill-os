@@ -4,7 +4,6 @@
 
 size_t strlen(const char* s) {
     const char* c = s;
-    size_t size = 0;
-    while (c++) size++;
-    return size;
+    while (*c) c++;
+    return c - s;
 }
