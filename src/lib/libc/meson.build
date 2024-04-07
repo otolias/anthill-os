@@ -2,6 +2,9 @@ libc_sources = files([
   'ctype' / 'isdigit.c',
   'ctype' / 'isspace.c',
   'errno' / 'errno.c',
+  'fcall' / 'fcall_msg_size.c',
+  'fcall' / 'fcall_msg_to_buf.c',
+  'fcall' / 'fcall_buf_to_msg.c',
   'internal' / 'formatter.c',
   'internal' / 'stdlib.c',
   'internal' / 'strtox.c',
@@ -39,6 +42,7 @@ libc_sources = files([
 libc_includes = files([
   'include' / 'ctype.h',
   'include' / 'errno.h',
+  'include' / 'fcall.h',
   'include' / 'limits.h',
   'include' / 'mqueue.h',
   'include' / 'stddef.h',
@@ -51,7 +55,7 @@ libc_includes = files([
 ])
 
 libc_inc_directories = include_directories(
-  ['include', '../../include'],
+  ['include', '..' / '..' / 'include'],
   is_system : true
 )
 
