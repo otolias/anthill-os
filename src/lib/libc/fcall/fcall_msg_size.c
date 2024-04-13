@@ -9,7 +9,6 @@ unsigned fcall_msg_size(const fcall *fcall) {
 
     size += INT_SIZE; /* size */
     size += CHAR_SIZE; /* type */
-    size += INT_SIZE; /* fid */
     size += SHRT_SIZE; /* tag */
 
     switch (fcall->type) {
@@ -18,6 +17,15 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += INT_SIZE; /* msize */
             size += strlen(fcall->version) + 1; /* version */
             size += strlen(fcall->channel) + 1; /* channel */
+            break;
+        case Tattach:
+            size += INT_SIZE; /* fid */
+            size += INT_SIZE; /* afid */
+            size += strlen(fcall->uname) + 1; /* uname */
+            size += strlen(fcall->aname) + 1; /* aname */
+            break;
+        case Rattach:
+            size += sizeof(qid);
             break;
         default:
             return 0;

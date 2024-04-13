@@ -15,6 +15,12 @@ static unsigned put_uint(char *ptr, unsigned int val) {
     return INT_SIZE;
 }
 
+static unsigned put_ulong(char *ptr, unsigned long val) {
+    ptr[0] = val; ptr[1] = val >> 8; ptr[2] = val >> 16; ptr[3] = val >> 24;
+    ptr[4] = val >> 32; ptr[5] = val >> 40; ptr[6] = val >> 48; ptr[7] = val >> 56;
+    return LONG_SIZE;
+}
+
 static unsigned put_string(char *ptr, const char *str, unsigned limit) {
     const char *c = str;
     unsigned i;
@@ -37,7 +43,6 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
 
     ptr += put_uint(ptr, fcall_msg_size(fcall));
     ptr += put_uchar(ptr, fcall->type);
-    ptr += put_uint(ptr, fcall->fid);
     ptr += put_ushort(ptr, fcall->tag);
 
     switch (fcall->type) {
@@ -45,12 +50,22 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
         case Rversion:
             ptr += put_uint(ptr, fcall->msize);
             ptr += put_string(ptr, fcall->version, length);
-            put_string(ptr, fcall->channel, length);
+            ptr += put_string(ptr, fcall->channel, length);
+            break;
+        case Tattach:
+            ptr += put_uint(ptr, fcall->fid);
+            ptr += put_uint(ptr, fcall->afid);
+            ptr += put_string(ptr, fcall->uname, length);
+            ptr += put_string(ptr, fcall->aname, length);
+            break;
+        case Rattach:
+            ptr += put_uint(ptr, fcall->qid.type);
+            ptr += put_uint(ptr, fcall->qid.version);
+            ptr += put_ulong(ptr, fcall->qid.id);
             break;
         default:
-            size = 0;
             break;
     };
 
-    return size;
+    return ptr - buf;
 }

@@ -16,6 +16,10 @@ static unsigned int get_uint(const char *ptr) {
         (unsigned char) ptr[2] << 16 | ptr[3] << 24;
 }
 
+static unsigned long get_ulong(const char *ptr) {
+    return get_uint(ptr) | (unsigned long) get_uint(ptr + 4) << 32;
+}
+
 unsigned fcall_buf_to_msg(const char *buf, fcall *fcall) {
     const char *ptr = buf;
 
@@ -24,8 +28,6 @@ unsigned fcall_buf_to_msg(const char *buf, fcall *fcall) {
 
     fcall->type = get_uchar(ptr);
     ptr += CHAR_SIZE;
-    fcall->fid = get_uint(ptr);
-    ptr += INT_SIZE;
     fcall->tag = get_ushort(ptr);
     ptr += SHRT_SIZE;
 
@@ -37,10 +39,32 @@ unsigned fcall_buf_to_msg(const char *buf, fcall *fcall) {
             fcall->version = (char *) ptr;
             ptr += strlen(ptr) + 1;
             fcall->channel = (char *) ptr;
+            ptr += strlen(ptr) + 1;
+            break;
+        case Tattach:
+            fcall->fid = get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->afid = get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->uname = (char *) ptr;
+            ptr += strlen(ptr) + 1;
+            fcall->aname = (char *) ptr;
+            ptr += strlen(ptr) + 1;
+            break;
+        case Rattach:
+            fcall->qid.type = get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->qid.version = get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->qid.id = get_ulong(ptr);
+            ptr += LONG_SIZE;
             break;
         default:
             return 0;
     }
+
+    if (size != ptr - buf)
+        return 0;
 
     return size;
 }

@@ -10,6 +10,16 @@
 * The channel field is an extension for use in mqueues.
 *
 * - _version_ is always the string 9p2000
+*
+* size[4] Tattach tag[2] fid[4] afid[4] uname[s] aname[s]
+* size[4] Rattach tag[2] qid[16]
+*
+* Attach file tree _aname_ to _fid_.
+* Response contains qid of _aname_
+*
+* - _afid_ is currently unused and its value should be NOFID
+* - _uname_ is currently unused and its value should be an empty
+*   string
 */
 
 #ifndef _FCALL_H
@@ -21,6 +31,13 @@
 #define CHAR_SIZE 1
 #define SHRT_SIZE 2
 #define INT_SIZE  4
+#define LONG_SIZE 8
+
+typedef struct {
+    unsigned int  type;
+    unsigned int  version;
+    unsigned long id;
+} qid;
 
 typedef struct {
     unsigned char  type; /* Message type */
@@ -32,12 +49,22 @@ typedef struct {
             char     *version; /* Protocol version */
             char     *channel; /* Where to reply */
         };
+        struct { /* Tattach */
+            unsigned afid;   /* Authentication fid. Currently unused */
+            char     *uname; /* Associated user. Currently unused */
+            char     *aname; /* File tree to access */
+        };
+        struct { /* Rattach */
+            qid qid; /* File information */
+        };
     };
 } fcall;
 
 enum fcall_types {
     Tversion = 100,
     Rversion,
+    Tattach,
+    Rattach,
 };
 
 /*
