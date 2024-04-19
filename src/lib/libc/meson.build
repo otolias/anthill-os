@@ -43,6 +43,7 @@ libc_includes = files([
   'include' / 'ctype.h',
   'include' / 'errno.h',
   'include' / 'fcall.h',
+  'include' / 'fcntl.h',
   'include' / 'limits.h',
   'include' / 'mqueue.h',
   'include' / 'stddef.h',

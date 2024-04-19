@@ -10,6 +10,7 @@
 #ifndef _MQUEUE_H
 #define _MQUEUE_H
 
+#include <fcntl.h>
 #include <sys/types.h>
 
 /* Message queue descriptor */
@@ -22,14 +23,6 @@ typedef struct {
     long mq_msgsize; /* Maximum message size */
     long mq_curmsg; /* Number of messages currently queued */
 } mq_attr;
-
-/* Available oflags */
-#define O_RDONLY   1 << 0
-#define O_WRONLY   1 << 1
-#define O_RDWR     1 << 2
-#define O_CREAT    1 << 3
-#define O_EXCL     1 << 4
-#define O_NONBLOCK 1 << 5
 
 /*
 * Establish a connection to the message queue with
