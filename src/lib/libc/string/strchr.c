@@ -4,9 +4,10 @@
 
 char *strchr(const char *s, int c) {
     const char *ch = s;
-    while (ch++) {
+    while (*ch) {
         if (*ch == c)
             return (char *) ch;
+        ch++;
     }
     return NULL;
 }

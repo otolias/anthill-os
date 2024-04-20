@@ -4,6 +4,19 @@
 #include <stdio.h>
 #include <string.h>
 
+static void _test_strchr(void) {
+    const char s[] = "ab";
+
+    if (strchr(s, 'b') == NULL)
+        puts("STRING::ERROR::strchr failed");
+
+    if (strchr(s, 'c') != NULL)
+        puts("STRING::ERROR::strchr NULL check failed");
+
+    if (strchr("", 'a') != NULL)
+        puts("STRING::ERROR::strchr empty string check failed");
+}
+
 static void _test_strspn(void) {
     char s[] = "str/str-";
 
@@ -52,6 +65,7 @@ static void _test_strtok(void) {
 }
 
 void test_string(void) {
+    _test_strchr();
     _test_strspn();
     _test_strcspn();
     _test_strtok();
