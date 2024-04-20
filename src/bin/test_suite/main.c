@@ -10,6 +10,7 @@ int main(void) {
     test_stdio();
     test_stdlib();
     test_string();
+    test_unistd();
 
     puts("Tests done");
 }

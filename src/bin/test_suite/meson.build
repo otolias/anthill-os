@@ -5,6 +5,7 @@ test_suite_sources = [
   'stdio.c',
   'stdlib.c',
   'string.c',
+  'unistd.c',
 ]
 
 hello = executable('test_suite',

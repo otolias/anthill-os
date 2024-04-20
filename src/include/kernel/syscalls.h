@@ -10,7 +10,8 @@
 #define SYS_MQ_UNLINK  6
 #define SYS_MQ_SEND    7
 #define SYS_MQ_RECV    8
-#define TOTAL_SYSCALLS 9
+#define SYS_GETPID     9
+#define TOTAL_SYSCALLS 10
 
 #ifndef __ASSEMBLER__
 
@@ -39,6 +40,8 @@ int sys_mq_close(int mqdes);
 int sys_mq_unlink(const char *name);
 int sys_mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio);
 ssize_t sys_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio);
+
+pid_t getpid(void);
 
 extern const void *system_call_table[];
 

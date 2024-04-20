@@ -37,6 +37,7 @@ libc_sources = files([
   'syscalls.c',
   'sys' / 'mman' / 'mmap.c',
   'sys' / 'mman' / 'munmap.c',
+  'unistd' / 'getpid.c',
 ])
 
 libc_includes = files([
@@ -53,6 +54,7 @@ libc_includes = files([
   'include' / 'syscalls.h',
   'include' / 'sys' / 'mman.h',
   'include' / 'sys' / 'types.h',
+  'include' / 'unistd.h',
 ])
 
 libc_inc_directories = include_directories(

@@ -17,6 +17,7 @@ const void *system_call_table[] = {
     (void *) sys_mq_unlink,
     (void *) sys_mq_send,
     (void *) sys_mq_receive,
+    (void *) getpid,
 };
 
 int sys_write(char *buffer) {
@@ -68,4 +69,8 @@ int sys_mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_p
 
 ssize_t sys_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio) {
     return mqueue_receive(mqdes, msg_ptr, msg_len, msg_prio);
+}
+
+pid_t getpid(void) {
+    return task_current_pid();
 }
