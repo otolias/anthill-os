@@ -38,8 +38,6 @@ unsigned fcall_buf_to_msg(const char *buf, fcall *fcall) {
             ptr += INT_SIZE;
             fcall->version = (char *) ptr;
             ptr += strlen(ptr) + 1;
-            fcall->channel = (char *) ptr;
-            ptr += strlen(ptr) + 1;
             break;
         case Tattach:
             fcall->fid = get_uint(ptr);

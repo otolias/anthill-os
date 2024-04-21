@@ -3,23 +3,26 @@
 *
 * Data is represented in little-endian order
 *
-* size[4] Tversion tag[2] msize[4] version[s] channel[s]
-* size[4] Rversion tag[2] msize[4] version[s] channel[s]
+* size[4] Tversion tag[2] msize[4] version[s]
+* size[4] Rversion tag[2] msize[4] version[s]
 *
-* Negotiates protocol, version and channel of communication.
-* The channel field is an extension for use in mqueues.
+* Negotiates protocol version and maximum message size.
 *
-* - _version_ is always the string 9p2000
+* Note: Implemented but practically unused
+*
+* - _version_ is always the string 9p2000.
 *
 * size[4] Tattach tag[2] fid[4] afid[4] uname[s] aname[s]
 * size[4] Rattach tag[2] qid[16]
 *
 * Attach file tree _aname_ to _fid_.
-* Response contains qid of _aname_
+* Response contains qid of _aname_.
+*
+* Note: Because the 9p2000 protocol is meant to be used on top of other protocols
+* not currently implemented, contrary to the 9p protocol, _uname_ currently contains
+* the mqueue channel to be associated with the _fid_.
 *
 * - _afid_ is currently unused and its value should be NOFID
-* - _uname_ is currently unused and its value should be an empty
-*   string
 *
 * size[4] Tcreate tag[2] fid[4] name[s] perm[4] mode[1]
 * size[4] Rcreate tag[2] qid[16] iounit[4]
@@ -66,7 +69,6 @@ typedef struct {
         struct { /* Tversion, Rversion */
             unsigned msize;    /* Maximum message size */
             char     *version; /* Protocol version */
-            char     *channel; /* Where to reply */
         };
         struct { /* Tattach */
             unsigned afid;   /* Authentication fid. Currently unused */

@@ -50,7 +50,6 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
         case Rversion:
             ptr += put_uint(ptr, fcall->msize);
             ptr += put_string(ptr, fcall->version, length);
-            ptr += put_string(ptr, fcall->channel, length);
             break;
         case Tattach:
             ptr += put_uint(ptr, fcall->fid);

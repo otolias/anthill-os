@@ -16,7 +16,6 @@ unsigned fcall_msg_size(const fcall *fcall) {
         case Rversion:
             size += INT_SIZE; /* msize */
             size += strlen(fcall->version) + 1; /* version */
-            size += strlen(fcall->channel) + 1; /* channel */
             break;
         case Tattach:
             size += INT_SIZE; /* fid */
