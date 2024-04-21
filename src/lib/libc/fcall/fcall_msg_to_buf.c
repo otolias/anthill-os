@@ -74,6 +74,8 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
             ptr += put_ulong(ptr, fcall->qid.id);
             ptr += put_uint(ptr, fcall->iounit);
             break;
+        case Rerror:
+            ptr += put_string(ptr, fcall->ename, length);
         default:
             break;
     };

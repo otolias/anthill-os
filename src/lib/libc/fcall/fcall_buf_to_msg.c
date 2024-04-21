@@ -77,6 +77,10 @@ unsigned fcall_buf_to_msg(const char *buf, fcall *fcall) {
             fcall->iounit = get_uint(ptr);
             ptr += INT_SIZE;
             break;
+        case Rerror:
+            fcall->ename = (char *) ptr;
+            ptr += strlen(ptr) + 1;
+            break;
         default:
             return 0;
     }

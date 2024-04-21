@@ -31,6 +31,10 @@
 * with permissions _perm_. Then, open file with _mode_
 *
 * - _iounit_ is currently unused and its value should be 0
+*
+* size[4] Rerror tag[2] ename[s]
+*
+* Error message _ename_
 */
 
 #ifndef _FCALL_H
@@ -85,6 +89,9 @@ typedef struct {
             unsigned perm; /* File permissions */
             char     mode; /* File open mode */
         };
+        struct { /* Rerror */
+            char* ename; /* Error string */
+        };
     };
 } fcall;
 
@@ -95,6 +102,8 @@ enum fcall_types {
     Rattach,
     Tcreate,
     Rcreate,
+    Terror, /* Illegal */
+    Rerror,
 };
 
 /*

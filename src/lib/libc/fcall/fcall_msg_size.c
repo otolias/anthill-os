@@ -36,6 +36,9 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += sizeof(qid); /* qid */
             size += INT_SIZE; /* iounit */
             break;
+        case Rerror:
+            size += strlen(fcall->ename) + 1; /* ename */
+            break;
         default:
             return 0;
     }
