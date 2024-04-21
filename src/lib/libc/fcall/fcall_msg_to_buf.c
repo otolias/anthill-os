@@ -63,6 +63,18 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
             ptr += put_uint(ptr, fcall->qid.version);
             ptr += put_ulong(ptr, fcall->qid.id);
             break;
+        case Tcreate:
+            ptr += put_uint(ptr, fcall->fid);
+            ptr += put_string(ptr, fcall->name, length);
+            ptr += put_uint(ptr, fcall->perm);
+            ptr += put_uchar(ptr, fcall->mode);
+            break;
+        case Rcreate:
+            ptr += put_uint(ptr, fcall->qid.type);
+            ptr += put_uint(ptr, fcall->qid.version);
+            ptr += put_ulong(ptr, fcall->qid.id);
+            ptr += put_uint(ptr, fcall->iounit);
+            break;
         default:
             break;
     };

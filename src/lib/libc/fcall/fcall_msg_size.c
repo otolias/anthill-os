@@ -27,6 +27,16 @@ unsigned fcall_msg_size(const fcall *fcall) {
         case Rattach:
             size += sizeof(qid);
             break;
+        case Tcreate:
+            size += INT_SIZE; /* fid */
+            size += strlen(fcall->name) + 1; /* name */
+            size += INT_SIZE; /* perm */
+            size += CHAR_SIZE; /* mode */
+            break;
+        case Rcreate:
+            size += sizeof(qid); /* qid */
+            size += INT_SIZE; /* iounit */
+            break;
         default:
             return 0;
     }

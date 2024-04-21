@@ -20,6 +20,14 @@
 * - _afid_ is currently unused and its value should be NOFID
 * - _uname_ is currently unused and its value should be an empty
 *   string
+*
+* size[4] Tcreate tag[2] fid[4] name[s] perm[4] mode[1]
+* size[4] Rcreate tag[2] qid[16] iounit[4]
+*
+* Create file with _name_ in the directory represented by _fid_
+* with permissions _perm_. Then, open file with _mode_
+*
+* - _iounit_ is currently unused and its value should be 0
 */
 
 #ifndef _FCALL_H
@@ -32,6 +40,17 @@
 #define SHRT_SIZE 2
 #define INT_SIZE  4
 #define LONG_SIZE 8
+
+/* File modes */
+#define OREAD   1 << 0 /* Read only */
+#define OWRITE  1 << 1 /* Write only */
+#define ORDWR   1 << 2 /* Read and write */
+#define OEXEC   1 << 3 /* Execute */
+#define OTRUNC  1 << 4 /* Truncate */
+#define ORCLOSE 1 << 5 /* Remove when fid is cluncked */
+
+/* File permissions */
+#define DMDIR 1 << 31 /* Directory */
 
 typedef struct {
     unsigned int  type;
@@ -54,8 +73,15 @@ typedef struct {
             char     *uname; /* Associated user. Currently unused */
             char     *aname; /* File tree to access */
         };
-        struct { /* Rattach */
-            qid qid; /* File information */
+        struct { /* Rattach, Rcreate */
+            qid      qid;    /* File information */
+            unsigned iounit; /* Maximum number of bytes guaranteed */
+                             /* to be read or written. Currently unused */
+        };
+        struct { /* Tcreate */
+            char*    name; /* File name to be created */
+            unsigned perm; /* File permissions */
+            char     mode; /* File open mode */
         };
     };
 } fcall;
@@ -65,6 +91,8 @@ enum fcall_types {
     Rversion,
     Tattach,
     Rattach,
+    Tcreate,
+    Rcreate,
 };
 
 /*

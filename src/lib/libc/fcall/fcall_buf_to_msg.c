@@ -59,6 +59,26 @@ unsigned fcall_buf_to_msg(const char *buf, fcall *fcall) {
             fcall->qid.id = get_ulong(ptr);
             ptr += LONG_SIZE;
             break;
+        case Tcreate:
+            fcall->fid = get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->name = (char *) ptr;
+            ptr += strlen(ptr) + 1;
+            fcall->perm = get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->mode = get_uchar(ptr);
+            ptr += CHAR_SIZE;
+            break;
+        case Rcreate:
+            fcall->qid.type = get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->qid.version = get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->qid.id = get_ulong(ptr);
+            ptr += LONG_SIZE;
+            fcall->iounit = get_uint(ptr);
+            ptr += INT_SIZE;
+            break;
         default:
             return 0;
     }
