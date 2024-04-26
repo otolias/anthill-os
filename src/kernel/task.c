@@ -29,8 +29,10 @@ void task_current_block(void) {
 
 void task_unblock(pid_t pid) {
     for (size_t i = 0; i < TOTAL_TASKS; i++) {
-        if (tasks[i]->pid == pid)
+        if (tasks[i]->pid == pid) {
             tasks[i]->state = TASK_RUNNING;
+            break;
+        }
     }
 }
 
