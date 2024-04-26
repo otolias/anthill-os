@@ -5,6 +5,7 @@
 int main(void) {
     puts("Starting userspace tests...");
 
+    test_fcall();
     test_mqueue();
     test_mman();
     test_stdio();

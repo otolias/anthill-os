@@ -1,4 +1,5 @@
 test_suite_sources = [
+  'fcall.c',
   'main.c',
   'mman.c',
   'mqueue.c',
