@@ -4,6 +4,15 @@
 #include <sys/types.h>
 
 /*
+* Copy _n_ bytes from the object pointed to by _s2_ into
+* the object pointed to by _s1_. The objects may have
+* overlapping areas
+*
+* Returns _s1_
+*/
+void *memmove(void *s1, const void *s2, size_t n);
+
+/*
 * Locate the first occurence of _c_ in the string
 * pointed to by _s_
 *

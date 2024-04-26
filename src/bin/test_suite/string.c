@@ -4,6 +4,34 @@
 #include <stdio.h>
 #include <string.h>
 
+static void _test_memmove(void) {
+    char *p;
+
+    {
+        char arr[] = {'a', 'b', 'c'};
+        p = arr;
+        memmove(p, p + 1, 2);
+        if (p[0] != 'b' || p[1] != 'c')
+            puts("STRING::ERROR::memmove s > d failed");
+    }
+
+    {
+        char arr[] = {'a', 'b', 'c'};
+        p = arr;
+        memmove(p + 1, p, 2);
+        if (p[1] != 'a' || p[2] != 'b')
+            puts("STRING::ERROR::memmove s < b failed");
+    }
+
+    {
+        char arr[] = {'a', 'b', 'c'};
+        p = arr;
+        memmove(p, p, 2);
+        if (p[0] != 'a' || p[1] != 'b')
+            puts("STRING::ERROR::memmove s == b failed");
+    }
+}
+
 static void _test_strchr(void) {
     const char s[] = "ab";
 
@@ -65,6 +93,7 @@ static void _test_strtok(void) {
 }
 
 void test_string(void) {
+    _test_memmove();
     _test_strchr();
     _test_strspn();
     _test_strcspn();
