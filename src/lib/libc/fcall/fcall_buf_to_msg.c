@@ -1,86 +1,99 @@
 #include "fcall.h"
 
 #include <string.h>
-#include <sys/types.h>
 
-static unsigned char get_uchar(const char *ptr) {
+static unsigned char _get_uchar(const char *ptr) {
     return *ptr;
 }
 
-static unsigned short get_ushort(const char *ptr) {
+static unsigned short _get_ushort(const char *ptr) {
     return (unsigned char) ptr[0] | ptr[1] << 8;
 }
 
-static unsigned int get_uint(const char *ptr) {
+static unsigned int _get_uint(const char *ptr) {
     return (unsigned char) ptr[0] | (unsigned char) ptr[1] << 8 |
         (unsigned char) ptr[2] << 16 | ptr[3] << 24;
 }
 
-static unsigned long get_ulong(const char *ptr) {
-    return get_uint(ptr) | (unsigned long) get_uint(ptr + 4) << 32;
+static unsigned long _get_ulong(const char *ptr) {
+    return _get_uint(ptr) | (unsigned long) _get_uint(ptr + 4) << 32;
 }
 
-unsigned fcall_buf_to_msg(const char *buf, fcall *fcall) {
-    const char *ptr = buf;
+static char* _get_string(char *ptr, char **str) {
+    unsigned short length = _get_ushort(ptr);
 
-    unsigned size = get_uint(ptr);
+    /* Make space for terminating byte */
+    memmove(ptr, ptr + SHRT_SIZE, length);
+    ptr[length] = 0;
+
+    *str = ptr;
+    ptr += length + SHRT_SIZE;
+
+    return ptr;
+}
+
+unsigned fcall_buf_to_msg(char *buf, fcall *fcall) {
+    char *ptr = buf;
+
+    unsigned size = _get_uint(ptr);
     ptr += INT_SIZE;
 
-    fcall->type = get_uchar(ptr);
+    fcall->type = _get_uchar(ptr);
     ptr += CHAR_SIZE;
-    fcall->tag = get_ushort(ptr);
+    fcall->tag = _get_ushort(ptr);
     ptr += SHRT_SIZE;
 
     switch (fcall->type) {
         case Tversion:
         case Rversion:
-            fcall->msize = get_uint(ptr);
+            fcall->msize = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->version = (char *) ptr;
-            ptr += strlen(ptr) + 1;
+            ptr = _get_string(ptr, &fcall->version);
             break;
+
         case Tattach:
-            fcall->fid = get_uint(ptr);
+            fcall->fid = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->afid = get_uint(ptr);
+            fcall->afid = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->uname = (char *) ptr;
-            ptr += strlen(ptr) + 1;
-            fcall->aname = (char *) ptr;
-            ptr += strlen(ptr) + 1;
+            ptr = _get_string(ptr, &fcall->uname);
+            ptr = _get_string(ptr, &fcall->aname);
             break;
+
         case Rattach:
-            fcall->qid.type = get_uint(ptr);
+            fcall->qid.type = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->qid.version = get_uint(ptr);
+            fcall->qid.version = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->qid.id = get_ulong(ptr);
+            fcall->qid.id = _get_ulong(ptr);
             ptr += LONG_SIZE;
             break;
+
         case Tcreate:
-            fcall->fid = get_uint(ptr);
+            fcall->fid = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->name = (char *) ptr;
-            ptr += strlen(ptr) + 1;
-            fcall->perm = get_uint(ptr);
+            ptr = _get_string(ptr, &fcall->name);
+            fcall->perm = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->mode = get_uchar(ptr);
+            fcall->mode = _get_uchar(ptr);
             ptr += CHAR_SIZE;
             break;
+
         case Rcreate:
-            fcall->qid.type = get_uint(ptr);
+            fcall->qid.type = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->qid.version = get_uint(ptr);
+            fcall->qid.version = _get_uint(ptr);
             ptr += INT_SIZE;
-            fcall->qid.id = get_ulong(ptr);
+            fcall->qid.id = _get_ulong(ptr);
             ptr += LONG_SIZE;
-            fcall->iounit = get_uint(ptr);
+            fcall->iounit = _get_uint(ptr);
             ptr += INT_SIZE;
             break;
+
         case Rerror:
-            fcall->ename = (char *) ptr;
-            ptr += strlen(ptr) + 1;
+            ptr = _get_string(ptr, &fcall->ename);
             break;
+
         default:
             return 0;
     }

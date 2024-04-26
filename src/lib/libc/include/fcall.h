@@ -2,6 +2,8 @@
 * 9p2000 protocol implementation
 *
 * Data is represented in little-endian order
+* Variable size parameters are prefixed with an unsigned short containing
+* the size of the parameter. Strings are not NULL terminated
 *
 * size[4] Tversion tag[2] msize[4] version[s]
 * size[4] Rversion tag[2] msize[4] version[s]
@@ -128,6 +130,6 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length);
 * On success, returns the length the number of bytes the buffer occupied
 * On failure, returns 0
 */
-unsigned fcall_buf_to_msg(const char *buf, fcall *fcall);
+unsigned fcall_buf_to_msg(char *buf, fcall *fcall);
 
 #endif /* _FCALL_H */

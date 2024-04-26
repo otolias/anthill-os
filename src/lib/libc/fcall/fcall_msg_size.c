@@ -15,30 +15,36 @@ unsigned fcall_msg_size(const fcall *fcall) {
         case Tversion:
         case Rversion:
             size += INT_SIZE; /* msize */
-            size += strlen(fcall->version) + 1; /* version */
+            size += SHRT_SIZE + strlen(fcall->version); /* version */
             break;
+
         case Tattach:
             size += INT_SIZE; /* fid */
             size += INT_SIZE; /* afid */
-            size += strlen(fcall->uname) + 1; /* uname */
-            size += strlen(fcall->aname) + 1; /* aname */
+            size += SHRT_SIZE + strlen(fcall->uname); /* uname */
+            size += SHRT_SIZE + strlen(fcall->aname); /* aname */
             break;
+
         case Rattach:
             size += sizeof(qid);
             break;
+
         case Tcreate:
             size += INT_SIZE; /* fid */
-            size += strlen(fcall->name) + 1; /* name */
+            size += SHRT_SIZE + strlen(fcall->name); /* name */
             size += INT_SIZE; /* perm */
             size += CHAR_SIZE; /* mode */
             break;
+
         case Rcreate:
             size += sizeof(qid); /* qid */
             size += INT_SIZE; /* iounit */
             break;
+
         case Rerror:
-            size += strlen(fcall->ename) + 1; /* ename */
+            size += SHRT_SIZE + strlen(fcall->ename); /* ename */
             break;
+
         default:
             return 0;
     }
