@@ -4,6 +4,24 @@
 #include <stdio.h>
 #include <string.h>
 
+static void _test_memcpy(void) {
+    char p[4] = { 0 };
+    char *res;
+
+    res = memcpy(p, "12", 0);
+    if (res != p || p[0] != 0 || p[1] != 0)
+        puts("STRING::ERROR::memcpy n = 0 failed");
+
+    res = memcpy(p, "12", 2);
+    if (res != p || p[0] != '1' || p[1] != '2')
+        puts("STRING::ERROR::memcpy char * failed");
+
+    int i = 123;
+    res = memcpy(p, &i, 4);
+    if (res != p || *p != i)
+        puts("STRING::ERROR::memcpy int * failed");
+}
+
 static void _test_memmove(void) {
     char *p;
 
@@ -93,6 +111,7 @@ static void _test_strtok(void) {
 }
 
 void test_string(void) {
+    _test_memcpy();
     _test_memmove();
     _test_strchr();
     _test_strspn();

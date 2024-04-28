@@ -4,6 +4,14 @@
 #include <sys/types.h>
 
 /*
+* Copy _n_ bytes from the object pointed to by _s2_ to the object
+* pointed to by _s1_
+*
+* Returns _s1_
+*/
+void *memcpy(void *restrict s1, const void *restrict s2, size_t n);
+
+/*
 * Copy _n_ bytes from the object pointed to by _s2_ into
 * the object pointed to by _s1_. The objects may have
 * overlapping areas
