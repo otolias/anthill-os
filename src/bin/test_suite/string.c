@@ -50,6 +50,13 @@ static void _test_memmove(void) {
     }
 }
 
+static void _test_memset(void) {
+    char s[] = "abcdef";
+    memset(s + 1, 'z', 3);
+    if (strcmp("azzzef", s) != 0)
+        puts("STRING::ERROR::memset failed");
+}
+
 static void _test_strchr(void) {
     const char s[] = "ab";
 
@@ -113,6 +120,7 @@ static void _test_strtok(void) {
 void test_string(void) {
     _test_memcpy();
     _test_memmove();
+    _test_memset();
     _test_strchr();
     _test_strspn();
     _test_strcspn();

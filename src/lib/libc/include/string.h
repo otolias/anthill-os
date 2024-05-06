@@ -21,6 +21,14 @@ void *memcpy(void *restrict s1, const void *restrict s2, size_t n);
 void *memmove(void *s1, const void *s2, size_t n);
 
 /*
+* Copy _c_ as unsigned char into each of the first _n_ bytes
+* of the object pointed to by _s_
+*
+* Returns _s_
+*/
+ void *memset(void *s, int c, size_t n);
+
+/*
 * Locate the first occurence of _c_ in the string
 * pointed to by _s_
 *

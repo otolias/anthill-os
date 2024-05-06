@@ -23,6 +23,7 @@ libc_sources = files([
   'stdlib' / 'strtoull.c',
   'string' / 'memcpy.c',
   'string' / 'memmove.c',
+  'string' / 'memset.c',
   'string' / 'strchr.c',
   'string' / 'strcmp.c',
   'string' / 'strcpy.c',
