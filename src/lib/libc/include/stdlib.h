@@ -4,6 +4,20 @@
 #include <sys/types.h>
 
 /*
+* Allocate unused space for an array of _nelem_, each of
+* size _elsize_
+*
+* On success, returns a pointer to the allocated space.
+* On failure, returns a null pointer and sets errno to
+* indicate the error.
+*
+* errno:
+* - ENOMEM Not enough available memory
+* - EINVAL Either _nelem_ or _elsize_ is zero
+*/
+void *calloc(size_t nelem, size_t elsize);
+
+/*
 * Terminate process
 *
 * Status is currently unsupported

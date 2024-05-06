@@ -14,6 +14,7 @@ libc_sources = files([
   'stdio' / 'sprintf.c',
   'stdio' / 'vsnprintf.c',
   'stdio' / 'vsprintf.c',
+  'stdlib' / 'calloc.c',
   'stdlib' / 'exit.c',
   'stdlib' / 'free.c',
   'stdlib' / 'malloc.c',

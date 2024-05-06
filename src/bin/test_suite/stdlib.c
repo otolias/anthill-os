@@ -6,6 +6,37 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void _test_calloc(void) {
+    int *mem;
+
+    errno = 0;
+    mem = calloc(2, sizeof *mem);
+    mem[0] = (int) ~0;
+    mem[1] = (int) ~0;
+    free(mem); mem = NULL;
+
+    errno = 0;
+    mem = calloc(2, sizeof *mem);
+    if (!mem || mem[0] != 0 || mem[1] != 0 || errno != 0)
+        puts("STDLIB::ERROR::Calloc failed");
+
+    free(mem); mem = NULL;
+
+    errno = 0;
+    mem = calloc(0, sizeof *mem);
+    if (mem || errno != EINVAL) {
+        puts("STDLIB::ERROR::Calloc zeroed nelem assertion failed");
+        free(mem); mem = NULL;
+    }
+
+    errno = 0;
+    mem = calloc(2, 0);
+    if (mem || errno != EINVAL) {
+        puts("STDLIB::ERROR::Calloc zeroed elsize assertion failed");
+        free(mem); mem = NULL;
+    }
+}
+
 static void _test_malloc(void) {
     /* --- Tests --- */
 
@@ -165,6 +196,7 @@ static void _test_strtol(void) {
 }
 
 void test_stdlib(void) {
+    _test_calloc();
     _test_malloc();
     _test_strtoull();
     _test_strtoul();
