@@ -14,6 +14,10 @@
 *
 * - _version_ is always the string 9p2000.
 *
+* size[4] Rerror tag[2] ename[s]
+*
+* Error message _ename_
+*
 * size[4] Tattach tag[2] fid[4] afid[4] uname[s] aname[s]
 * size[4] Rattach tag[2] qid[16]
 *
@@ -41,9 +45,11 @@
 *
 * - _iounit_ is currently unused and its value should be 0
 *
-* size[4] Rerror tag[2] ename[s]
+* size[4] Tread tag[2] fid[4] offset[8] count[4]
+* size[4] Rread tag[2] count[4] data[count]
 *
-* Error message _ename_
+* Request _count_ bytes of data from file represented by _fid_,
+* starting from _offset_.
 */
 
 #ifndef _FCALL_H
@@ -83,6 +89,9 @@ typedef struct {
             unsigned msize;    /* Maximum message size */
             char     *version; /* Protocol version */
         };
+        struct { /* Rerror */
+            char* ename; /* Error string */
+        };
         struct { /* Tattach */
             unsigned afid;   /* Authentication fid. Currently unused */
             char     *uname; /* Associated user. Currently unused */
@@ -98,8 +107,10 @@ typedef struct {
             unsigned perm; /* File permissions */
             char     mode; /* File open mode */
         };
-        struct { /* Rerror */
-            char* ename; /* Error string */
+        struct { /* Tread, Rread */
+            unsigned long offset; /* Where to start reading (Tread) */
+            unsigned      count;  /* Number of bytes to read (Tread, Rread) */
+            char*         data;   /* Returned data (Rread) */
         };
     };
 } fcall;
@@ -107,14 +118,16 @@ typedef struct {
 enum fcall_types {
     Tversion = 100,
     Rversion,
+    Terror, /* Illegal */
+    Rerror,
     Tattach,
     Rattach,
     Topen,
     Ropen,
     Tcreate,
     Rcreate,
-    Terror, /* Illegal */
-    Rerror,
+    Tread,
+    Rread,
 };
 
 /*

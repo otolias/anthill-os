@@ -55,6 +55,30 @@ static void _test_Rversion(void) {
         puts("FCALL::ERROR::fcall Tversion failure");
 }
 
+static void _test_Rerror(void) {
+    char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Rerror,
+        .tag = 0,
+        .ename = "Error",
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 14)
+        puts("FCALL::ERROR::fcall_msg_size Rerror failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 14)
+        puts("FCALL::ERROR::fcall_msg_to_buf Rerror failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+
+    if (res != 14 || fin.type != fout.type || fin.tag != fout.tag ||
+        strcmp(fin.ename, fout.ename) != 0)
+        puts("FCALL::ERROR::fcall Rerror failure");
+}
+
 static void _test_Tattach(void) {
     char buf[256];
     unsigned res;
@@ -229,38 +253,71 @@ static void _test_Rcreate(void) {
         puts("FCALL::ERROR::fcall Rcreate failure");
 }
 
-static void _test_Rerror(void) {
+static void _test_Tread(void) {
     char buf[256];
     unsigned res;
     fcall fout, fin = {
-        .type = Rerror,
-        .tag = 0,
-        .ename = "Error",
+        .type = Tread,
+        .tag = NOTAG,
+        .fid = NOFID,
+        .offset = (unsigned long) ~0,
+        .count = (unsigned) ~0,
     };
 
     res = fcall_msg_size(&fin);
-    if (res != 14)
-        puts("FCALL::ERROR::fcall_msg_size Rerror failure");
+    if (res != 23)
+        puts("FCALL::ERROR::fcall_msg_size Tread failure");
 
     res = fcall_msg_to_buf(&fin, buf, 256);
-    if (res != 14)
-        puts("FCALL::ERROR::fcall_msg_to_buf Rerror failure");
+    if (res != 23)
+        puts("FCALL::ERROR::fcall_msg_to_buf Tread failure");
 
     res = fcall_buf_to_msg(buf, &fout);
+    if (res != 23)
+        puts("FCALL::ERROR::fcall_buf_to_msg Tread failure");
 
-    if (res != 14 || fin.type != fout.type || fin.tag != fout.tag ||
-        strcmp(fin.ename, fout.ename) != 0)
-        puts("FCALL::ERROR::fcall Rerror failure");
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid ||
+        fin.offset != fout.offset || fin.count != fout.count)
+        puts("FCALL::ERROR::fcall Tread failure");
+}
+
+static void _test_Rread(void) {
+    char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Rread,
+        .tag = NOTAG,
+        .count = 4,
+        .data = "data"
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 15)
+        puts("FCALL::ERROR::fcall_msg_size Rread failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 15)
+        puts("FCALL::ERROR::fcall_msg_to_buf Rread failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 15)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rread failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.count != fout.count ||
+        memcmp(fin.data, fout.data, 4) != 0)
+        puts("FCALL::ERROR::fcall Rread failure");
 }
 
 void test_fcall(void) {
     _test_Tversion();
     _test_Rversion();
+    _test_Rerror();
     _test_Tattach();
     _test_Rattach();
     _test_Topen();
     _test_Ropen();
     _test_Tcreate();
     _test_Rcreate();
-    _test_Rerror();
+    _test_Tread();
+    _test_Rread();
 }

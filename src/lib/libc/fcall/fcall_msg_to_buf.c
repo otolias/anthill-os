@@ -54,6 +54,10 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
             ptr += _put_string(ptr, fcall->version);
             break;
 
+        case Rerror:
+            ptr += _put_string(ptr, fcall->ename);
+            break;
+
         case Tattach:
             ptr += _put_uint(ptr, fcall->fid);
             ptr += _put_uint(ptr, fcall->afid);
@@ -87,8 +91,17 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
             ptr += _put_uchar(ptr, fcall->mode);
             break;
 
-        case Rerror:
-            ptr += _put_string(ptr, fcall->ename);
+        case Tread:
+            ptr += _put_uint(ptr, fcall->fid);
+            ptr += _put_ulong(ptr, fcall->offset);
+            ptr += _put_uint(ptr, fcall->count);
+            break;
+
+        case Rread:
+            ptr += _put_uint(ptr, fcall->count);
+            memmove(ptr, fcall->data, fcall->count);
+            ptr += fcall->count;
+            break;
 
         default:
             break;

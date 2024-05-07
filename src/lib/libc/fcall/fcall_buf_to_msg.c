@@ -51,6 +51,10 @@ unsigned fcall_buf_to_msg(char *buf, fcall *fcall) {
             ptr = _get_string(ptr, &fcall->version);
             break;
 
+        case Rerror:
+            ptr = _get_string(ptr, &fcall->ename);
+            break;
+
         case Tattach:
             fcall->fid = _get_uint(ptr);
             ptr += INT_SIZE;
@@ -98,8 +102,20 @@ unsigned fcall_buf_to_msg(char *buf, fcall *fcall) {
             ptr += CHAR_SIZE;
             break;
 
-        case Rerror:
-            ptr = _get_string(ptr, &fcall->ename);
+        case Tread:
+            fcall->fid = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->offset = _get_ulong(ptr);
+            ptr += LONG_SIZE;
+            fcall->count = _get_uint(ptr);
+            ptr += INT_SIZE;
+            break;
+
+        case Rread:
+            fcall->count = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->data = ptr;
+            ptr += fcall->count;
             break;
 
         default:

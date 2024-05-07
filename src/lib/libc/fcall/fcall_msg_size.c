@@ -18,6 +18,10 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += SHRT_SIZE + strlen(fcall->version); /* version */
             break;
 
+        case Rerror:
+            size += SHRT_SIZE + strlen(fcall->ename); /* ename */
+            break;
+
         case Tattach:
             size += INT_SIZE; /* fid */
             size += INT_SIZE; /* afid */
@@ -47,8 +51,15 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += CHAR_SIZE; /* mode */
             break;
 
-        case Rerror:
-            size += SHRT_SIZE + strlen(fcall->ename); /* ename */
+        case Tread:
+            size += INT_SIZE; /* fid */
+            size += LONG_SIZE; /* offset */
+            size += INT_SIZE; /* count */
+            break;
+
+        case Rread:
+            size += INT_SIZE; /* count */
+            size += fcall->count; /* data */
             break;
 
         default:
