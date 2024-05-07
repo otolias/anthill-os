@@ -42,31 +42,22 @@ static void _test_memcpy(void) {
 }
 
 static void _test_memmove(void) {
-    char *p;
+    char p[4];
 
-    {
-        char arr[] = {'a', 'b', 'c'};
-        p = arr;
-        memmove(p, p + 1, 2);
-        if (p[0] != 'b' || p[1] != 'c')
-            puts("STRING::ERROR::memmove s > d failed");
-    }
+    memcpy(p, "abc", 4);
+    memmove(p, p + 1, 2);
+    if (memcmp(p, "bcc", 3) != 0)
+        puts("STRING::ERROR::memmove s > d failed");
 
-    {
-        char arr[] = {'a', 'b', 'c'};
-        p = arr;
-        memmove(p + 1, p, 2);
-        if (p[1] != 'a' || p[2] != 'b')
-            puts("STRING::ERROR::memmove s < b failed");
-    }
+    memcpy(p, "abc", 4);
+    memmove(p + 1, p, 2);
+    if (memcmp(p, "aab", 3) != 0)
+        puts("STRING::ERROR::memmove s < d failed");
 
-    {
-        char arr[] = {'a', 'b', 'c'};
-        p = arr;
-        memmove(p, p, 2);
-        if (p[0] != 'a' || p[1] != 'b')
-            puts("STRING::ERROR::memmove s == b failed");
-    }
+    memcpy(p, "abc", 4);
+    memmove(p, p, 2);
+    if (memcmp(p, "abc", 3) != 0)
+        puts("STRING::ERROR::memmove s == d failed");
 }
 
 static void _test_memset(void) {

@@ -7,10 +7,10 @@ void *memmove(void *s1, const void *s2, size_t n) {
     if (s == d) return d;
 
     if (s > d)
-        for (; n; n--)
+        while(n--)
             *d++ = *s++;
     else
-        for (; n; n--)
+        while (n--)
             d[n] = s[n];
 
     return d;
