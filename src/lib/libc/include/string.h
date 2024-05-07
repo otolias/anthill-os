@@ -4,6 +4,17 @@
 #include <sys/types.h>
 
 /*
+ * Compare _n_ bytes from the object pointed to by
+ * _s1_ to the object pointed to by _s2_
+*
+* Returns an integer greater than, equal to, or
+* less than 0 if the object pointed to by _s1_ is
+* greater than, equal to, or less than the object
+* pointed to by _s2_.
+ */
+ int memcmp(const void *s1, const void *s2, size_t n);
+
+/*
 * Copy _n_ bytes from the object pointed to by _s2_ to the object
 * pointed to by _s1_
 *

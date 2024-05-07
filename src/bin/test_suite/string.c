@@ -4,6 +4,25 @@
 #include <stdio.h>
 #include <string.h>
 
+static void _test_memcmp(void) {
+    const char *abc = "abc";
+    const char *abc_2 = "abc";
+    const char *abd = "abd";
+    const char *bcd = "bcd";
+
+    if (memcmp(abc, abc_2, 4) != 0)
+        puts("STRING::ERROR::memcmp failed");
+
+    if (memcmp(abc, abd, 2) != 0)
+        puts("STRING::ERROR::memcmp tail failed");
+
+    if (memcmp(abc, bcd, 2) != -1)
+        puts("STRING::ERROR::memcmp negative result failed");
+
+    if (memcmp(bcd, abc, 2) != 1)
+        puts("STRING::ERROR::memcmp positive result failed");
+}
+
 static void _test_memcpy(void) {
     char p[4] = { 0 };
     char *res;
@@ -118,6 +137,7 @@ static void _test_strtok(void) {
 }
 
 void test_string(void) {
+    _test_memcmp();
     _test_memcpy();
     _test_memmove();
     _test_memset();
