@@ -26,6 +26,13 @@
 *
 * - _afid_ is currently unused and its value should be NOFID
 *
+* size[4] Topen tag[2] fid[4] mode[1]
+* size[4] Ropen tag[2] qid[16] iounit[4]
+*
+* Open file represented by _fid_ with _mode_.
+*
+* - _iounit_ is currently unused and its value should be 0
+*
 * size[4] Tcreate tag[2] fid[4] name[s] perm[4] mode[1]
 * size[4] Rcreate tag[2] qid[16] iounit[4]
 *
@@ -81,12 +88,12 @@ typedef struct {
             char     *uname; /* Associated user. Currently unused */
             char     *aname; /* File tree to access */
         };
-        struct { /* Rattach, Rcreate */
+        struct { /* Rattach, Rcreate, Ropen */
             qid      qid;    /* File information */
             unsigned iounit; /* Maximum number of bytes guaranteed */
                              /* to be read or written. Currently unused */
         };
-        struct { /* Tcreate */
+        struct { /* Tcreate, Topen */
             char*    name; /* File name to be created */
             unsigned perm; /* File permissions */
             char     mode; /* File open mode */
@@ -102,6 +109,8 @@ enum fcall_types {
     Rversion,
     Tattach,
     Rattach,
+    Topen,
+    Ropen,
     Tcreate,
     Rcreate,
     Terror, /* Illegal */

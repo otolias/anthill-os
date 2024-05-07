@@ -112,6 +112,65 @@ static void _test_Rattach(void) {
         puts("FCALL::ERROR::fcall Rattach failure");
 }
 
+static void _test_Topen(void) {
+    char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Topen,
+        .tag = NOTAG,
+        .fid = NOFID,
+        .mode = (char) ~0,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 12)
+        puts("FCALL::ERROR::fcall_msg_size Topen failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 12)
+        puts("FCALL::ERROR::fcall_msg_to_buf Topen failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 12)
+        puts("FCALL::ERROR::fcall_buf_to_msg Topen failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid ||
+        fin.mode != fout.mode)
+        puts("FCALL::ERROR::fcall Topen failure");
+}
+
+static void _test_Ropen(void) {
+    char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Ropen,
+        .tag = NOTAG,
+        .qid = {
+            .type = (unsigned) ~0,
+            .version = (unsigned) ~0,
+            .id = (unsigned long) ~0,
+        },
+        .iounit = 0,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_msg_size Ropen failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_msg_to_buf Ropen failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_buf_to_msg Ropen failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.qid.type != fout.qid.type ||
+        fin.qid.version != fout.qid.version || fin.qid.id != fout.qid.id ||
+        fin.iounit != fout.iounit)
+        puts("FCALL::ERROR::fcall Ropen failure");
+}
+
 static void _test_Tcreate(void) {
     char buf[256];
     unsigned res;
@@ -199,6 +258,8 @@ void test_fcall(void) {
     _test_Rversion();
     _test_Tattach();
     _test_Rattach();
+    _test_Topen();
+    _test_Ropen();
     _test_Tcreate();
     _test_Rcreate();
     _test_Rerror();

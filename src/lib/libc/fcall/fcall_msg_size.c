@@ -29,16 +29,22 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += sizeof(qid);
             break;
 
+        case Topen:
+            size += INT_SIZE; /* fid */
+            size += CHAR_SIZE; /* mode */
+            break;
+
+        case Ropen:
+        case Rcreate:
+            size += sizeof(qid); /* qid */
+            size += INT_SIZE; /* iounit */
+            break;
+
         case Tcreate:
             size += INT_SIZE; /* fid */
             size += SHRT_SIZE + strlen(fcall->name); /* name */
             size += INT_SIZE; /* perm */
             size += CHAR_SIZE; /* mode */
-            break;
-
-        case Rcreate:
-            size += sizeof(qid); /* qid */
-            size += INT_SIZE; /* iounit */
             break;
 
         case Rerror:

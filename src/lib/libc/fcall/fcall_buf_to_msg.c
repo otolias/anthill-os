@@ -69,16 +69,14 @@ unsigned fcall_buf_to_msg(char *buf, fcall *fcall) {
             ptr += LONG_SIZE;
             break;
 
-        case Tcreate:
+        case Topen:
             fcall->fid = _get_uint(ptr);
-            ptr += INT_SIZE;
-            ptr = _get_string(ptr, &fcall->name);
-            fcall->perm = _get_uint(ptr);
             ptr += INT_SIZE;
             fcall->mode = _get_uchar(ptr);
             ptr += CHAR_SIZE;
             break;
 
+        case Ropen:
         case Rcreate:
             fcall->qid.type = _get_uint(ptr);
             ptr += INT_SIZE;
@@ -88,6 +86,16 @@ unsigned fcall_buf_to_msg(char *buf, fcall *fcall) {
             ptr += LONG_SIZE;
             fcall->iounit = _get_uint(ptr);
             ptr += INT_SIZE;
+            break;
+
+        case Tcreate:
+            fcall->fid = _get_uint(ptr);
+            ptr += INT_SIZE;
+            ptr = _get_string(ptr, &fcall->name);
+            fcall->perm = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->mode = _get_uchar(ptr);
+            ptr += CHAR_SIZE;
             break;
 
         case Rerror:
