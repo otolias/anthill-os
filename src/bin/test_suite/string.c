@@ -80,6 +80,25 @@ static void _test_strchr(void) {
         puts("STRING::ERROR::strchr empty string check failed");
 }
 
+static void _test_strcnt(void) {
+    char s[] = "aba";
+
+    if (strcnt(s, 'b') != 1)
+        puts("STRING::ERROR::strcnt occurence failed");
+
+    if (strcnt(s, 'a') != 2)
+        puts("STRING::ERROR::strcnt occurences failed");
+
+    if (strcnt("", 'a') != 0)
+        puts("STRING::ERROR::strcnt with empty string failed");
+
+    if (strcnt("", 0) != 0)
+        puts("STRING::ERROR::strcnt with null character failed");
+
+    if (strcnt(s, 'c') != 0)
+        puts("STRING::ERROR::strcnt with non existing character failed");
+}
+
 static void _test_strspn(void) {
     char s[] = "str/str-";
 
@@ -133,6 +152,7 @@ void test_string(void) {
     _test_memmove();
     _test_memset();
     _test_strchr();
+    _test_strcnt();
     _test_strspn();
     _test_strcspn();
     _test_strtok();

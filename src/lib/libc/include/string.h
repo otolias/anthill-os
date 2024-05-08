@@ -60,6 +60,14 @@ char *strchr(const char *s, int c);
 int strcmp(const char *s1, const char *s2);
 
 /*
+* Count the number of occurences of _c_ in the string
+* pointed to by _s_
+*
+* Note: Non-Posix
+*/
+size_t strcnt(const char *s, const char c);
+
+/*
 * Copy the string pointed to by _s2_ to the string
 * pointed to by _s1_
 *

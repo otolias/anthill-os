@@ -28,6 +28,7 @@ libc_sources = files([
   'string' / 'memset.c',
   'string' / 'strchr.c',
   'string' / 'strcmp.c',
+  'string' / 'strcnt.c',
   'string' / 'strcpy.c',
   'string' / 'strlen.c',
   'string' / 'strncpy.c',
