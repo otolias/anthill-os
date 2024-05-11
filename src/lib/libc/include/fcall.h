@@ -90,22 +90,26 @@ struct qid {
     unsigned long id;
 };
 
+/*
+* A data structure for storing and parsing 9p messages.
+* Strings are expected to be of type pstring.
+*/
 typedef struct {
-    unsigned char  type; /* Message type */
     unsigned int   fid;  /* Associated file descriptor */
+    unsigned char  type; /* Message type */
     unsigned short tag;  /* Identifying tag */
     union {
         struct { /* Tversion, Rversion */
-            unsigned msize;    /* Maximum message size */
-            char     *version; /* Protocol version */
+            unsigned msize;   /* Maximum message size */
+            pstring* version; /* Protocol version */
         };
         struct { /* Rerror */
-            char* ename; /* Error string */
+            pstring* ename; /* Error string */
         };
         struct { /* Tattach */
-            unsigned afid;   /* Authentication fid. Currently unused */
-            char     *uname; /* Associated user. Currently unused */
-            char     *aname; /* File tree to access */
+            unsigned afid;  /* Authentication fid. Currently unused */
+            pstring* uname; /* Associated user. Currently unused */
+            pstring* aname; /* File tree to access */
         };
         struct { /* Rattach, Rcreate, Ropen */
             struct qid qid;    /* File information */
@@ -122,14 +126,14 @@ typedef struct {
             struct qid*    wqid;  /* Pointer to qids */
         };
         struct { /* Tcreate, Topen */
-            char*    name; /* File name to be created */
+            pstring* name; /* File name to be created */
             unsigned perm; /* File permissions */
             char     mode; /* File open mode */
         };
         struct { /* Tread, Rread */
-            unsigned long offset; /* Where to start reading (Tread) */
-            unsigned      count;  /* Number of bytes to read (Tread, Rread) */
-            char*         data;   /* Returned data (Rread) */
+            unsigned long  offset; /* Where to start reading (Tread) */
+            unsigned       count;  /* Number of bytes to read (Tread, Rread) */
+            unsigned char* data;   /* Returned data (Rread) */
         };
     };
 } fcall;
@@ -165,7 +169,7 @@ unsigned fcall_msg_size(const fcall *fcall);
 * On success, returns the length of the resulting buffer.
 * On failure, returns 0
 */
-unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length);
+unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned length);
 
 /*
 * Creates _fcall_ struct from buffer pointed to by _buf_
@@ -173,6 +177,6 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length);
 * On success, returns the length the number of bytes the buffer occupied
 * On failure, returns 0
 */
-unsigned fcall_buf_to_msg(char *buf, fcall *fcall);
+unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall);
 
 #endif /* _FCALL_H */

@@ -8,7 +8,7 @@
 
 typedef struct __attribute__((packed)) {
     unsigned short len;
-    char           s[];
+    unsigned char  s[];
 } pstring;
 
 /*

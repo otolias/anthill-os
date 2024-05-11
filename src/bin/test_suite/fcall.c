@@ -1,18 +1,19 @@
 #include "test_suite.h"
 
 #include <fcall.h>
+#include <pstring.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 
 static void _test_Tversion(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Tversion,
         .tag = NOTAG,
-        .msize = 128,
-        .version = "9p2000",
+        .msize = ~0,
+        .version = (pstring *) "\6\09p2000",
     };
 
     res = fcall_msg_size(&fin);
@@ -24,20 +25,22 @@ static void _test_Tversion(void) {
         puts("FCALL::ERROR::fcall_msg_to_buf Tversion failure");
 
     res = fcall_buf_to_msg(buf, &fout);
+    if (res != 19)
+        puts("FCALL::ERROR::fcall_buf_to_msg Tversion failure");
 
-    if (res != 19 || fin.type != fout.type || fin.tag != fout.tag ||
-        fin.msize != fout.msize || strcmp(fin.version, fout.version) != 0)
+    if (fin.type != fout.type || fin.tag != fout.tag ||
+        fin.msize != fout.msize || memcmp(fin.version, fout.version, 8) != 0)
         puts("FCALL::ERROR::fcall Tversion failure");
 }
 
 static void _test_Rversion(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Rversion,
         .tag = NOTAG,
-        .msize = 128,
-        .version = "9p2000",
+        .msize = ~0,
+        .version = (pstring *) "\6\09p2000",
     };
 
     res = fcall_msg_size(&fin);
@@ -49,19 +52,21 @@ static void _test_Rversion(void) {
         puts("FCALL::ERROR::fcall_msg_to_buf Rversion failure");
 
     res = fcall_buf_to_msg(buf, &fout);
+    if (res != 19)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rversion failure");
 
-    if (res != 19 || fin.type != fout.type || fin.tag != fout.tag ||
-        fin.msize != fout.msize || strcmp(fin.version, fout.version) != 0)
-        puts("FCALL::ERROR::fcall Tversion failure");
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.msize != fout.msize ||
+        memcmp(fin.version, fout.version, 8) != 0)
+        puts("FCALL::ERROR::fcall Rversion failure");
 }
 
 static void _test_Rerror(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Rerror,
-        .tag = 0,
-        .ename = "Error",
+        .tag = NOTAG,
+        .ename = (pstring *) "\5\0Error",
     };
 
     res = fcall_msg_size(&fin);
@@ -73,22 +78,24 @@ static void _test_Rerror(void) {
         puts("FCALL::ERROR::fcall_msg_to_buf Rerror failure");
 
     res = fcall_buf_to_msg(buf, &fout);
+    if (res != 14)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rerror failure");
 
-    if (res != 14 || fin.type != fout.type || fin.tag != fout.tag ||
-        strcmp(fin.ename, fout.ename) != 0)
+    if (fin.type != fout.type || fin.tag != fout.tag ||
+        memcmp(fin.ename, fout.ename, 7) != 0)
         puts("FCALL::ERROR::fcall Rerror failure");
 }
 
 static void _test_Tattach(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Tattach,
         .fid = NOFID,
         .tag = NOTAG,
         .afid = NOFID,
-        .uname = "user",
-        .aname = "/",
+        .uname = (pstring *) "\4\0user",
+        .aname = (pstring *) "\1\0/",
     };
 
     res = fcall_msg_size(&fin);
@@ -100,23 +107,25 @@ static void _test_Tattach(void) {
         puts("FCALL::ERROR::fcall_msg_to_buf Tattach failure");
 
     res = fcall_buf_to_msg(buf, &fout);
+    if (res != 24)
+        puts("FCALL::ERROR::fcall_buf_to_msg Tattach failure");
 
-    if (res != 24 || fin.type != fout.type || fin.fid != fout.fid ||
-        fin.tag != fout.tag || fin.msize != fout.msize ||
-        strcmp(fin.version, fout.version) != 0)
+    if (fin.type != fout.type || fin.fid != fout.fid || fin.tag != fout.tag ||
+        fin.msize != fout.msize || memcmp(fin.uname, fout.uname, 6) != 0 ||
+        memcmp(fin.aname, fout.aname, 3) != 0)
         puts("FCALL::ERROR::fcall Tattach failure");
 }
 
 static void _test_Rattach(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Rattach,
         .tag = NOTAG,
         .qid = {
-            .type = 0,
-            .version = 1,
-            .id = 2,
+            .type = ~0,
+            .version = ~0,
+            .id = ~0,
         },
     };
 
@@ -129,74 +138,16 @@ static void _test_Rattach(void) {
         puts("FCALL::ERROR::fcall_msg_to_buf Rattach failure");
 
     res = fcall_buf_to_msg(buf, &fout);
+    if (res != 23)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rattach failure");
 
-    if (res != 23 || fin.type != fout.type || fin.tag != fout.tag ||
-        fin.qid.type != fout.qid.type || fin.qid.version != fout.qid.version ||
-        fin.qid.id != fout.qid.id)
+    if (fin.type != fout.type || fin.tag != fout.tag ||
+        memcmp(&fin.qid, &fout.qid, sizeof(struct qid)) != 0)
         puts("FCALL::ERROR::fcall Rattach failure");
 }
 
-static void _test_Topen(void) {
-    char buf[256];
-    unsigned res;
-    fcall fout, fin = {
-        .type = Topen,
-        .tag = NOTAG,
-        .fid = NOFID,
-        .mode = (char) ~0,
-    };
-
-    res = fcall_msg_size(&fin);
-    if (res != 12)
-        puts("FCALL::ERROR::fcall_msg_size Topen failure");
-
-    res = fcall_msg_to_buf(&fin, buf, 256);
-    if (res != 12)
-        puts("FCALL::ERROR::fcall_msg_to_buf Topen failure");
-
-    res = fcall_buf_to_msg(buf, &fout);
-    if (res != 12)
-        puts("FCALL::ERROR::fcall_buf_to_msg Topen failure");
-
-    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid ||
-        fin.mode != fout.mode)
-        puts("FCALL::ERROR::fcall Topen failure");
-}
-
-static void _test_Ropen(void) {
-    char buf[256];
-    unsigned res;
-    fcall fout, fin = {
-        .type = Ropen,
-        .tag = NOTAG,
-        .qid = {
-            .type = (unsigned) ~0,
-            .version = (unsigned) ~0,
-            .id = (unsigned long) ~0,
-        },
-        .iounit = 0,
-    };
-
-    res = fcall_msg_size(&fin);
-    if (res != 27)
-        puts("FCALL::ERROR::fcall_msg_size Ropen failure");
-
-    res = fcall_msg_to_buf(&fin, buf, 256);
-    if (res != 27)
-        puts("FCALL::ERROR::fcall_msg_to_buf Ropen failure");
-
-    res = fcall_buf_to_msg(buf, &fout);
-    if (res != 27)
-        puts("FCALL::ERROR::fcall_buf_to_msg Ropen failure");
-
-    if (fin.type != fout.type || fin.tag != fout.tag || fin.qid.type != fout.qid.type ||
-        fin.qid.version != fout.qid.version || fin.qid.id != fout.qid.id ||
-        fin.iounit != fout.iounit)
-        puts("FCALL::ERROR::fcall Ropen failure");
-}
-
 static void _test_Twalk(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Twalk,
@@ -226,18 +177,10 @@ static void _test_Twalk(void) {
 }
 
 static void _test_Rwalk(void) {
-    char buf[256];
+    unsigned char buf[256];
     struct qid qids[2] = {
-        {
-            .type = (unsigned int) ~0,
-            .version = (unsigned int) ~0,
-            .id = (unsigned long) ~0,
-        },
-        {
-            .type = (unsigned int) ~0,
-            .version = (unsigned int) ~0,
-            .id = (unsigned long) ~0,
-        },
+        { .type = ~0, .version = ~0, .id = ~0, },
+        { .type = ~0, .version = ~0, .id = ~0, },
     };
     unsigned res;
     fcall fout, fin = {
@@ -264,14 +207,73 @@ static void _test_Rwalk(void) {
         puts("FCALL::ERROR::fcall Rwalk failure");
 }
 
+static void _test_Topen(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Topen,
+        .tag = NOTAG,
+        .fid = NOFID,
+        .mode = ~0,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 12)
+        puts("FCALL::ERROR::fcall_msg_size Topen failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 12)
+        puts("FCALL::ERROR::fcall_msg_to_buf Topen failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 12)
+        puts("FCALL::ERROR::fcall_buf_to_msg Topen failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid ||
+        fin.mode != fout.mode)
+        puts("FCALL::ERROR::fcall Topen failure");
+}
+
+static void _test_Ropen(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Ropen,
+        .tag = NOTAG,
+        .qid = {
+            .type = ~0,
+            .version = ~0,
+            .id = ~0,
+        },
+        .iounit = ~0,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_msg_size Ropen failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_msg_to_buf Ropen failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_buf_to_msg Ropen failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag ||
+        memcmp(&fin.qid, &fout.qid, sizeof(struct qid)) != 0 ||
+        fin.iounit != fout.iounit)
+        puts("FCALL::ERROR::fcall Ropen failure");
+}
+
 static void _test_Tcreate(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Tcreate,
         .tag = 0,
         .fid = 0,
-        .name = "file",
+        .name = (pstring *) "\4\0file",
         .perm = 0,
         .mode = 0,
     };
@@ -285,25 +287,27 @@ static void _test_Tcreate(void) {
         puts("FCALL::ERROR::fcall_msg_to_buf Tcreate failure");
 
     res = fcall_buf_to_msg(buf, &fout);
+    if (res != 22)
+        puts("FCALL::ERROR::fcall_buf_to_msg Tcreate failure");
 
-    if (res != 22 || fin.type != fout.type || fin.tag != fout.tag ||
-        fin.fid != fout.fid || strcmp(fin.name, fout.name) != 0 ||
-        fin.perm != fout.perm || fin.mode != fout.mode)
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid ||
+        memcmp(fin.name, fout.name, 6) != 0 || fin.perm != fout.perm ||
+        fin.mode != fout.mode)
         puts("FCALL::ERROR::fcall Tcreate failure");
 }
 
 static void _test_Rcreate(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Rcreate,
-        .tag = 0,
+        .tag = NOTAG,
         .qid = {
-            .type = 0,
-            .version = 1,
-            .id = 2,
+            .type = ~0,
+            .version = ~0,
+            .id = ~0,
         },
-        .iounit = 0,
+        .iounit = ~0,
     };
 
     res = fcall_msg_size(&fin);
@@ -315,22 +319,24 @@ static void _test_Rcreate(void) {
         puts("FCALL::ERROR::fcall_msg_to_buf Rcreate failure");
 
     res = fcall_buf_to_msg(buf, &fout);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rcreate failure");
 
-    if (res != 27 || fin.type != fout.type || fin.tag != fout.tag ||
-        fin.qid.type != fout.qid.type || fin.qid.version != fout.qid.version ||
-        fin.qid.id != fout.qid.id || fin.iounit != fout.iounit)
+    if (fin.type != fout.type || fin.tag != fout.tag ||
+        memcmp(&fin.qid, &fout.qid, sizeof(struct qid)) != 0 ||
+        fin.iounit != fout.iounit)
         puts("FCALL::ERROR::fcall Rcreate failure");
 }
 
 static void _test_Tread(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Tread,
         .tag = NOTAG,
         .fid = NOFID,
-        .offset = (unsigned long) ~0,
-        .count = (unsigned) ~0,
+        .offset = ~0,
+        .count = ~0,
     };
 
     res = fcall_msg_size(&fin);
@@ -351,13 +357,13 @@ static void _test_Tread(void) {
 }
 
 static void _test_Rread(void) {
-    char buf[256];
+    unsigned char buf[256];
     unsigned res;
     fcall fout, fin = {
         .type = Rread,
         .tag = NOTAG,
         .count = 4,
-        .data = "data"
+        .data = (unsigned char *) "data"
     };
 
     res = fcall_msg_size(&fin);

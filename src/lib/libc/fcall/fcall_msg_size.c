@@ -2,7 +2,6 @@
 
 #include <pstring.h>
 #include <stddef.h>
-#include <string.h>
 #include <sys/types.h>
 
 unsigned fcall_msg_size(const fcall *fcall) {
@@ -16,18 +15,18 @@ unsigned fcall_msg_size(const fcall *fcall) {
         case Tversion:
         case Rversion:
             size += INT_SIZE; /* msize */
-            size += SHRT_SIZE + strlen(fcall->version); /* version */
+            size += pstrlen(fcall->version); /* version */
             break;
 
         case Rerror:
-            size += SHRT_SIZE + strlen(fcall->ename); /* ename */
+            size += pstrlen(fcall->ename); /* ename */
             break;
 
         case Tattach:
             size += INT_SIZE; /* fid */
             size += INT_SIZE; /* afid */
-            size += SHRT_SIZE + strlen(fcall->uname); /* uname */
-            size += SHRT_SIZE + strlen(fcall->aname); /* aname */
+            size += pstrlen(fcall->uname); /* uname */
+            size += pstrlen(fcall->aname); /* aname */
             break;
 
         case Rattach:
@@ -39,7 +38,7 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += INT_SIZE; /* newfid */
             size += SHRT_SIZE; /* nwname */
 
-            char *ptr = (char *) fcall->wname;
+            unsigned char *ptr = (unsigned char *) fcall->wname;
             for (unsigned short i = 0; i < fcall->nwname; i++) {
                 size_t len = pstrlen((pstring *) ptr);
                 size += len;
@@ -66,7 +65,7 @@ unsigned fcall_msg_size(const fcall *fcall) {
 
         case Tcreate:
             size += INT_SIZE; /* fid */
-            size += SHRT_SIZE + strlen(fcall->name); /* name */
+            size += pstrlen(fcall->name); /* name */
             size += INT_SIZE; /* perm */
             size += CHAR_SIZE; /* mode */
             break;
