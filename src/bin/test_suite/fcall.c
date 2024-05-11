@@ -195,6 +195,75 @@ static void _test_Ropen(void) {
         puts("FCALL::ERROR::fcall Ropen failure");
 }
 
+static void _test_Twalk(void) {
+    char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Twalk,
+        .tag = NOTAG,
+        .fid = NOFID,
+        .newfid = NOFID,
+        .nwname = 3,
+        .wname = (pstring *) "\1\0a\2\0bc\3\0def",
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 29)
+        puts("FCALL::ERROR::fcall_msg_size Twalk failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 29)
+        puts("FCALL::ERROR::fcall_msg_to_buf Twalk failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 29)
+        puts("FCALL::ERROR::fcall_buf_to_msg Twalk failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid ||
+        fin.newfid != fout.newfid || fin.nwname != fout.nwname ||
+        memcmp(fin.wname, fout.wname, 12) != 0)
+        puts("FCALL::ERROR::fcall Twalk failure");
+}
+
+static void _test_Rwalk(void) {
+    char buf[256];
+    struct qid qids[2] = {
+        {
+            .type = (unsigned int) ~0,
+            .version = (unsigned int) ~0,
+            .id = (unsigned long) ~0,
+        },
+        {
+            .type = (unsigned int) ~0,
+            .version = (unsigned int) ~0,
+            .id = (unsigned long) ~0,
+        },
+    };
+    unsigned res;
+    fcall fout, fin = {
+        .type = Rwalk,
+        .tag = NOTAG,
+        .nwqid = 2,
+        .wqid = qids,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 41)
+        puts("FCALL::ERROR::fcall_msg_size Rwalk failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 41)
+        puts("FCALL::ERROR::fcall_msg_to_buf Rwalk failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 41)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rwalk failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.nwqid != fout.nwqid ||
+        memcmp(fin.wqid, fout.wqid, fin.nwqid * sizeof(struct qid)) != 0)
+        puts("FCALL::ERROR::fcall Rwalk failure");
+}
+
 static void _test_Tcreate(void) {
     char buf[256];
     unsigned res;
@@ -314,6 +383,8 @@ void test_fcall(void) {
     _test_Rerror();
     _test_Tattach();
     _test_Rattach();
+    _test_Twalk();
+    _test_Rwalk();
     _test_Topen();
     _test_Ropen();
     _test_Tcreate();

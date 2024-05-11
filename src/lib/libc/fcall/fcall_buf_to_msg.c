@@ -1,5 +1,6 @@
 #include "fcall.h"
 
+#include <pstring.h>
 #include <string.h>
 
 static unsigned char _get_uchar(const char *ptr) {
@@ -71,6 +72,25 @@ unsigned fcall_buf_to_msg(char *buf, fcall *fcall) {
             ptr += INT_SIZE;
             fcall->qid.id = _get_ulong(ptr);
             ptr += LONG_SIZE;
+            break;
+
+        case Twalk:
+            fcall->fid = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->newfid = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->nwname = _get_ushort(ptr);
+            ptr += SHRT_SIZE;
+            fcall->wname = (pstring *) ptr;
+            for (unsigned short i = 0; i < fcall->nwname; i++)
+                ptr += pstrlen((pstring *) ptr);
+            break;
+
+        case Rwalk:
+            fcall->nwqid = _get_ushort(ptr);
+            ptr += SHRT_SIZE;
+            fcall->wqid = (struct qid *) ptr;
+            ptr += fcall->nwqid * sizeof(struct qid);
             break;
 
         case Topen:

@@ -1,5 +1,6 @@
 #include "fcall.h"
 
+#include <pstring.h>
 #include <stddef.h>
 #include <string.h>
 #include <sys/types.h>
@@ -30,7 +31,26 @@ unsigned fcall_msg_size(const fcall *fcall) {
             break;
 
         case Rattach:
-            size += sizeof(qid);
+            size += sizeof(struct qid);
+            break;
+
+        case Twalk: {
+            size += INT_SIZE; /* fid */
+            size += INT_SIZE; /* newfid */
+            size += SHRT_SIZE; /* nwname */
+
+            char *ptr = (char *) fcall->wname;
+            for (unsigned short i = 0; i < fcall->nwname; i++) {
+                size_t len = pstrlen((pstring *) ptr);
+                size += len;
+                ptr += len;
+            } /* nwname * wname */
+            break;
+        }
+
+        case Rwalk:
+            size += SHRT_SIZE; /* nwqid */
+            size += sizeof(struct qid) * fcall->nwqid; /* wqid */
             break;
 
         case Topen:
@@ -40,7 +60,7 @@ unsigned fcall_msg_size(const fcall *fcall) {
 
         case Ropen:
         case Rcreate:
-            size += sizeof(qid); /* qid */
+            size += sizeof(struct qid); /* qid */
             size += INT_SIZE; /* iounit */
             break;
 

@@ -1,5 +1,6 @@
 #include "fcall.h"
 
+#include <pstring.h>
 #include <string.h>
 #include <sys/types.h>
 
@@ -24,15 +25,22 @@ static unsigned _put_ulong(char *ptr, unsigned long val) {
     return LONG_SIZE;
 }
 
-static unsigned _put_string(char *ptr, const char *str) {
-    size_t length = strlen(str);
+static unsigned _put_string(char *ptr, const char *str, size_t length) {
     unsigned i = _put_ushort(ptr, length);
     const char *c = str;
 
-    for (; i < length + SHRT_SIZE; i++, c++)
-        ptr[i] = *c;
+    for (; i < length + SHRT_SIZE; i++)
+        ptr[i] = *c++;
 
     return i;
+}
+
+static unsigned _put_qid(char *ptr, const struct qid *qid) {
+    unsigned n = 0;
+    n += _put_uint(ptr + n, qid->type);
+    n += _put_uint(ptr + n , qid->version);
+    n += _put_ulong(ptr + n, qid->id);
+    return n;
 }
 
 unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
@@ -51,24 +59,45 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
         case Tversion:
         case Rversion:
             ptr += _put_uint(ptr, fcall->msize);
-            ptr += _put_string(ptr, fcall->version);
+            ptr += _put_string(ptr, fcall->version, strlen(fcall->version));
             break;
 
         case Rerror:
-            ptr += _put_string(ptr, fcall->ename);
+            ptr += _put_string(ptr, fcall->ename, strlen(fcall->ename));
             break;
 
         case Tattach:
             ptr += _put_uint(ptr, fcall->fid);
             ptr += _put_uint(ptr, fcall->afid);
-            ptr += _put_string(ptr, fcall->uname);
-            ptr += _put_string(ptr, fcall->aname);
+            ptr += _put_string(ptr, fcall->uname, strlen(fcall->uname));
+            ptr += _put_string(ptr, fcall->aname, strlen(fcall->aname));
             break;
 
         case Rattach:
-            ptr += _put_uint(ptr, fcall->qid.type);
-            ptr += _put_uint(ptr, fcall->qid.version);
-            ptr += _put_ulong(ptr, fcall->qid.id);
+            ptr += _put_qid(ptr, &fcall->qid);
+            break;
+
+        case Twalk: {
+            ptr += _put_uint(ptr, fcall->fid);
+            ptr += _put_uint(ptr, fcall->newfid);
+            ptr += _put_ushort(ptr, fcall->nwname);
+
+            char *s = (char *) fcall->wname;
+            for (size_t i = 0; i < fcall->nwname; i++) {
+                pstring *pstr = (pstring *) s;
+                ptr += _put_string(ptr, pstr->s, pstr->len);
+                s += pstrlen(pstr);
+            }
+
+            break;
+        }
+
+        case Rwalk:
+            ptr += _put_ushort(ptr, fcall->nwqid);
+
+            for (size_t i = 0; i < fcall->nwqid; i++)
+                ptr += _put_qid(ptr, &fcall->wqid[i]);
+
             break;
 
         case Topen:
@@ -78,15 +107,13 @@ unsigned fcall_msg_to_buf(const fcall *fcall, char *buf, unsigned length) {
 
         case Ropen:
         case Rcreate:
-            ptr += _put_uint(ptr, fcall->qid.type);
-            ptr += _put_uint(ptr, fcall->qid.version);
-            ptr += _put_ulong(ptr, fcall->qid.id);
+            ptr += _put_qid(ptr, &fcall->qid);
             ptr += _put_uint(ptr, fcall->iounit);
             break;
 
         case Tcreate:
             ptr += _put_uint(ptr, fcall->fid);
-            ptr += _put_string(ptr, fcall->name);
+            ptr += _put_string(ptr, fcall->name, strlen(fcall->name));
             ptr += _put_uint(ptr, fcall->perm);
             ptr += _put_uchar(ptr, fcall->mode);
             break;

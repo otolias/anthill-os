@@ -30,6 +30,14 @@
 *
 * - _afid_ is currently unused and its value should be NOFID
 *
+* size[4] Twalk tag[2] fid[4] newfid[4] nwname[2] nwname * wname[s]
+* size[4] Rwalk tag[2] nwqid[2] nwqid * wqid[16]
+*
+* Traverse the directory hierarchy _nwname_ path elements from the file represented
+* by _fid_. The response contains _nwqid_ qids for each of the successfuly traversed
+* folders. If the whole path is traversed, meaning _nwname_ == _nwqid_, the resulting
+* file is represented by _newfid_.
+*
 * size[4] Topen tag[2] fid[4] mode[1]
 * size[4] Ropen tag[2] qid[16] iounit[4]
 *
@@ -55,6 +63,8 @@
 #ifndef _FCALL_H
 #define _FCALL_H
 
+#include <pstring.h>
+
 #define NOFID (int)~0
 #define NOTAG (unsigned short)~0
 
@@ -74,11 +84,11 @@
 /* File permissions */
 #define DMDIR 1 << 31 /* Directory */
 
-typedef struct {
+struct qid {
     unsigned int  type;
     unsigned int  version;
     unsigned long id;
-} qid;
+};
 
 typedef struct {
     unsigned char  type; /* Message type */
@@ -98,9 +108,18 @@ typedef struct {
             char     *aname; /* File tree to access */
         };
         struct { /* Rattach, Rcreate, Ropen */
-            qid      qid;    /* File information */
-            unsigned iounit; /* Maximum number of bytes guaranteed */
-                             /* to be read or written. Currently unused */
+            struct qid qid;    /* File information */
+            unsigned   iounit; /* Maximum number of bytes guaranteed */
+                               /* to be read or written. Currently unused */
+        };
+        struct { /* Twalk */
+            unsigned       newfid; /* Fid to be associated with the last element */
+            unsigned short nwname; /* Number of path elements */
+            pstring*       wname;  /* Pointer to path elements */
+        };
+        struct { /* Rwalk */
+            unsigned short nwqid; /* Number of qids */
+            struct qid*    wqid;  /* Pointer to qids */
         };
         struct { /* Tcreate, Topen */
             char*    name; /* File name to be created */
@@ -122,6 +141,8 @@ enum fcall_types {
     Rerror,
     Tattach,
     Rattach,
+    Twalk,
+    Rwalk,
     Topen,
     Ropen,
     Tcreate,
