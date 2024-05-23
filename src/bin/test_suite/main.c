@@ -8,6 +8,7 @@ int main(void) {
     test_fcall();
     test_mqueue();
     test_mman();
+    test_pstring();
     test_stdio();
     test_stdlib();
     test_string();

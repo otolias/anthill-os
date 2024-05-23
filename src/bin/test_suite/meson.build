@@ -3,6 +3,7 @@ test_suite_sources = [
   'main.c',
   'mman.c',
   'mqueue.c',
+  'pstring.c',
   'stdio.c',
   'stdlib.c',
   'string.c',
