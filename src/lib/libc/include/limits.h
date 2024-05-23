@@ -1,6 +1,14 @@
 #ifndef _LIMITS_H
 #define _LIMITS_H
 
+#ifndef SHRT_MAX
+#define SHRT_MAX __SHRT_MAX__
+#endif /* SHRT_MAX */
+
+#ifndef SHRT_MIN
+#define SHRT_MIN (-SHRT_MAX - 1)
+#endif /* SHRT_MIN */
+
 #ifndef INT_MAX
 #define INT_MAX __INT_MAX__
 #endif /* INT_MAX */

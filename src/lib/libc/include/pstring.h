@@ -12,8 +12,31 @@ typedef struct __attribute__((packed)) {
 } pstring;
 
 /*
+* Converts the string pointed to by _src_ to a pstring representation
+* stored in _dest_, with a maximum of _n_ bytes.
+*
+* If _dest_ is a null pointer, the pstring is malloc'd and _n_
+* is ignored.
+*
+* On success, returns a pointer to the new pstring.
+* On failure, returns a null pointer.
+*/
+pstring* pstrconv(void *dest, const char *src, size_t n);
+
+/*
 * Calculate the number of bytes in the pstring to which _s_ points to
 */
 size_t pstrlen(const pstring* s);
+
+/*
+* Converts the pstring pointed to by _src_ to a nul-terminated string
+* stored in _dest_, with a maximum of _n_ bytes.
+*
+* If _dest_ is a null pointer, the string is malloc'd and _n_ is ignored
+*
+* On success, returns a pointed to the new string.
+* On failure, returns a null pointer.
+*/
+char* pstrtoz(char *dest, const pstring *src, size_t n);
 
 #endif /* _PSTRING_H */
