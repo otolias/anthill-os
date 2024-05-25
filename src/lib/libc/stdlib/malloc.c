@@ -7,12 +7,13 @@
 #include "internal/stdlib.h"
 
 void* malloc(size_t size) {
+    if (size == 0)
+        { errno = EINVAL; return NULL; }
+
     size_t actual_size = size + sizeof(block_t);
 
-    if (actual_size > MALLOC_BLOCK_SIZE) {
-        errno = ENOMEM;
-        return NULL;
-    }
+    if (actual_size > MALLOC_BLOCK_SIZE)
+        { errno = ENOMEM; return NULL; }
 
     int j;
     for (j = 0; actual_size; j++) {

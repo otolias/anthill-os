@@ -13,7 +13,8 @@
 * indicate the error
 *
 * errno:
-* - ENOMEM Not enough available storage
+* - EINVAL Size is 0
+* - ENOMEM Not enough available space
 */
 void* malloc(size_t size);
 
