@@ -25,6 +25,27 @@ static void _test_pstrconv(void) {
         puts("PSTRING::ERROR::pstrconv length check failed");
 }
 
+static void _test_pstrdup(void) {
+    char src_buf[16];
+    char dst_buf[16];
+    const pstring *src = pstrconv(src_buf, "abc", 16);
+    pstring *pstr;
+
+    pstr = pstrdup(dst_buf, src, 16);
+    if (pstr != (void *) dst_buf || pstr->len != 3 || memcmp(pstr->s, "abc", 3) != 0)
+        puts("PSTRING::ERROR::pstrdup failed");
+
+    pstr = pstrdup(NULL, src, 0);
+    if (pstr == NULL || pstr->len != 3 || memcmp(pstr->s, "abc", 3) != 0)
+        puts("PSTRING::ERROR::pstrdup dest = NULL failed");
+    else
+        free(pstr);
+
+    pstr = pstrdup(dst_buf, src, 1);
+    if (pstr != NULL)
+        puts("PSTRING::ERROR::pstrdup length check failed");
+}
+
 static void _test_pstrtoz(void) {
     char buf[16];
     pstring *pstr = pstrconv(NULL, "abc", 0);
@@ -49,5 +70,6 @@ static void _test_pstrtoz(void) {
 
 void test_pstring(void) {
     _test_pstrconv();
+    _test_pstrdup();
     _test_pstrtoz();
 }

@@ -24,6 +24,18 @@ typedef struct __attribute__((packed)) {
 pstring* pstrconv(void *dest, const char *src, size_t n);
 
 /*
+* Duplicate the pstring pointed to by _src_ to a new pstring stored in
+* _dest_, with a maximum of _n_ bytes.
+*
+* If _dest_ is a null pointer, the pstring is malloc'd and _n_
+* is ignored.
+*
+* On success, returns a pointer to the new pstring.
+* On failure, returns a null pointer.
+*/
+pstring* pstrdup(void *dest, const pstring* src, size_t n);
+
+/*
 * Calculate the number of bytes in the pstring to which _s_ points to
 */
 size_t pstrlen(const pstring* s);

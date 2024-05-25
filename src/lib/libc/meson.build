@@ -14,6 +14,7 @@ libc_sources = files([
   'mqueue' / 'mq_send.c',
   'mqueue' / 'mq_unlink.c',
   'pstring' / 'pstrconv.c',
+  'pstring' / 'pstrdup.c',
   'pstring' / 'pstrlen.c',
   'pstring' / 'pstrtoz.c',
   'stdio' / 'printf.c',
