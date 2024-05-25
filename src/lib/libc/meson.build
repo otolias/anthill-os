@@ -6,7 +6,7 @@ libc_sources = files([
   'fcall' / 'fcall_msg_to_buf.c',
   'fcall' / 'fcall_buf_to_msg.c',
   'internal' / 'formatter.c',
-  'internal' / 'stdlib.c',
+  'internal' / 'malloc.c',
   'internal' / 'strtox.c',
   'mqueue' / 'mq_close.c',
   'mqueue' / 'mq_open.c',

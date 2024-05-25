@@ -5,7 +5,7 @@
 
 block_t *first_block;
 
-block_t* find_available_block(char order) {
+block_t* block_find(char order) {
     block_t *current_block = first_block;
 
     while (current_block) {
@@ -15,7 +15,7 @@ block_t* find_available_block(char order) {
         }
 
         if (current_block->k > order) {
-            split_block(current_block);
+            block_split(current_block);
             continue;
         }
 
@@ -25,15 +25,15 @@ block_t* find_available_block(char order) {
         }
     }
 
-    if (expand(current_block) == 0)
-        return find_available_block(order);
+    if (block_expand(current_block) == 0)
+        return block_find(order);
 
     return NULL;
 }
 
-void coalesce_blocks(block_t *block) {
+void block_coalesce(block_t *block) {
     if (block->k == MALLOC_MAX_ORDER) {
-        shrink(block);
+        block_shrink(block);
         return;
     }
 
@@ -53,7 +53,7 @@ void coalesce_blocks(block_t *block) {
     }
 }
 
-short expand(block_t *block) {
+short block_expand(block_t *block) {
     block_t *new_block = mmap(0, MALLOC_BLOCK_SIZE, 0, MAP_ANONYMOUS, 0, 0);
 
     if(!new_block)
@@ -73,7 +73,7 @@ short expand(block_t *block) {
     return 0;
 }
 
-void shrink(block_t *block) {
+void block_shrink(block_t *block) {
     if (block->next)
         return;
 
@@ -83,7 +83,7 @@ void shrink(block_t *block) {
     munmap(block, MALLOC_BLOCK_SIZE);
 }
 
-void split_block(block_t *block) {
+void block_split(block_t *block) {
     block->k--;
     block_t *new_block = (block_t *) ((size_t) block + (2 << block->k));
     new_block->available = 1;

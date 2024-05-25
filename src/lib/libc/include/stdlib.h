@@ -3,6 +3,20 @@
 
 #include <sys/types.h>
 
+/* --- Memory allocation functions */
+
+/*
+* Allocate unused space for an object of _size_ in bytes
+*
+* On success, returns a pointer to the allocated space.
+* On failure, returns a null pointer and sets errno to
+* indicate the error
+*
+* errno:
+* - ENOMEM Not enough available storage
+*/
+void* malloc(size_t size);
+
 /*
 * Allocate unused space for an array of _nelem_, each of
 * size _elsize_
@@ -18,28 +32,20 @@
 void *calloc(size_t nelem, size_t elsize);
 
 /*
+* Deallocate space pointed to by _ptr_
+*/
+void free(void *ptr);
+
+/* --- Process functions */
+
+/*
 * Terminate process
 *
 * Status is currently unsupported
 */
 void exit(int status);
 
-/*
-* Deallocate space pointed to by _ptr_
-*/
-void free(void *ptr);
-
-/*
-* Allocate unused space for an object of _size_ in bytes
-*
-* On success, returns a pointer to the allocated space.
-* On failure, returns a null pointer and sets errno to
-* indicate the error
-*
-* errno:
-* - ENOMEM Not enough available storage
-*/
-void* malloc(size_t size);
+/* String conversion functions */
 
 /*
 * Convert the initial portion of the string pointed

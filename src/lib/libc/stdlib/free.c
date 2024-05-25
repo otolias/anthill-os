@@ -10,5 +10,5 @@ void free(void *ptr) {
     block_t *block = (block_t *) ((size_t) ptr - sizeof(block_t));
     block->available = 1;
 
-    coalesce_blocks(block);
+    block_coalesce(block);
 }

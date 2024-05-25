@@ -19,7 +19,7 @@ void* malloc(size_t size) {
         actual_size = actual_size >> 1;
     }
 
-    block_t *available_block = find_available_block(j);
+    block_t *available_block = block_find(j);
 
     if(!available_block) {
         errno = ENOMEM;

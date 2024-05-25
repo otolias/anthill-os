@@ -22,27 +22,27 @@ typedef struct {
 /*
 * Coalesce blocks
 */
-void coalesce_blocks(block_t *block);
+void block_coalesce(block_t *block);
 
 /*
 * Get more memory for the allocator from _block_
 */
-short expand(block_t *block);
+short block_expand(block_t *block);
 
 /*
 * Iterate through the available blocks and find one with k equal to _order_
 */
-block_t* find_available_block(char order);
+block_t* block_find(char order);
 
 /*
  * Release memory from the allocator from _block_
 */
-void shrink(block_t *block);
+void block_shrink(block_t *block);
 
 /*
 * Split the given _block_ to two blocks of lower k
 */
-void split_block(block_t *block);
+void block_split(block_t *block);
 
 /*
 * Convert _str_ to unsigned long long in radix _base_ and sets _endptr_ to
