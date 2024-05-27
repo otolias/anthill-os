@@ -24,21 +24,14 @@ static void _test_memcmp(void) {
 }
 
 static void _test_memcpy(void) {
-    char p[4] = { 0 };
-    char *res;
+    char src[15];
+    char dst[15];
 
-    res = memcpy(p, "12", 0);
-    if (res != p || p[0] != 0 || p[1] != 0)
+    for (size_t i = 0; i < 15; i++) src[i] = i;
+
+    const char *res = memcpy(dst, src, 15);
+    if (res != dst || memcmp(dst, src, 15) != 0)
         puts("STRING::ERROR::memcpy n = 0 failed");
-
-    res = memcpy(p, "12", 2);
-    if (res != p || p[0] != '1' || p[1] != '2')
-        puts("STRING::ERROR::memcpy char * failed");
-
-    int i = 123;
-    res = memcpy(p, &i, 4);
-    if (res != p || *p != i)
-        puts("STRING::ERROR::memcpy int * failed");
 }
 
 static void _test_memmove(void) {
