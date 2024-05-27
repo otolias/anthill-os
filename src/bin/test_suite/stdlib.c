@@ -74,6 +74,52 @@ static void _test_malloc(void) {
     free(mem_5);
 }
 
+static void _test_realloc(void) {
+    {
+        char *src = malloc(2);
+        src[0] = 'a'; src[1] = 'b';
+        errno = 0;
+        char *dst = realloc(src, 4);
+        if (dst == NULL || errno != 0 || memcmp(dst, "ab", 2) != 0)
+            puts("STDLIB::ERROR::Realloc bigger allocation failed");
+
+        if (dst) free(dst);
+        else free(src);
+    }
+
+    {
+        char *src = malloc(4);
+        src[0] = 'a'; src[1] = 'b'; src[2] = 'c'; src[3] = 'd';
+        errno = 0;
+        char *dst = realloc(src, 2);
+        if (dst == NULL || errno != 0 || memcmp(dst, "ab", 2) != 0)
+            puts("STDLIB::Error::Realloc smaller allocation failed");
+
+        if (dst) free(dst);
+        else free(src);
+    }
+
+    {
+        char *src = malloc(2);
+        errno = 0;
+        char *dst = realloc(src, 0);
+        if (dst != NULL || errno != EINVAL)
+            puts("STDLIB::ERROR::Realloc size check failed");
+
+        if (dst) free(dst);
+        else free(src);
+    }
+
+    {
+        errno = 0;
+        char *dst = realloc(NULL, 4);
+        if (dst == NULL || errno != 0)
+            puts("STDLIB::ERROR::Realloc null src failed");
+
+        if (dst) free(dst);
+    }
+}
+
 static void _test_strtoull(void) {
     char *end;
     unsigned long long res;
@@ -198,6 +244,7 @@ static void _test_strtol(void) {
 void test_stdlib(void) {
     _test_calloc();
     _test_malloc();
+    _test_realloc();
     _test_strtoull();
     _test_strtoul();
     _test_strtoll();
