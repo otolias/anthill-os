@@ -27,6 +27,7 @@ libc_sources = files([
   'stdlib' / 'exit.c',
   'stdlib' / 'free.c',
   'stdlib' / 'malloc.c',
+  'stdlib' / 'realloc.c',
   'stdlib' / 'strtol.c',
   'stdlib' / 'strtoll.c',
   'stdlib' / 'strtoul.c',

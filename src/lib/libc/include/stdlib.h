@@ -33,6 +33,25 @@ void* malloc(size_t size);
 void *calloc(size_t nelem, size_t elsize);
 
 /*
+* Replace allocation size for object pointed to by _ptr_ and put
+* the contents of _ptr_ up to the lesser of the new and old sizes.
+*
+* If _ptr_ is a null pointer, the behaviour is equivalent to
+* malloc.
+*
+* On success, returns a pointer to the allocated space and _ptr_
+* is deallocated.
+* On failure, returns a null pointer and sets errno to
+* indicate the error. The old object _ptr_ is left as is.
+*
+* errno:
+* - EINVAL Size is 0 or _ptr_ wasn't returned by previous memory
+*   allocation
+* - ENOMEM Not enough available space
+*/
+void* realloc(void *ptr, size_t size);
+
+/*
 * Deallocate space pointed to by _ptr_
 */
 void free(void *ptr);

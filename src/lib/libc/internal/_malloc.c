@@ -105,3 +105,19 @@ block_t* block_find(char order) {
 
     return NULL;
 }
+
+size_t block_get_size(void *ptr) {
+    const block_t *block = (block_t *) ((size_t) ptr - sizeof(block_t));
+    const block_t *current_block = first_block;
+
+    while (current_block) {
+        if (current_block == block)
+            break;
+
+        current_block = current_block->next;
+    }
+
+    if (!current_block) return 0;
+
+    return 1 << current_block->k;
+}
