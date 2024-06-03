@@ -36,6 +36,11 @@ pstring* pstrconv(void *dest, const char *src, size_t n);
 pstring* pstrdup(void *dest, const pstring* src, size_t n);
 
 /*
+* Returns a pointer to the byte after _pstr_
+*/
+pstring* pstriter(const pstring *pstr);
+
+/*
 * Calculate the number of bytes in the pstring to which _s_ points to
 */
 size_t pstrlen(const pstring* s);
