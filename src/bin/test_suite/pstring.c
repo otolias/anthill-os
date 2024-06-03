@@ -46,6 +46,21 @@ static void _test_pstrdup(void) {
         puts("PSTRING::ERROR::pstrdup length check failed");
 }
 
+static void _test_pstriter(void) {
+    const char *literal = "\1\0a\3\0bcd\5\0efghi";
+    const pstring *pstr = (pstring *) literal;
+    pstring *next;
+
+    for (int i = 0; i < 3; i++) {
+        next = pstriter(pstr);
+        if ((char *) next != (char *) pstr + pstrlen(pstr))
+                printf("PSTRING::ERROR::pstriter iteration %d failed\n", i);
+
+        pstr = next;
+    }
+
+}
+
 static void _test_pstrtoz(void) {
     char buf[16];
     pstring *pstr = pstrconv(NULL, "abc", 0);
@@ -71,5 +86,6 @@ static void _test_pstrtoz(void) {
 void test_pstring(void) {
     _test_pstrconv();
     _test_pstrdup();
+    _test_pstriter();
     _test_pstrtoz();
 }
