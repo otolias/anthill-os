@@ -65,8 +65,10 @@
 
 #include <pstring.h>
 
-#define NOFID (int)~0
+#define NOFID (unsigned int)~0
 #define NOTAG (unsigned short)~0
+
+#define FCALL_ERROR(e,s) pstring (e) = {sizeof(s) - 1, (s)}
 
 #define CHAR_SIZE 1
 #define SHRT_SIZE 2
@@ -89,6 +91,10 @@ struct qid {
     unsigned int  version;
     unsigned long id;
 };
+
+/* qid types */
+#define QTFILE 0
+#define QTDIR  31 << 1
 
 /*
 * A data structure for storing and parsing 9p messages.
