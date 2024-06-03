@@ -60,6 +60,7 @@ exec_link_args = [
 ]
 
 subdir('src' / 'bin')
+subdir('src' / 'modules')
 
 kernel_inc_directories = include_directories('src' / 'include')
 
