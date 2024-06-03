@@ -15,6 +15,12 @@ void main(void) {
     file = ramdisk_lookup("./bin/test_suite");
     task_exec(file);
 
+    file = ramdisk_lookup("./modules/mod_rd");
+    task_exec(file);
+
+    file = ramdisk_lookup("./modules/mod_vfs");
+    task_exec(file);
+
     file = ramdisk_lookup("./bin/hello");
     task_exec(file);
 
