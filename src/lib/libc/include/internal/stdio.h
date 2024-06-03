@@ -10,8 +10,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 
-#define PRINTF_BUFFER_SIZE 1024
-
 /* File handling */
 
 /*

@@ -14,6 +14,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 
+#define BUFSIZ 512
 #define FOPEN_MAX 16
 
 enum file_states {

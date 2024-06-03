@@ -3,11 +3,9 @@
 #include <stdarg.h>
 #include <syscalls.h>
 
-#include "internal/stdio.h"
-
 int printf(const char *restrict format, ...) {
     va_list args;
-    char buffer[PRINTF_BUFFER_SIZE];
+    char buffer[BUFSIZ];
 
     va_start(args, format);
     vsprintf(buffer, format, args);
