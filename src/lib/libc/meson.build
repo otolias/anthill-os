@@ -6,6 +6,7 @@ libc_sources = files([
   'fcall' / 'fcall_msg_size.c',
   'fcall' / 'fcall_msg_to_buf.c',
   'fcall' / 'fcall_path_size.c',
+  'fcall' / 'fcall_path_split.c',
   'internal' / '_formatter.c',
   'internal' / '_malloc.c',
   'internal' / '_strtox.c',

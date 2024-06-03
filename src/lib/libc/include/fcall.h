@@ -188,4 +188,12 @@ unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall);
 */
 unsigned short fcall_path_size(fcall *fcall);
 
+/*
+* Splits _path_ delimited by slashes to an array of malloc'd pstring elements.
+*
+* On success, sets nwname and wname fields of _fcall_ and returns number of elements.
+* On failure, returns 0 and no memory is allocated.
+*/
+unsigned short fcall_path_split(fcall *fcall, const char *path);
+
 #endif /* _FCALL_H */
