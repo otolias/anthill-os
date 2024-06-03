@@ -3,8 +3,55 @@
 #include <fcall.h>
 #include <pstring.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+
+static void _test_path_size(void) {
+    unsigned short res;
+    fcall f = {
+        .type = Twalk,
+        .tag = NOTAG,
+        .fid = NOFID,
+        .newfid = NOFID,
+    };
+
+    f.nwname = 1;
+    f.wname = (pstring *) "\4\0file";
+    res = fcall_path_size(&f);
+    if (res != 4)
+        puts("FCALL::ERROR::fcall_path_size one element failure");
+
+    f.nwname = 3;
+    f.wname = (pstring *) "\3\0dir\4\0dir2\4\0file";
+    res = fcall_path_size(&f);
+    if (res != 13)
+        puts("FCALL::ERROR::fcall_path_size three elements failure");
+}
+
+static void _test_path_split(void) {
+    unsigned short res;
+    fcall f = {
+        .type = Twalk,
+        .tag = NOTAG,
+        .fid = NOFID,
+        .newfid = NOFID,
+    };
+
+    const char *p1 = "/file";
+    res = fcall_path_split(&f, p1);
+    if (res != 1 || res != f.nwname || memcmp(f.wname, "\4\0file", 6) != 0)
+        puts("FCALL::ERROR::fcall_path_split /file failure");
+    else
+        free(f.wname);
+
+    const char *p2 = "/dir/file";
+    res = fcall_path_split(&f, p2);
+    if (res != 2 || res != f.nwname || memcmp(f.wname, "\3\0dir\4\0file", 11) != 0)
+        puts("FCALL::ERROR::fcall_path_split /dir/file failure");
+    else
+        free(f.wname);
+}
 
 static void _test_Tversion(void) {
     unsigned char buf[256];
@@ -384,6 +431,8 @@ static void _test_Rread(void) {
 }
 
 void test_fcall(void) {
+    _test_path_size();
+    _test_path_split();
     _test_Tversion();
     _test_Rversion();
     _test_Rerror();
