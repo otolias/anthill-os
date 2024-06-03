@@ -1,5 +1,5 @@
 /*
-* Current implementation supports:
+* Current formatting implementation supports:
 *
 * Length modifier:   %l (not supported on %c and %s)
 * Characters:        %c
@@ -13,6 +13,36 @@
 
 #include <stdarg.h>
 #include <sys/types.h>
+
+#define FOPEN_MAX 16
+
+enum file_states {
+    FCLOSED,
+    FOPEN,
+};
+
+typedef struct {
+    unsigned         fid;
+    enum file_states state;
+} FILE;
+
+/* File handling */
+
+/*
+* Open the file whose path name is the string pointed to by _pathname_ with
+* the indicated _mode_
+*
+* Available modes:
+* - r  Open file for reading
+* - w  Truncate or create file for writing
+* - a  Append or create file
+* - r+ Open file for reading and writing
+* - w+ Truncate or create file for reading and writing
+* - a+ Append or create file for reading or writing
+*/
+FILE* fopen(const char *restrict pathname, const char *restrict mode);
+
+/* Format handling */
 
 /*
 * Put formatted string to _s_. Formatting is specified by _format_ and _ap_

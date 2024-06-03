@@ -1,14 +1,26 @@
 /*
-* Internal stdio formatting functions
+* Internal stdio functions
 */
 
 #ifndef _INTERNAL_STDIO_H
 #define _INTERNAL_STDIO_H
 
+#include <pstring.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <sys/types.h>
 
 #define PRINTF_BUFFER_SIZE 1024
+
+/* File handling */
+
+/*
+* Open file for whose path name is pointed to by _pathname_ with
+* mode specified by _oflag_
+*/
+FILE* file_open(const char *pathname, int oflag);
+
+/* Format handling */
 
 /*
 * Formats _format_ according to _args_ and puts the result in _buffer_,
