@@ -3,6 +3,8 @@
 #include <mqueue.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/vfs.h>
 
 #include "rd.h"
@@ -47,6 +49,62 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     return vfs_msg_put(vfs_msg, buf);
 }
 
+/* Handle Twalk message */
+static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
+    unsigned short total_length = fcall_path_size(&vfs_msg->fcall) + 1; /* Path prefix (/) */
+
+    pstring *path = malloc(total_length + sizeof(*path));
+    if (!path) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ECLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    unsigned short nwqid;
+    struct qid wqid[vfs_msg->fcall.nwname];
+    char *path_ptr = (char *) path->s;
+    pstring *wname_ptr = vfs_msg->fcall.wname;
+
+    *path_ptr++ = '/';
+    path->len = 1;
+
+    for (nwqid = 0; nwqid < vfs_msg->fcall.nwname; nwqid++) {
+        path->len += wname_ptr->len;
+        memcpy(path_ptr, wname_ptr->s, wname_ptr->len);
+        path_ptr += wname_ptr->len;
+
+        if (vfs_msg->fcall.nwname - nwqid != 1) {
+            *path_ptr++ = '/';
+            path->len ++;
+        }
+
+        const struct header *header = rd_find(path);
+        if (!header) break;
+
+        wqid[nwqid].type = rd_get_type(header);
+        wqid[nwqid].version = 0;
+        wqid[nwqid].id = 0;
+
+        wname_ptr = pstriter(wname_ptr);
+    }
+
+    if (nwqid == 0) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOTFOUND;
+    } else {
+        vfs_msg->fcall.type = Rwalk;
+        vfs_msg->fcall.nwqid = nwqid;
+        vfs_msg->fcall.wqid = wqid;
+    }
+
+    unsigned result_length = vfs_msg_put(vfs_msg, buf);
+    free(path);
+    return result_length;
+}
+
+/*
+* Handle vfs message
+*/
 static void _handle_message(char *buf) {
     struct vfs_msg vfs_msg;
 
@@ -65,6 +123,10 @@ static void _handle_message(char *buf) {
                 return;
 
             len = _attach(&vfs_msg, buf);
+            break;
+
+        case Twalk:
+            len = _walk(&vfs_msg, buf);
             break;
 
         default:
