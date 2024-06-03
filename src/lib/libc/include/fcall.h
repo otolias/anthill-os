@@ -179,4 +179,13 @@ unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned lengt
 */
 unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall);
 
+/*
+* Calculates the size needed for a slash delimited path assembled from the nwname and
+* wname fields of _fcall_. Fails on malformed input.
+*
+* On success, returns the size.
+* On failure, returns 0.
+*/
+unsigned short fcall_path_size(fcall *fcall);
+
 #endif /* _FCALL_H */
