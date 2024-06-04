@@ -15,12 +15,6 @@ enum task_state {
     TASK_BLOCKED,
 };
 
-enum task_error_codes {
-    TASK_OK,
-    TASK_ELF_ERROR,
-    TASK_INIT_ERROR,
-};
-
 /*
 * Task descriptor
 */
@@ -62,9 +56,9 @@ void task_tick(void);
 void task_schedule(void);
 
 /*
-* Load _file_ dependencies and execute
+* Load _file_ dependencies and execute. Returns a pointer to the process address
 */
-short task_exec(const void *file);
+const void* task_exec(const void *file);
 
 /*
 * Terminate process

@@ -1,6 +1,7 @@
-#include "drivers/uart.h"
 #include "drivers/irq.h"
 #include "drivers/timer.h"
+#include "drivers/uart.h"
+#include <kernel/kprintf.h>
 #include <kernel/ramdisk.h>
 #include <kernel/task.h>
 
@@ -11,18 +12,23 @@ void main(void) {
     uart_init();
 
     void *file;
+    const void *address;
 
     file = ramdisk_lookup("./bin/test_suite");
-    task_exec(file);
+    address = task_exec(file);
+    kprintf("bin/test_suite loaded at address %x\n", address);
 
     file = ramdisk_lookup("./modules/mod_rd");
-    task_exec(file);
+    address = task_exec(file);
+    kprintf("modules/mod_rd loaded at address %x\n", address);
 
     file = ramdisk_lookup("./modules/mod_vfs");
-    task_exec(file);
+    address = task_exec(file);
+    kprintf("modules/mod_vfs loaded at address %x\n", address);
 
     file = ramdisk_lookup("./bin/hello");
-    task_exec(file);
+    address = task_exec(file);
+    kprintf("bin/hello loaded at address %x\n", address);
 
     while (1)
         task_schedule();

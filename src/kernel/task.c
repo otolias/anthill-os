@@ -66,7 +66,7 @@ static void _task_load(const Elf64_Ehdr *ehdr, const void *address) {
     }
 }
 
-short task_exec(const void *file) {
+const void *task_exec(const void *file) {
     current_task->preempt_count++;
 
     /* Load linker if not already loaded*/
@@ -77,7 +77,7 @@ short task_exec(const void *file) {
         linker_page = get_free_pages(elf_get_image_size(ehdr));
         if (!linker_page) {
             kprintf("Error loading linker\n");
-            return TASK_INIT_ERROR;
+            return NULL;
         };
 
         _task_load(ehdr, linker_page);
@@ -90,7 +90,7 @@ short task_exec(const void *file) {
     const void *process_addr = get_free_pages(process_size + STACK_SIZE);
     if (!process_addr) {
         kprintf("Error loading process\n");
-        return TASK_INIT_ERROR;
+        return NULL;
     }
 
     _task_load(ehdr, process_addr);
@@ -129,7 +129,7 @@ short task_exec(const void *file) {
     }
 
     current_task->preempt_count--;
-    return TASK_OK;
+    return process_addr;
 }
 
 void task_schedule(void) {
