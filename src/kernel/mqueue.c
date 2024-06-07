@@ -124,7 +124,7 @@ static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
 * _mqueue_
 */
 static bool _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t msg_len) {
-    if (mqueue->tail == mqueue->attr.mq_maxmsg)
+    if (mqueue->tail == mqueue->attr.mq_maxmsg - 1)
         mqueue->tail = -1;
 
     if (mqueue->attr.mq_curmsg == mqueue->attr.mq_maxmsg)
@@ -147,7 +147,7 @@ static bool _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t m
 * Copy first message of _mqueue_ to _msg_ptr_
 */
 static ssize_t _mqueue_dequeue(struct mqueue *mqueue, char *msg_ptr) {
-    if (mqueue->head == mqueue->attr.mq_maxmsg)
+    if (mqueue->head == mqueue->attr.mq_maxmsg - 1)
         mqueue->head = -1;
 
     if (!mqueue->attr.mq_curmsg)
