@@ -1,15 +1,13 @@
 #include <stdio.h>
 
-#include <stdlib.h>
-
 int main(void) {
-    char *string = malloc(sizeof(char) * 24);
-    if (!string) return 1;
+    FILE *f = fopen("/bin/hello", "r");
+    int c;
+    unsigned i = 0;
 
-    sprintf(string, "%s %s", "Malloced", "Hello, World!");
+    while ((c = fgetc(f)) != EOF) {
+        i++;
+    }
 
-    printf("%s\n", string);
-
-    free(string);
-    return 0;
+    printf("Read 0x%x bytes\n", i);
 }
