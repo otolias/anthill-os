@@ -4,6 +4,7 @@
 #include <fcall.h>
 #include <mqueue.h>
 #include <pstring.h>
+#include <sys/vfs.h>
 
 enum vfs_error {
     VFS_OK,
@@ -17,7 +18,9 @@ struct vnode {
     struct qid       qid;         /* File information */
     struct vnode*    children;    /* Array of children */
     unsigned         children_no; /* Number of children */
+    struct vnode*    mount_node;  /* Parent mount point */
     mqd_t            mq_id;       /* Associated mqueue channel */
+    unsigned         fid;         /* Associated mount fid */
 };
 
 /*

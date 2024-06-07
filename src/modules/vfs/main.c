@@ -20,12 +20,9 @@
 #include <stdio.h>
 #include <sys/vfs.h>
 
-#include "vfs.h"
-#include "client.h"
+#include <vfs/client.h>
 
-static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf);
-static unsigned short _open(struct vfs_msg *vfs_msg, char *buf);
-static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf);
+#include "vfs.h"
 
 /* Errors */
 FCALL_ERROR(EINVALID, "Invalid message");
@@ -34,12 +31,16 @@ FCALL_ERROR(ENOFID, "Unknown fid");
 FCALL_ERROR(ENOFILE, "File not found");
 
 static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
-    struct client *client = client_create(vfs_msg->fcall.uname);
-    if (!client) {
-        vfs_msg->fcall.type = Rerror;
-        vfs_msg->fcall.ename = &ENOCLIENT;
-        return vfs_msg_put(vfs_msg, buf);
-    }
+    if (vfs_msg->fcall.uname->len == 0)
+        return 0;
+
+    char client_name[32];
+    if (!pstrtoz(client_name, vfs_msg->fcall.uname, 32))
+        return 0;
+
+    struct vfs_client *client = vfs_client_create(client_name);
+    if (!client)
+        return 0;
 
     if (vfs_msg->fcall.aname->len == 0 || vfs_msg->fcall.fid == NOFID) {
         vfs_msg->fcall.type = Rerror;
@@ -47,7 +48,7 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (client_open(client, vfs_msg->fcall.fid, vnode_get_root()) != VFS_OK) {
+    if (!vfs_client_add_fid(client, vfs_msg->fcall.fid, vnode_get_root())) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOCLIENT;
         return vfs_msg_put(vfs_msg, buf);
@@ -62,7 +63,7 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
 }
 
 static unsigned short _open(struct vfs_msg *vfs_msg, char *buf) {
-    struct client *client = client_get(vfs_msg->mq_id);
+    struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
     if (!client) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOCLIENT;
@@ -75,7 +76,7 @@ static unsigned short _open(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    const struct vnode *vnode = client_get_node(client, vfs_msg->fcall.fid);
+    const struct vnode *vnode = vfs_client_get_fid(client, vfs_msg->fcall.fid);
     if (!vnode) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOFID;
@@ -90,7 +91,7 @@ static unsigned short _open(struct vfs_msg *vfs_msg, char *buf) {
 }
 
 static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
-    struct client *client = client_get(vfs_msg->mq_id);
+    struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
     if (!client) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOCLIENT;
@@ -114,12 +115,13 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (node && nwqid == vfs_msg->fcall.nwname)
-        if (client_open(client, vfs_msg->fcall.newfid, node) != VFS_OK) {
+    if (node && nwqid == vfs_msg->fcall.nwname) {
+        if (!vfs_client_add_fid(client, vfs_msg->fcall.newfid, node)) {
             vfs_msg->fcall.type = Rerror;
             vfs_msg->fcall.ename = &ENOCLIENT;
             return vfs_msg_put(vfs_msg, buf);
         }
+    }
 
     vfs_msg->fcall.type = Rwalk;
     vfs_msg->fcall.nwqid = nwqid;
@@ -127,7 +129,6 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
 
     return vfs_msg_put(vfs_msg, buf);
 }
-
 
 /*
 * Handle vfs message
@@ -144,9 +145,6 @@ static void _handle_message(char *buf) {
 
     switch (vfs_msg.fcall.type) {
         case Tattach:
-            if (vfs_msg.fcall.uname->len == 0)
-                return;
-
             len = _attach(&vfs_msg, buf);
             break;
 
