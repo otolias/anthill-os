@@ -18,6 +18,12 @@
 */
 FILE* file_open(const char *pathname, int oflag);
 
+/*
+* Read from _stream_. Returns the number of bytes read.
+*/
+unsigned file_read(FILE *stream);
+
+
 /* Format handling */
 
 /*

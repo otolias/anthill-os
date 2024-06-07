@@ -12,5 +12,7 @@
 #define EAGAIN   9
 #define ENOMEM   10
 #define ERANGE   11
+#define EMFILE   12
+#define EIO      13
 
 #endif /* _KERNEL_ERRNO_H */

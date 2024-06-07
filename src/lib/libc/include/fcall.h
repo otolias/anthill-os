@@ -41,9 +41,8 @@
 * size[4] Topen tag[2] fid[4] mode[1]
 * size[4] Ropen tag[2] qid[16] iounit[4]
 *
-* Open file represented by _fid_ with _mode_.
-*
-* - _iounit_ is currently unused and its value should be 0
+* Open file represented by _fid_ with _mode_. _iounit_ is the maximum number
+* of bytes guaranteed to be transferred by one 9p message
 *
 * size[4] Tcreate tag[2] fid[4] name[s] perm[4] mode[1]
 * size[4] Rcreate tag[2] qid[16] iounit[4]

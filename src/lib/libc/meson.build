@@ -21,6 +21,7 @@ libc_sources = files([
   'pstring' / 'pstriter.c',
   'pstring' / 'pstrlen.c',
   'pstring' / 'pstrtoz.c',
+  'stdio' / 'fgetc.c',
   'stdio' / 'fopen.c',
   'stdio' / 'printf.c',
   'stdio' / 'puts.c',

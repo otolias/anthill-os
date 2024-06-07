@@ -17,21 +17,43 @@
 #define BUFSIZ 512
 #define FOPEN_MAX 16
 
-enum file_states {
-    FCLOSED,
-    FOPEN,
-};
+#define EOF -1
+
+/* File flag offsets */
+#define F_OPEN 0 << 0
+#define F_EOF  1 << 1
+
 
 typedef struct {
-    unsigned         fid;
-    enum file_states state;
+    unsigned fid;         /* File descriptor */
+    int      flags;       /* File status flags */
+    size_t   seek_offset; /* Seek offset */
+    ssize_t  chunk_index; /* Current buffer chunk index */
+    char*    buf;         /* Read buffer */
+    char*    buf_end;     /* Pointer to end of buffer */
 } FILE;
 
 /* File handling */
 
 /*
+* Get the next byte of _stream_.
+*
+* On success, returns the next byte as an int, or EOF if at end of file.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - ENOMEM Not enough available space.
+* - EBADF  The stream's underlying stream is not a valid file descriptor.
+* - EIO    Physical I/O error, or data could not be retrieved.
+*/
+int fgetc(FILE *stream);
+
+/*
 * Open the file whose path name is the string pointed to by _pathname_ with
-* the indicated _mode_
+* the indicated _mode_.
+*
+* On success, returns a pointer to the FILE object controlling the stream.
+* On failure, returns a null pointer and sets errno to indicate the error.
 *
 * Available modes:
 * - r  Open file for reading
@@ -40,6 +62,10 @@ typedef struct {
 * - r+ Open file for reading and writing
 * - w+ Truncate or create file for reading and writing
 * - a+ Append or create file for reading or writing
+*
+* errno:
+* - EACCES File not found
+* - EMFILE No available file descriptors
 */
 FILE* fopen(const char *restrict pathname, const char *restrict mode);
 

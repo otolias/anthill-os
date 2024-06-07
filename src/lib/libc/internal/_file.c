@@ -143,15 +143,77 @@ FILE *file_open(const char *restrict pathname, int oflag) {
 
     FILE *f = NULL;
     for (unsigned i = 0; i < FOPEN_MAX; i++) {
-        if (open_files[i].state == FCLOSED){
+        if (!(open_files[i].flags & F_OPEN)){
             f = &open_files[i];
             break;
         }
     }
-    if (!f) return NULL;
+
+    if (!f)
+        { errno = EMFILE; return NULL; }
 
     f->fid = fid;
-    f->state = FOPEN;
+    f->flags |= 1 << F_OPEN;
+    f->seek_offset = 0;
+    f->chunk_index = -1;
 
     return f;
+}
+
+unsigned file_read(FILE *stream) {
+    if (!stream->buf) {
+        stream->buf = malloc(BUFSIZ);
+        if (!stream->buf)
+            { errno = ENOMEM; return 0; }
+
+        stream->buf_end = stream->buf + BUFSIZ;
+    }
+
+    if (stream->buf_end - stream->buf < BUFSIZ) {
+        stream->flags |= 1 << F_EOF;
+        return 0;
+    }
+
+    char buf[VFS_MAX_MSG_LEN];
+    struct vfs_msg vfs_msg;
+
+    unsigned current_buffer_size = 0;
+
+    while (current_buffer_size < BUFSIZ) {
+        unsigned remaining = BUFSIZ - current_buffer_size;
+        unsigned count = remaining > VFS_MAX_IOUNIT ? VFS_MAX_IOUNIT : remaining;
+        unsigned len;
+        vfs_msg.fcall.type = Tread;
+        vfs_msg.fcall.tag = tag_count++;
+        vfs_msg.fcall.fid = stream->fid;
+        vfs_msg.fcall.count = count;
+        vfs_msg.fcall.offset = stream->seek_offset + current_buffer_size;
+        vfs_msg.mq_id = mq_in;
+
+        len = vfs_msg_put(&vfs_msg, buf);
+        if (len == 0)
+            { errno = EIO; return 0; }
+
+        if (mq_send(mq_vfs, buf, len, 0) == -1)
+            { errno = EIO; return 0; }
+
+        if (mq_receive(mq_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
+            { errno = EIO; return 0; }
+
+        len = vfs_msg_parse(&vfs_msg, buf);
+        if (len == 0 || vfs_msg.fcall.type == Rerror)
+            { errno = EIO; return 0; }
+
+        unsigned n = (vfs_msg.fcall.count < count) ? vfs_msg.fcall.count : count;
+        memcpy(stream->buf + current_buffer_size, vfs_msg.fcall.data, n);
+
+        current_buffer_size += n;
+
+        if (vfs_msg.fcall.count < count)
+            break;
+    }
+
+    stream->buf_end = stream->buf + current_buffer_size;
+    stream->chunk_index++;
+    return current_buffer_size;
 }
