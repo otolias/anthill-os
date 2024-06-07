@@ -126,6 +126,30 @@ struct vnode* vnode_get_root() {
     return root;
 }
 
+unsigned vnode_read(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *buf) {
+    unsigned len;
+    vfs_msg->fcall.tag = tag_count++;
+    vfs_msg->fcall.fid = vnode->fid;
+    vfs_msg->mq_id = mq_in;
+
+    len = vfs_msg_put(vfs_msg, buf);
+    if (len == 0)
+        return 0;
+
+    if (mq_send(vnode->mq_id, buf, len, 0) == -1)
+        return 0;
+
+    if (mq_receive(mq_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
+        return 0;
+
+    if (vfs_msg_parse(vfs_msg, buf) == 0)
+        return 0;
+
+    len = vfs_msg_parse(vfs_msg, buf);
+
+    return len;
+}
+
 struct vnode* vnode_remove(struct vnode *node) {
     if (!node) return NULL;
     if (node->name) { free(node->name); node->name = NULL; }

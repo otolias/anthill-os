@@ -27,6 +27,7 @@
 /* Errors */
 FCALL_ERROR(EINVALID, "Invalid message");
 FCALL_ERROR(ENOCLIENT, "Failed to find client");
+FCALL_ERROR(ESERVER, "Server failed");
 FCALL_ERROR(ENOFID, "Unknown fid");
 FCALL_ERROR(ENOFILE, "File not found");
 
@@ -85,8 +86,41 @@ static unsigned short _open(struct vfs_msg *vfs_msg, char *buf) {
 
     vfs_msg->fcall.type = Ropen;
     vfs_msg->fcall.qid = vnode->qid;
-    vfs_msg->fcall.iounit = 0;
+    vfs_msg->fcall.iounit = VFS_MAX_IOUNIT;
 
+    return vfs_msg_put(vfs_msg, buf);
+}
+
+static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
+    struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOCLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    const struct vnode *vnode = vfs_client_get_fid(client, vfs_msg->fcall.fid);
+    if (!vnode) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOFID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    char read_buf[VFS_MAX_MSG_LEN];
+    struct vfs_msg read_msg;
+    read_msg.fcall.type = Tread;
+    read_msg.fcall.offset = vfs_msg->fcall.offset;
+    read_msg.fcall.count = vfs_msg->fcall.count;
+
+    if (vnode_read(vnode, &read_msg, read_buf) == 0) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ESERVER;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    vfs_msg->fcall.type = Rread;
+    vfs_msg->fcall.count = read_msg.fcall.count;
+    vfs_msg->fcall.data = read_msg.fcall.data;
     return vfs_msg_put(vfs_msg, buf);
 }
 
@@ -150,6 +184,10 @@ static void _handle_message(char *buf) {
 
         case Topen:
             len = _open(&vfs_msg, buf);
+            break;
+
+        case Tread:
+            len = _read(&vfs_msg, buf);
             break;
 
         case Twalk:
