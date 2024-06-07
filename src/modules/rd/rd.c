@@ -66,3 +66,13 @@ unsigned int rd_get_type(const struct header *header) {
             return ~0;
     }
 }
+
+unsigned rd_read(const struct header *header, char *buf, size_t offset, unsigned count) {
+    size_t file_size = rd_get_size(header);
+    unsigned len = offset + count < file_size ? count : file_size - offset;
+
+    const char *data = (char *) (header + 1);
+
+    memcpy(buf, &data[offset], len);
+    return len;
+}

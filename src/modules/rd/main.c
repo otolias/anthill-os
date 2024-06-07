@@ -53,7 +53,31 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     return vfs_msg_put(vfs_msg, buf);
 }
 
-/* Handle Twalk message */
+static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
+    const struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ECLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    const struct header *header = vfs_client_get_fid(client, vfs_msg->fcall.fid);
+    if (!header) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOTFOUND;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    char read_buf[vfs_msg->fcall.count];
+    unsigned count = rd_read(header, read_buf, vfs_msg->fcall.offset,
+                             vfs_msg->fcall.count);
+
+    vfs_msg->fcall.type = Rread;
+    vfs_msg->fcall.count = count;
+    vfs_msg->fcall.data = (unsigned char *) read_buf;
+    return vfs_msg_put(vfs_msg, buf);
+}
+
 static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
     unsigned short total_length = fcall_path_size(&vfs_msg->fcall) + 1; /* Path prefix (/) */
 
@@ -138,6 +162,10 @@ static void _handle_message(char *buf) {
     switch (vfs_msg.fcall.type) {
         case Tattach:
             len = _attach(&vfs_msg, buf);
+            break;
+
+        case Tread:
+            len = _read(&vfs_msg, buf);
             break;
 
         case Twalk:

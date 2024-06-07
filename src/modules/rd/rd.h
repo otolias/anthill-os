@@ -50,4 +50,11 @@ size_t rd_get_size(const struct header *header);
 */
 unsigned int rd_get_type(const struct header *header);
 
+/*
+* Put _count_ bytes of file represented by _header_ to _buf_ starting from _offset_.
+*
+* Returns the number of bytes read.
+*/
+unsigned rd_read(const struct header *header, char *buf, size_t offset, unsigned count);
+
 #endif /* _MOD_RD_H */
