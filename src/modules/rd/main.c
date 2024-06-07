@@ -7,9 +7,11 @@
 #include <string.h>
 #include <sys/vfs.h>
 
+#include <vfs/client.h>
+
 #include "rd.h"
 
-mqd_t mq_in = -1, mq_vfs = -1;
+mqd_t mq_in = -1;
 
 /* Errors */
 FCALL_ERROR(EINVALID, "Invalid message");
@@ -17,29 +19,31 @@ FCALL_ERROR(ENOTFOUND, "Requested File not found");
 FCALL_ERROR(ECLIENT, "Client error");
 
 static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
-    char vfs_name_buf[16];
+    if (vfs_msg->fcall.uname->len == 0)
+        return 0;
 
-    char *vfs_name = pstrtoz(vfs_name_buf, vfs_msg->fcall.uname, 16);
-    if (!vfs_name) {
+    char client_name[32];
+    if (!pstrtoz(client_name, vfs_msg->fcall.uname, 32))
+        return 0;
+
+    struct vfs_client *client = vfs_client_create(client_name);
+    if (!client)
+        return 0;
+
+    if (vfs_msg->fcall.fid == NOFID || vfs_msg->fcall.afid != NOFID) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &EINVALID;
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    errno = 0;
-    mq_vfs = mq_open(vfs_name, O_WRONLY);
-    if (mq_vfs == -1) {
-        vfs_msg->fcall.type = Rerror;
-        vfs_msg->fcall.ename = &EINVALID;
-        return vfs_msg_put(vfs_msg, buf);
-    }
-
-    const struct header *header = rd_find(vfs_msg->fcall.aname);
+    struct header *header = rd_find(vfs_msg->fcall.aname);
     if (!header) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOTFOUND;
         return vfs_msg_put(vfs_msg, buf);
     }
+
+    vfs_client_add_fid(client, vfs_msg->fcall.fid, header);
 
     vfs_msg->fcall.type = Rattach;
     vfs_msg->fcall.qid.type = rd_get_type(header);
@@ -52,6 +56,19 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
 /* Handle Twalk message */
 static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
     unsigned short total_length = fcall_path_size(&vfs_msg->fcall) + 1; /* Path prefix (/) */
+
+    if (vfs_msg->fcall.newfid == NOFID) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &EINVALID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ECLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
 
     pstring *path = malloc(total_length + sizeof(*path));
     if (!path) {
@@ -68,6 +85,7 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
     *path_ptr++ = '/';
     path->len = 1;
 
+    struct header *header;
     for (nwqid = 0; nwqid < vfs_msg->fcall.nwname; nwqid++) {
         path->len += wname_ptr->len;
         memcpy(path_ptr, wname_ptr->s, wname_ptr->len);
@@ -78,7 +96,7 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
             path->len ++;
         }
 
-        const struct header *header = rd_find(path);
+        header = rd_find(path);
         if (!header) break;
 
         wqid[nwqid].type = rd_get_type(header);
@@ -92,6 +110,9 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOTFOUND;
     } else {
+        if (nwqid == vfs_msg->fcall.nwname)
+            vfs_client_add_fid(client, vfs_msg->fcall.newfid, header);
+
         vfs_msg->fcall.type = Rwalk;
         vfs_msg->fcall.nwqid = nwqid;
         vfs_msg->fcall.wqid = wqid;
@@ -114,14 +135,8 @@ static void _handle_message(char *buf) {
         return;
     }
 
-    if (mq_vfs == -1 && vfs_msg.fcall.type != Tattach)
-        return;
-
     switch (vfs_msg.fcall.type) {
         case Tattach:
-            if (vfs_msg.fcall.uname->len == 0)
-                return;
-
             len = _attach(&vfs_msg, buf);
             break;
 
@@ -140,7 +155,7 @@ static void _handle_message(char *buf) {
     }
 
     errno = 0;
-    if (mq_send(mq_vfs, buf, len, 0) == -1)
+    if (mq_send(vfs_msg.mq_id, buf, len, 0) == -1)
         printf("MOD_RD::Failed to send message::%d\n", errno);
 }
 
@@ -162,12 +177,6 @@ static bool _init(void) {
 * Close and unlink mqueues
 */
 static void _deinit(void) {
-    if (mq_vfs) {
-        errno = 0;
-        if (mq_close(mq_vfs) == -1)
-            printf("MOD_RD::Failed to close vfs queue::%d\n", errno);
-    }
-
     if (mq_in) {
         errno = 0;
         if (mq_close(mq_in) == -1)
