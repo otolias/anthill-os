@@ -81,6 +81,17 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += fcall->count; /* data */
             break;
 
+        case Twrite:
+            size += INT_SIZE; /* fid */
+            size += LONG_SIZE; /* offset */
+            size += INT_SIZE; /* count */
+            size += fcall->count; /* data */
+            break;
+
+        case Rwrite:
+            size += INT_SIZE; /* count */
+            break;
+
         default:
             return 0;
     }

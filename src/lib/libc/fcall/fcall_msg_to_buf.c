@@ -130,6 +130,18 @@ unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned lengt
             ptr += fcall->count;
             break;
 
+        case Twrite:
+            ptr += _put_uint(ptr, fcall->fid);
+            ptr += _put_ulong(ptr, fcall->offset);
+            ptr += _put_uint(ptr, fcall->count);
+            memmove(ptr, fcall->data, fcall->count);
+            ptr += fcall->count;
+            break;
+
+        case Rwrite:
+            ptr += _put_uint(ptr, fcall->count);
+            break;
+
         default:
             break;
     };

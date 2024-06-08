@@ -129,6 +129,22 @@ unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall) {
             ptr += fcall->count;
             break;
 
+        case Twrite:
+            fcall->fid = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->offset = _get_ulong(ptr);
+            ptr += LONG_SIZE;
+            fcall->count = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->data = ptr;
+            ptr += fcall->count;
+            break;
+
+        case Rwrite:
+            fcall->count = _get_uint(ptr);
+            ptr += INT_SIZE;
+            break;
+
         default:
             return 0;
     }

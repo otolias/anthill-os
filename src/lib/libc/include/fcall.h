@@ -48,14 +48,19 @@
 * size[4] Rcreate tag[2] qid[16] iounit[4]
 *
 * Create file with _name_ in the directory represented by _fid_
-* with permissions _perm_. Then, open file with _mode_
-*
-* - _iounit_ is currently unused and its value should be 0
+* with permissions _perm_. Then, open file with _mode_. _iounit_ is the maximum
+* number of bytes guaranteed to be transferred by one 9p message.
 *
 * size[4] Tread tag[2] fid[4] offset[8] count[4]
 * size[4] Rread tag[2] count[4] data[count]
 *
 * Request _count_ bytes of data from file represented by _fid_,
+* starting from _offset_.
+*
+* size[4] Twrite tag[2] fid[4] offset[8] count[4] data[count]
+* size[4] Rwrite tag[2] count[4]
+*
+* Write _count_ bytes of data from file represented by _fid_,
 * starting from _offset_.
 */
 
@@ -135,10 +140,10 @@ typedef struct {
             unsigned perm; /* File permissions */
             char     mode; /* File open mode */
         };
-        struct { /* Tread, Rread */
-            unsigned long  offset; /* Where to start reading (Tread) */
-            unsigned       count;  /* Number of bytes to read (Tread, Rread) */
-            unsigned char* data;   /* Returned data (Rread) */
+        struct { /* Tread, Rread, Twrite, Rwrite */
+            unsigned long  offset; /* Where to start reading /writing (Tread, Twrite) */
+            unsigned       count;  /* Number of bytes (Tread, Rread, Twrite, Rwrite) */
+            unsigned char* data;   /* Data read/to write (Rread, Twrite) */
         };
     };
 } fcall;
@@ -158,6 +163,8 @@ enum fcall_types {
     Rcreate,
     Tread,
     Rread,
+    Twrite,
+    Rwrite,
 };
 
 /*
