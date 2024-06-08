@@ -430,6 +430,61 @@ static void _test_Rread(void) {
         puts("FCALL::ERROR::fcall Rread failure");
 }
 
+static void _test_Twrite(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Twrite,
+        .tag = NOTAG,
+        .fid = NOFID,
+        .offset = ~0,
+        .count = 4,
+        .data = (unsigned char *) "data"
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_msg_size Twrite failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_msg_to_buf Twrite failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 27)
+        puts("FCALL::ERROR::fcall_buf_to_msg Twrite failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid ||
+        fin.offset != fout.offset || fin.count != fout.count ||
+        memcmp(fin.data, fout.data, 4) != 0)
+        puts("FCALL::ERROR::fcall Twrite failure");
+}
+
+static void _test_Rwrite(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Rwrite,
+        .tag = NOTAG,
+        .count = 4,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_msg_size Rwrite failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_msg_to_buf Rwrite failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rwrite failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.count != fout.count)
+        puts("FCALL::ERROR::fcall Rwrite failure");
+}
+
 void test_fcall(void) {
     _test_path_size();
     _test_path_split();
@@ -446,4 +501,6 @@ void test_fcall(void) {
     _test_Rcreate();
     _test_Tread();
     _test_Rread();
+    _test_Twrite();
+    _test_Rwrite();
 }
