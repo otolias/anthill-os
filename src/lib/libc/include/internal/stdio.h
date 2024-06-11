@@ -29,6 +29,10 @@ FILE* file_open(const char *pathname, int oflag);
 */
 unsigned file_read(FILE *stream);
 
+/*
+* Write _stream_ buffer to file. Returns the number of bytes written.
+*/
+unsigned file_write(FILE *stream);
 
 /* Format handling */
 

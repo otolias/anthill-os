@@ -192,3 +192,40 @@ unsigned file_read(FILE *stream) {
     stream->chunk_index++;
     return current_buffer_size;
 }
+
+unsigned file_write(FILE *stream) {
+    if (!_check_init())
+        { errno = EIO; return 0; }
+
+    if (!stream->buf)
+        return 0;
+
+    struct vfs_msg vfs_msg;
+    unsigned remaining = stream->buf_pos - stream->buf;
+    unsigned bytes_sent = 0;
+
+    while (remaining > 0) {
+        unsigned count = remaining > VFS_MAX_IOUNIT ? VFS_MAX_IOUNIT : remaining;
+
+        vfs_msg.fcall.type = Twrite;
+        vfs_msg.fcall.tag = tag_count++;
+        vfs_msg.fcall.fid = stream->fid;
+        vfs_msg.fcall.offset = stream->seek_offset + bytes_sent;
+        vfs_msg.fcall.count = count;
+        vfs_msg.fcall.data = (unsigned char *) stream->buf;
+        vfs_msg.mq_id = mq_in;
+
+        if (!vfs_msg_send(&vfs_msg, mq_vfs, mq_in))
+            { errno = EIO; return bytes_sent; }
+
+        bytes_sent += vfs_msg.fcall.count;
+
+        if (vfs_msg.fcall.count < count)
+            { errno = EIO; return bytes_sent; }
+
+        remaining -= vfs_msg.fcall.count;
+    }
+
+    stream->buf_pos = stream->buf;
+    return bytes_sent;
+}

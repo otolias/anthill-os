@@ -42,6 +42,17 @@ extern FILE open_files[];
 /* File handling */
 
 /*
+* Write unwritten data in _stream_ buffer to the file.
+*
+* On success, returns 0.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - EIO Physical I/O error.
+*/
+int fflush(FILE *stream);
+
+/*
 * Get the next byte of _stream_.
 *
 * On success, returns the next byte as an int, or EOF if at end of file.
