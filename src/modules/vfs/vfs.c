@@ -105,7 +105,7 @@ struct vnode* vnode_get_root() {
     return root;
 }
 
-unsigned vnode_read(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *buf) {
+unsigned vnode_forward(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *buf) {
     unsigned len;
     vfs_msg->fcall.tag = tag_count++;
     vfs_msg->fcall.fid = vnode->fid;

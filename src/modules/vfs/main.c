@@ -121,7 +121,7 @@ static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
     read_msg.fcall.offset = vfs_msg->fcall.offset;
     read_msg.fcall.count = vfs_msg->fcall.count;
 
-    if (vnode_read(vnode, &read_msg, read_buf) == 0) {
+    if (vnode_forward(vnode, &read_msg, read_buf) == 0) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ESERVER;
         return vfs_msg_put(vfs_msg, buf);
@@ -173,6 +173,45 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
     return vfs_msg_put(vfs_msg, buf);
 }
 
+static unsigned _write(struct vfs_msg *vfs_msg, char *buf) {
+    const struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOCLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    if (vfs_msg->fcall.fid == NOFID) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &EINVALID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    const struct vnode *vnode = vfs_client_get_fid(client, vfs_msg->fcall.fid);
+    if (!vnode) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOFID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    char write_buf[VFS_MAX_MSG_LEN];
+    struct vfs_msg write_msg;
+    write_msg.fcall.type = Twrite;
+    write_msg.fcall.offset = vfs_msg->fcall.offset;
+    write_msg.fcall.count = vfs_msg->fcall.count;
+    write_msg.fcall.data = vfs_msg->fcall.data;
+
+    if (vnode_forward(vnode, &write_msg, write_buf) == 0) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ESERVER;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    vfs_msg->fcall.type = Rwrite;
+    vfs_msg->fcall.count = write_msg.fcall.count;
+    return vfs_msg_put(vfs_msg, buf);
+}
+
 /*
 * Handle vfs message
 */
@@ -201,6 +240,10 @@ static void _handle_message(char *buf) {
 
         case Twalk:
             len = _walk(&vfs_msg, buf);
+            break;
+
+        case Twrite:
+            len = _write(&vfs_msg, buf);
             break;
 
         default:

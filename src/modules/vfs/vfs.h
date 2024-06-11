@@ -39,7 +39,7 @@ struct vnode* vnode_get_root();
 /*
 * Forwards _vfs_msg_ to _vnode_ mount node
 */
-unsigned vnode_read(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *buf);
+unsigned vnode_forward(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *buf);
 
 /*
 * Deallocate memory of _node_ and its children
