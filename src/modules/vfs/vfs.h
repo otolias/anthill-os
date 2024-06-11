@@ -24,6 +24,14 @@ struct vnode {
 };
 
 /*
+* Search in children of _vnode_ for vnode with name _name_
+*
+* On success, returns a pointer to the child.
+* On failure, returns a null pointer
+*/
+struct vnode* vnode_find_child(const struct vnode* vnode, const pstring *name);
+
+/*
 * Get vfs starting point
 */
 struct vnode* vnode_get_root();
@@ -34,7 +42,7 @@ struct vnode* vnode_get_root();
 unsigned vnode_read(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *buf);
 
 /*
-* Deallocate _node_ memory
+* Deallocate memory of _node_ and its children
 *
 * Returns null pointer
 */

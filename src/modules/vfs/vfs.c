@@ -15,10 +15,6 @@ static unsigned long id_count = 0;;
 static unsigned tag_count = 0;
 static unsigned fid_count = 0;
 
-static struct vnode* _add_child(struct vnode *vnode);
-static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned short n);
-static struct vnode* _find_child(const struct vnode* vnode, const pstring *name);
-
 /*
 * Allocate space for a child of _vnode_
 */
@@ -45,38 +41,27 @@ static struct vnode* _add_child(struct vnode *vnode) {
 * Generate a Twalk message for the driver
 */
 static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned short n) {
-    char buf[VFS_MAX_MSG_LEN];
-    unsigned len, new_fid = fid_count++;
+    unsigned new_fid = fid_count++;
 
-    struct vfs_msg vfs_msg = {
-        .fcall = {
-            .type = Twalk,
-            .tag = tag_count++,
-            .fid = mount->fid,
-            .newfid = new_fid,
-            .nwname = n,
-            .wname = elements,
-        },
-        .mq_id = mq_in,
-    };
+    struct vfs_msg vfs_msg;
+    vfs_msg.fcall.type = Twalk;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = mount->fid;
+    vfs_msg.fcall.newfid = new_fid;
+    vfs_msg.fcall.nwname = n;
+    vfs_msg.fcall.wname = elements;
+    vfs_msg.mq_id = mq_in;
 
-    len = vfs_msg_put(&vfs_msg, buf);
-    if (len == 0) return VFS_MQERR;
-
-    if (mq_send(mount->mq_id, buf, len, 0) == -1)
+    if (!vfs_msg_send(&vfs_msg, mount->mq_id, mq_in))
         return VFS_MQERR;
 
-    if (mq_receive(mq_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
-        return VFS_MQERR;
-
-    len = vfs_msg_parse(&vfs_msg, buf);
-    if (len == 0 || vfs_msg.fcall.type == Rerror)
+    if (vfs_msg.fcall.type == Rerror)
         return VFS_MQERR;
 
     struct vnode *vnode = mount;
     pstring *element = elements;
     for (unsigned short i = 0; i < vfs_msg.fcall.nwqid; i++) {
-        struct vnode *child = _find_child(vnode, element);
+        struct vnode *child = vnode_find_child(vnode, element);
         if (!child) {
             child = _add_child(vnode);
             if (!child) return VFS_NOMEM;
@@ -104,13 +89,7 @@ static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned s
     return VFS_OK;
 }
 
-/*
-* Search in children of _vnode_ for vnode with name _name_
-*
-* On success, returns a pointer to the child.
-* On failure, returns a null pointer
-*/
-static struct vnode* _find_child(const struct vnode* vnode, const pstring *name) {
+struct vnode* vnode_find_child(const struct vnode* vnode, const pstring *name) {
     for (unsigned i = 0; i < vnode->children_no; i++) {
         if (!vnode->children[i].name) continue;
 
@@ -152,8 +131,15 @@ unsigned vnode_read(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *bu
 
 struct vnode* vnode_remove(struct vnode *node) {
     if (!node) return NULL;
+
+    if (node->children) {
+        for (unsigned i = 0; i < node->children_no; i++)
+            node->children = vnode_remove(&node->children[i]);
+
+        free(node->children); node->children = NULL;
+    }
+
     if (node->name) { free(node->name); node->name = NULL; }
-    if (node->children) { free(node->children); node->children = NULL; }
     free(node);
     return NULL;
 }
@@ -174,7 +160,7 @@ unsigned short vnode_scan(pstring *elements, unsigned short n, struct qid *wqid,
         }
 
         wqid[i] = vnode->qid;
-        struct vnode *child = _find_child(vnode, element);
+        struct vnode *child = vnode_find_child(vnode, element);
 
         if (!child) {
             if (_expand(mount, element, n - mount_index) != VFS_OK)
@@ -210,34 +196,20 @@ enum vfs_error vfs_init() {
     char aname_buf[16];
     pstring *uname = pstrconv(uname_buf, "vfs/client", 16);
     pstring *aname = pstrconv(aname_buf, "/", 16);
-    unsigned fid = fid_count++;
-    struct vfs_msg vfs_msg = {
-        .fcall = {
-            .type = Tattach,
-            .tag = NOTAG,
-            .fid = fid,
-            .afid = NOFID,
-            .uname = uname,
-            .aname = aname,
-        },
-        .mq_id = mq_in,
-    };
+    unsigned fid;
+    struct vfs_msg vfs_msg;
 
-    char buf[VFS_MAX_MSG_LEN];
-    unsigned len;
+    /* Setup root */
+    fid = fid_count++;
+    vfs_msg.fcall.type = Tattach;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = fid;
+    vfs_msg.fcall.afid = NOFID;
+    vfs_msg.fcall.uname = uname;
+    vfs_msg.fcall.aname = aname;
+    vfs_msg.mq_id = mq_in;
 
-    len = vfs_msg_put(&vfs_msg, buf);
-    if (len == 0)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
-
-    if (mq_send(root->mq_id, buf, len, 0) == -1)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
-
-    if (mq_receive(mq_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
-
-    len = vfs_msg_parse(&vfs_msg, buf);
-    if (len == 0)
+    if (!vfs_msg_send(&vfs_msg, root->mq_id, mq_in))
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
     if (vfs_msg.fcall.type == Rerror)
@@ -249,6 +221,43 @@ enum vfs_error vfs_init() {
     root->fid = fid;
     root->children = NULL;
     root->children_no = 0;
+
+    struct vnode *dev = _add_child(root);
+    if (!dev) return VFS_NOTFOUND;
+
+    dev->name = pstrconv(NULL, "dev", 4);
+    dev->qid.type = QTDIR;
+    dev->qid.id = id_count++;
+    dev->qid.version = 0;
+    dev->mount_node = root;
+    dev->mq_id = root->mq_id;
+
+    struct vnode *uart = _add_child(dev);
+    if (!uart) return VFS_NOTFOUND;
+
+    errno = 0;
+    uart->mq_id = mq_open("vfs/mod/uart", O_WRONLY);
+    if (uart->mq_id == -1)
+        { root = vnode_remove(root); return VFS_NOTFOUND; }
+
+    /* Setup uart */
+    fid = fid_count++;
+    vfs_msg.fcall.type = Tattach;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = fid;
+    vfs_msg.fcall.afid = NOFID;
+    vfs_msg.fcall.uname = uname;
+    vfs_msg.fcall.aname = aname;
+    vfs_msg.mq_id = mq_in;
+
+    if (!vfs_msg_send(&vfs_msg, uart->mq_id, mq_in))
+        { root = vnode_remove(root); return VFS_NOTFOUND; }
+
+    uart->name = pstrconv(NULL, "uart", 5);
+    uart->qid.type = vfs_msg.fcall.qid.type;
+    uart->qid.id = id_count++;
+    uart->qid.version = 0;
+    uart->fid = fid;
 
     return VFS_OK;
 }
