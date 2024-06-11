@@ -15,8 +15,20 @@ struct vfs_msg {
     mqd_t mq_id; /* Message queue to respond */
 };
 
+/*
+* Parse _msg_ from _buf_. Returns number of bytes parsed.
+*/
 unsigned vfs_msg_parse(struct vfs_msg *msg, char* buf);
 
+/*
+* Put _msg_ to _buf_. Returns number of bytes put.
+*/
 unsigned vfs_msg_put(struct vfs_msg *msg, char *buf);
+
+/*
+* Send _msg_ to _out_ and receive response from _in_. Returns the number
+* of bytes of the response on success, or zero on failure
+*/
+unsigned vfs_msg_send(struct vfs_msg *msg, mqd_t out, mqd_t in);
 
 #endif /* _SYS_VFS_H */

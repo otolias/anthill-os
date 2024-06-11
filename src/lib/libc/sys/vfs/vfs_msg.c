@@ -29,3 +29,23 @@ unsigned vfs_msg_put(struct vfs_msg *msg, char *buf) {
 
     return len + MQ_ID_SIZE;
 }
+
+unsigned vfs_msg_send(struct vfs_msg *msg, mqd_t out, mqd_t in) {
+    char buf[VFS_MAX_MSG_LEN];
+    unsigned len;
+
+    len = vfs_msg_put(msg, buf);
+    if (len == 0) return 0;
+
+    if (mq_send(out, buf, len, 0) == -1)
+        return 0;
+
+    if (mq_receive(in, buf, VFS_MAX_MSG_LEN, 0) == -1)
+        return 0;
+
+    len = vfs_msg_parse(msg, buf);
+    if (len == 0)
+        return 0;
+
+    return len;
+}
