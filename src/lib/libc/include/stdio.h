@@ -86,6 +86,17 @@ int fgetc(FILE *stream);
 */
 FILE* fopen(const char *restrict pathname, const char *restrict mode);
 
+/*
+* Write _c_ to _stream_fputc
+*
+* On success, returns the value as written.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - ENOMEM Not enough available space
+*/
+int fputc(int c, FILE *stream);
+
 /* Format handling */
 
 /*
