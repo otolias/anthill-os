@@ -13,6 +13,12 @@
 /* File handling */
 
 /*
+* Allocate read/write buffer for _stream_. Returns a pointer to the allocated space
+* on success or a null pointer on failure.
+*/
+void *file_alloc(FILE *stream);
+
+/*
 * Open file for whose path name is pointed to by _pathname_ with
 * mode specified by _oflag_
 */

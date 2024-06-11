@@ -23,15 +23,21 @@
 #define F_OPEN 0 << 0
 #define F_EOF  1 << 1
 
-
 typedef struct {
     unsigned fid;         /* File descriptor */
     int      flags;       /* File status flags */
     size_t   seek_offset; /* Seek offset */
     ssize_t  chunk_index; /* Current buffer chunk index */
-    char*    buf;         /* Read buffer */
+    char*    buf;         /* Stream buffer */
+    char*    buf_pos;     /* Current buffer position */
     char*    buf_end;     /* Pointer to end of buffer */
 } FILE;
+
+extern FILE open_files[];
+
+#define stdin  &open_files[0]
+#define stdout &open_files[1]
+#define stderr &open_files[2]
 
 /* File handling */
 
