@@ -145,6 +145,14 @@ unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall) {
             ptr += INT_SIZE;
             break;
 
+        case Tclunk:
+            fcall->fid = _get_uint(ptr);
+            ptr += INT_SIZE;
+            break;
+
+        case Rclunk:
+            break;
+
         default:
             return 0;
     }

@@ -92,6 +92,13 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += INT_SIZE; /* count */
             break;
 
+        case Tclunk:
+            size += INT_SIZE; /* fid */
+            break;
+
+        case Rclunk:
+            break;
+
         default:
             return 0;
     }

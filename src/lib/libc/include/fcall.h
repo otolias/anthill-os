@@ -62,6 +62,11 @@
 *
 * Write _count_ bytes of data from file represented by _fid_,
 * starting from _offset_.
+*
+* size[4] Tclunk tag[2] fid[4]
+* size[4] Rclunk tag[2]
+*
+* Close file represented by _fid_
 */
 
 #ifndef _FCALL_H
@@ -165,6 +170,8 @@ enum fcall_types {
     Rread,
     Twrite,
     Rwrite,
+    Tclunk,
+    Rclunk,
 };
 
 /*

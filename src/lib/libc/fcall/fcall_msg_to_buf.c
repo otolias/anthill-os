@@ -142,6 +142,11 @@ unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned lengt
             ptr += _put_uint(ptr, fcall->count);
             break;
 
+        case Tclunk:
+            ptr += _put_uint(ptr, fcall->fid);
+            break;
+
+        case Rclunk:
         default:
             break;
     };
