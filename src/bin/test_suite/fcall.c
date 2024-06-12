@@ -485,6 +485,55 @@ static void _test_Rwrite(void) {
         puts("FCALL::ERROR::fcall Rwrite failure");
 }
 
+static void _test_Tclunk(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Tclunk,
+        .tag = NOTAG,
+        .fid = NOFID,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_msg_size Tclunk failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_msg_to_buf Tclunk failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_buf_to_msg Tclunk failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid)
+        puts("FCALL::ERROR::fcall Tclunk failure");
+}
+
+static void _test_Rclunk(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Rclunk,
+        .tag = NOTAG,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 7)
+        puts("FCALL::ERROR::fcall_msg_size Rclunk failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 7)
+        puts("FCALL::ERROR::fcall_msg_to_buf Rclunk failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 7)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rclunk failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag)
+        puts("FCALL::ERROR::fcall Rclunk failure");
+}
+
 void test_fcall(void) {
     _test_path_size();
     _test_path_split();
@@ -503,4 +552,6 @@ void test_fcall(void) {
     _test_Rread();
     _test_Twrite();
     _test_Rwrite();
+    _test_Tclunk();
+    _test_Rclunk();
 }
