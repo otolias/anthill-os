@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define MQ_MAX_OPEN        8
+#define MQ_MAX_OPEN        32
 #define MQ_MAX_SUBSCRIBERS 8
 #define MQ_MAX_MSG_SIZE    128
 #define MQ_MAX_MSG         8
