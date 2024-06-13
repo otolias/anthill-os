@@ -72,6 +72,31 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     return vfs_msg_put(vfs_msg, buf);
 }
 
+static unsigned short _clunk(struct vfs_msg *vfs_msg, char *buf) {
+    struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOCLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    if (vfs_msg->fcall.fid == NOFID) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &EINVALID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    if (vfs_client_remove_fid(client, vfs_msg->fcall.fid) != 0) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOFID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    vfs_msg->fcall.type = Rclunk;
+
+    return vfs_msg_put(vfs_msg, buf);
+}
+
 static unsigned short _open(struct vfs_msg *vfs_msg, char *buf) {
     struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
     if (!client) {
@@ -228,6 +253,10 @@ static void _handle_message(char *buf) {
     switch (vfs_msg.fcall.type) {
         case Tattach:
             len = _attach(&vfs_msg, buf);
+            break;
+
+        case Tclunk:
+            len = _clunk(&vfs_msg, buf);
             break;
 
         case Topen:
