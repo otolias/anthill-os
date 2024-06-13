@@ -59,10 +59,12 @@ void* vfs_client_get_fid(const struct vfs_client *client, unsigned fid);
 [[nodiscard]] struct vfs_client* vfs_client_remove(struct vfs_client *client);
 
 /*
-* Removes fid association of _client_ and _fid_. Returns a null pointer.
+* Removes fid association of _client_ and _fid_.
+*
+* On success, returns 0.
+* On failure, returns -1.
 */
-[[nodiscard]] struct fid_pair* vfs_client_remove_fid(const struct vfs_client *client,
-                                                     unsigned fid);
+int vfs_client_remove_fid(const struct vfs_client *client, unsigned fid);
 
 
 #endif /* _LIBVFS_CLIENT_H */

@@ -3,6 +3,8 @@ libvfs_sources = files([
   'vfs_client_create.c',
   'vfs_client_get.c',
   'vfs_client_get_fid.c',
+  'vfs_client_remove.c',
+  'vfs_client_remove_fid.c',
 ])
 
 libvfs_inc_directories = include_directories('include')

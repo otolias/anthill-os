@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-struct fid_pair* vfs_client_remove_fid(const struct vfs_client *client, unsigned fid) {
+int vfs_client_remove_fid(const struct vfs_client *client, unsigned fid) {
     struct fid_pair *pair = client->fids, *prev_pair = client->fids;
 
     while(pair) {
@@ -14,11 +14,11 @@ struct fid_pair* vfs_client_remove_fid(const struct vfs_client *client, unsigned
         pair = pair->next;
     }
 
-    if (!pair) return NULL;
+    if (!pair) return -1;
 
     prev_pair->next = pair->next;
     free(pair->obj); pair->obj = NULL;
     free(pair);
 
-    return NULL;
+    return 0;
 }
