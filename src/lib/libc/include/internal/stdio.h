@@ -20,6 +20,11 @@
 void *file_alloc(FILE *stream);
 
 /*
+* Disassociate fid of _stream_
+*/
+bool file_close(FILE *stream);
+
+/*
 * Close VFS connections.
 */
 void file_deinit(void);

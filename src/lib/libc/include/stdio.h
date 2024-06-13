@@ -44,6 +44,17 @@ extern FILE __stderr;
 /* File handling */
 
 /*
+* Flush and deallocate _stream_ buffer and disassociate _stream_ fid
+*
+* On success, returns 0.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - EIO Physical I/O error. Data could not be written to file.
+*/
+int fclose(FILE *stream);
+
+/*
 * Write unwritten data in _stream_ buffer to the file.
 *
 * On success, returns 0.

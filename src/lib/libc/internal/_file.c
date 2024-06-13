@@ -29,6 +29,39 @@ static bool _check_init(void) {
     return true;
 }
 
+void *file_alloc(FILE *stream) {
+    stream->buf = malloc(BUFSIZ);
+    if (!stream->buf)
+        { errno = ENOMEM; return 0; }
+
+    stream->buf_end = stream->buf + BUFSIZ;
+    stream->buf_pos = stream->buf;
+
+    return stream->buf;
+}
+
+bool file_close(FILE *stream) {
+    struct vfs_msg vfs_msg;
+    vfs_msg.fcall.type = Tclunk;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = stream->fid;
+    vfs_msg.mq_id = mq_in;
+
+    bool success = vfs_msg_send(&vfs_msg, mq_vfs, mq_in);
+
+    if (vfs_msg.fcall.type != Rclunk)
+        success = false;
+
+    stream->fid = NOFID;
+    stream->flags = 0;
+    stream->seek_offset = 0;
+    stream->chunk_index = -1;
+    stream->buf_pos = NULL;
+    stream->buf_end = NULL;
+
+    return success;
+}
+
 void file_deinit(void) {
     if (mq_in != -1) { mq_close(mq_in); mq_in = 0; mq_unlink(vfs_name); }
 
@@ -80,17 +113,6 @@ bool file_init(void) {
     initialised = true;
 
     return true;
-}
-
-void *file_alloc(FILE *stream) {
-    stream->buf = malloc(BUFSIZ);
-    if (!stream->buf)
-        { errno = ENOMEM; return 0; }
-
-    stream->buf_end = stream->buf + BUFSIZ;
-    stream->buf_pos = stream->buf;
-
-    return stream->buf;
 }
 
 FILE *file_open(const char *restrict pathname, int oflag) {

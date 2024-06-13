@@ -23,6 +23,7 @@ libc_sources = files([
   'pstring' / 'pstrlen.c',
   'pstring' / 'pstrtoz.c',
   'stdio' / '_std.c',
+  'stdio' / 'fclose.c',
   'stdio' / 'fflush.c',
   'stdio' / 'fgetc.c',
   'stdio' / 'fopen.c',
