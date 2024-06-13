@@ -64,7 +64,9 @@ int formatter(char* buffer, const char *format, va_list args, size_t max_size) {
 
         c = *(format++);
 
-        if (c == 'l') {
+        if (c == '%') {
+            size = _char(c, buffer, size, n);
+        } else if (c == 'l') {
             is_long = true;
             c = *(format++);
         } else {
@@ -99,6 +101,5 @@ int formatter(char* buffer, const char *format, va_list args, size_t max_size) {
         }
     }
 
-    buffer[(size < n) ? size : n] = 0;
     return size;
 }

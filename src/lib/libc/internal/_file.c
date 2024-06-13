@@ -20,30 +20,41 @@ static char vfs_name[16];
 static unsigned fid_count = 4;
 static unsigned short tag_count = 0;
 
-static void _deinit(void) {
-    for (unsigned i = 0; i < FOPEN_MAX; i++) {
-        FILE *f = &open_files[i];
-        if (f->buf) free(f->buf);
+static bool _check_init(void) {
+    if (!initialised) {
+        if (!file_init())
+            return false;
     }
 
+    return true;
+}
+
+void file_deinit(void) {
     if (mq_in != -1) { mq_close(mq_in); mq_in = 0; mq_unlink(vfs_name); }
 
     if (mq_vfs != -1) { mq_close(mq_vfs); mq_vfs = 0; }
 }
 
-static bool _init(void) {
+bool file_init(void) {
+    /* This function is called once during the process initialisation. In case it fails
+     * because the VFS server has not been initialised or it is called during the VFS
+     * server initialisation, it is called with each file_* function */
     pid_t pid = getpid();
 
     if (snprintf(vfs_name, 16, "vfs/%ld", pid) > 16)
         return false;
 
-    /* Setup vfs queues */
+    /* Setup vfs queues. */
 
-    mq_vfs = mq_open("vfs/server", O_WRONLY);
-    if (mq_vfs == -1) return false;
+    if (mq_vfs == -1) {
+        mq_vfs = mq_open("vfs/server", O_WRONLY);
+        if (mq_vfs == -1) return false;
+    }
 
-    mq_in = mq_open(vfs_name, O_RDONLY | O_CREAT | O_EXCL);
-    if (mq_in == -1) return false;
+    if (mq_in == -1) {
+        mq_in = mq_open(vfs_name, O_RDONLY | O_CREAT | O_EXCL);
+        if (mq_in == -1) return false;
+    }
 
     /* Send Tattach */
     unsigned short tag = tag_count++;
@@ -64,21 +75,9 @@ static bool _init(void) {
     if (!vfs_msg_send(&vfs_msg, mq_vfs, mq_in))
         return false;
 
-    open_files[0].fid = 0;
-    open_files[1].fid = 1;
-    open_files[2].fid = 2;
-    open_files[3].fid = 3;
+    open_files[0].fid = 3;
 
-    return true;
-}
-
-static bool _check_init(void) {
-    if (!initialised) {
-        if (!_init()) {
-            _deinit();
-            return false;
-        }
-    }
+    initialised = true;
 
     return true;
 }

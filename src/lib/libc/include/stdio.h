@@ -33,11 +33,13 @@ typedef struct {
     char*    buf_end;     /* Pointer to end of buffer */
 } FILE;
 
-extern FILE open_files[];
+extern FILE __stdin;
+extern FILE __stdout;
+extern FILE __stderr;
 
-#define stdin  &open_files[0]
-#define stdout &open_files[1]
-#define stderr &open_files[2]
+#define stdin  &__stdin
+#define stdout &__stdout
+#define stderr &__stderr
 
 /* File handling */
 
@@ -101,37 +103,55 @@ int fputc(int c, FILE *stream);
 /* Format handling */
 
 /*
-* Put formatted string to _s_. Formatting is specified by _format_ and _ap_
+* Put string specified by _format_ and a variable number of arguments to stdout.
 *
-* Returns the length of the resulting string, excluding the terminating
-* null byte
+* On success, returns the number of bytes written to stdout.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - EIO Physical I/O error, or the associated buffer isn't large enough
 */
-int vsprintf(char *restrict s, const char *restrict format, va_list ap);
+int printf(const char *restrict format, ...);
 
 /*
-* Put formatted string to _s_. Formatting is specified by _format_ and
-* a variable number of arguments
+* Put the string pointed to by _s_, followed by a newline (\n) to stdout.
 *
-* Returns the length of the resulting string, excluding the terminating
-* byte.
+* On success, returns the number of bytes written to stdout.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - EIO Physical I/O error, or the associated buffer isn't large enough.
 */
-int sprintf(char *restrict s, const char *restrict format, ...);
+int puts(const char *s);
 
 /*
-* Put formatted string to _s_ up to _n_ bytes. Formatting is specified
-* by _format_ and _ap_
+* Put string specified by _format_ and a variable number of arguments to buffer
+* associated with _stream_. The associated buffer may be flushed.
 *
-* If the number of bytes to be written exceed _n_, a null byte is written
-* and the rest are discarded
+* On success, returns the number of bytes written to the buffer.
+* On failure, returns EOF and sets errno to indicate the error.
 *
-* Returns the number of bytes that would be written if _n_ had been
-* large enough, excluding the terminating byte
+* errno:
+* - ENOMEM Not enough available space
+* - EIO    Physical I/O error, or the associated buffer isn't large enough
 */
-int vsnprintf(char *restrict s, size_t n, const char *restrict format, va_list ap);
+int fprintf(FILE *restrict stream, const char *restrict format, ...);
 
 /*
-* Put formatted string to _s_ up to _n_ bytes. Formatting is specified
-* by _format_ and a variable number of arguments
+* Put the string pointed to by _s_ to _stream_.
+*
+* On success, returns the number of bytes written.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - ENOMEM Not enough available space
+* - EIO    Physical I/O error, or the associated buffer isn't large enough
+*/
+int fputs(const char *restrict s, FILE *restrict stream);
+
+/*
+* Put nul-terminated string specified by _format_ and a variable number of arguments
+* to _s_ up to _n_ bytes.
 *
 * If the number of bytes to be written exceed _n_, a null byte is written
 * and the rest are discarded
@@ -142,17 +162,55 @@ int vsnprintf(char *restrict s, size_t n, const char *restrict format, va_list a
 int snprintf(char *restrict s, size_t n, const char *restrict format, ...);
 
 /*
-* Send formatted string to uart
+* Put nul-terminated string specified by _format_ and a variable number of arguments
+* to _s_.
 *
-* Returns the number of bytes transmitted
+* Returns the length of the resulting string, excluding the terminating
+* byte.
 */
-int printf(const char *restrict format, ...);
+int sprintf(char *restrict s, const char *restrict format, ...);
 
 /*
-* Send string to uart
+* Put string specified by _format_ and _ap_ to buffer associated with _stream_.
+* The associated buffer may be flushed.
 *
-* Returns the number of bytes transmitted
+* On success, returns the number of bytes written to the buffer.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - ENOMEM Not enough available space
+* - EIO    Physical I/O error, or the associated buffer isn't large enough
 */
-int puts(const char *s);
+int vfprintf(FILE *restrict stream, const char *restrict format, va_list ap);
+
+/*
+* Put string specified by _format_ and _ap_ to stdout.
+*
+* On success, returns the number of byte written to stdout.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - EIO Physical I/O error, or the associated buffer isn't large enough
+*/
+int vprintf(const char *restrict format, va_list ap);
+
+/*
+* Put nul-terminated string specified by _format_ and _ap_ to _s_ up to _n_ bytes.
+*
+* If the number of bytes to be written exceed _n_, a null byte is written
+* and the rest are discarded
+*
+* Returns the number of bytes that would be written if _n_ had been
+* large enough, excluding the terminating byte
+*/
+int vsnprintf(char *restrict s, size_t n, const char *restrict format, va_list ap);
+
+/*
+* Put nul-terminated string specified by _format_ and _ap_ to _s_.
+*
+* Returns the length of the resulting string, excluding the terminating
+* byte
+*/
+int vsprintf(char *restrict s, const char *restrict format, va_list ap);
 
 #endif /* _STDIO_H */

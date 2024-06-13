@@ -2,12 +2,12 @@
 
 #include <stdarg.h>
 
-int printf(const char *restrict format, ...) {
+int fprintf(FILE *restrict stream, const char *restrict format, ...) {
     va_list args;
     int res;
 
     va_start(args, format);
-    res = vprintf(format, args);
+    res = vfprintf(stream, format, args);
     va_end(args);
 
     return res;

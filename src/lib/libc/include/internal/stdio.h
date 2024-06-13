@@ -7,6 +7,7 @@
 
 #include <pstring.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -17,6 +18,16 @@
 * on success or a null pointer on failure.
 */
 void *file_alloc(FILE *stream);
+
+/*
+* Close VFS connections.
+*/
+void file_deinit(void);
+
+/*
+* Initialise VFS connections.
+*/
+bool file_init(void);
 
 /*
 * Open file for whose path name is pointed to by _pathname_ with
