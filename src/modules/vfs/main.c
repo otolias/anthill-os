@@ -17,7 +17,6 @@
 #include <fcall.h>
 #include <mqueue.h>
 #include <pstring.h>
-#include <stdio.h>
 #include <sys/vfs.h>
 
 #include <vfs/client.h>
@@ -245,10 +244,7 @@ static void _handle_message(char *buf) {
     unsigned len;
 
     len = vfs_msg_parse(&vfs_msg, buf);
-    if (len == 0) {
-        puts("VFS::ERROR::Failed to read message");
-        return;
-    }
+    if (len == 0) return;
 
     switch (vfs_msg.fcall.type) {
         case Tattach:
@@ -276,18 +272,12 @@ static void _handle_message(char *buf) {
             break;
 
         default:
-            puts("VFS::ERROR::Unknown message type");
             return;
     }
 
-    if (len == 0) {
-        puts("VFS::ERROR::Failed to write message");
-        return;
-    }
+    if (len == 0) return;
 
-    errno = 0;
-    if (mq_send(vfs_msg.mq_id, buf, len, 0) == -1)
-        printf("VFS::ERROR::Failed to send message::%d\n", errno);
+    mq_send(vfs_msg.mq_id, buf, len, 0);
 }
 
 int main(void) {
@@ -295,33 +285,21 @@ int main(void) {
     enum vfs_error err;
 
     errno = 0;
-    mqd_t mq_in = mq_open("vfs/server", O_RDONLY | O_CREAT | O_EXCL, 0, 0);
-    if (mq_in == -1)
-        printf("VFS::ERROR::Failed to open vfs/server::ERRNO::%d\n", errno);
+    mqd_t mq_in = mq_open("vfs/server", O_RDWR | O_CREAT | O_EXCL, 0, 0);
 
     err = vfs_init();
     if (err != VFS_OK) {
-        puts("VFS::ERROR::Failed to initialise VFS");
         return err;
     }
 
-    puts("VFS initialised successfully");
-
     while(1) {
         errno = 0;
-        if (mq_receive(mq_in, buf, VFS_MAX_MSG_LEN, 0) == -1) {
-            printf("VFS::ERROR::Failed to read message::%d\n", errno);
+        if (mq_receive(mq_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
             continue;
-        }
 
         _handle_message(buf);
     }
 
-    errno = 0;
-    if (mq_close(mq_in) == -1)
-        printf("VFS::ERROR::Failed to close queue::%d\n", errno);
-
-    errno = 0;
-    if (mq_unlink("vfs/server") == -1)
-        printf("VFS::ERROR::Failed to unlink queue::%d\n", errno);
+    mq_close(mq_in);
+    mq_unlink("vfs/server");
 }
