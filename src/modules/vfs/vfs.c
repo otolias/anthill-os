@@ -5,7 +5,6 @@
 #include <pstring.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/vfs.h>
 
@@ -212,7 +211,7 @@ enum vfs_error vfs_init() {
     if (!vfs_msg_send(&vfs_msg, root->mq_id, mq_in))
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
-    if (vfs_msg.fcall.type == Rerror)
+    if (vfs_msg.fcall.type != Rattach)
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
     root->qid.type = vfs_msg.fcall.qid.type;
@@ -222,16 +221,18 @@ enum vfs_error vfs_init() {
     root->children = NULL;
     root->children_no = 0;
 
+    /* Setup /dev */
     struct vnode *dev = _add_child(root);
     if (!dev) return VFS_NOTFOUND;
 
-    dev->name = pstrconv(NULL, "dev", 4);
+    dev->name = pstrconv(NULL, "dev", 0);
     dev->qid.type = QTDIR;
     dev->qid.id = id_count++;
     dev->qid.version = 0;
     dev->mount_node = root;
     dev->mq_id = root->mq_id;
 
+    /* Setup /dev/uart */
     struct vnode *uart = _add_child(dev);
     if (!uart) return VFS_NOTFOUND;
 
@@ -240,7 +241,6 @@ enum vfs_error vfs_init() {
     if (uart->mq_id == -1)
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
-    /* Setup uart */
     fid = fid_count++;
     vfs_msg.fcall.type = Tattach;
     vfs_msg.fcall.tag = tag_count++;
@@ -253,11 +253,44 @@ enum vfs_error vfs_init() {
     if (!vfs_msg_send(&vfs_msg, uart->mq_id, mq_in))
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
-    uart->name = pstrconv(NULL, "uart", 5);
+    if (vfs_msg.fcall.type != Rattach)
+        { root = vnode_remove(root); return VFS_NOTFOUND; }
+
+    uart->name = pstrconv(NULL, "uart", 0);
     uart->qid.type = vfs_msg.fcall.qid.type;
     uart->qid.id = id_count++;
     uart->qid.version = 0;
     uart->fid = fid;
+
+    /* Setup /dev/pl011 */
+    struct vnode *pl011 = _add_child(dev);
+    if (!pl011) return VFS_NOTFOUND;
+
+    errno = 0;
+    pl011->mq_id = mq_open("vfs/mod/pl011", O_WRONLY);
+    if (pl011->mq_id == -1)
+        { root = vnode_remove(root); return VFS_NOTFOUND; }
+
+    fid = fid_count++;
+    vfs_msg.fcall.type = Tattach;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = fid;
+    vfs_msg.fcall.afid = NOFID;
+    vfs_msg.fcall.uname = uname;
+    vfs_msg.fcall.aname = aname;
+    vfs_msg.mq_id = mq_in;
+
+    if (!vfs_msg_send(&vfs_msg, pl011->mq_id, mq_in))
+        { root = vnode_remove(root); return VFS_NOTFOUND; }
+
+    if (vfs_msg.fcall.type != Rattach)
+        { root = vnode_remove(root); return VFS_NOTFOUND; }
+
+    pl011->name = pstrconv(NULL, "pl011", 0);
+    pl011->qid.type = vfs_msg.fcall.qid.type;
+    pl011->qid.id = id_count++;
+    pl011->qid.version = 0;
+    pl011->fid = fid;
 
     return VFS_OK;
 }
