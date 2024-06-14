@@ -22,6 +22,10 @@ void main(void) {
     address = task_exec(file);
     kprintf("modules/mod_uart loaded at address %x\n", address);
 
+    file = ramdisk_lookup("./modules/mod_pl011");
+    address = task_exec(file);
+    kprintf("modules/mod_pl011 loaded at address %x\n", address);
+
     file = ramdisk_lookup("./modules/mod_vfs");
     address = task_exec(file);
     kprintf("modules/mod_vfs loaded at address %x\n", address);
