@@ -534,6 +534,59 @@ static void _test_Rclunk(void) {
         puts("FCALL::ERROR::fcall Rclunk failure");
 }
 
+static void _test_Tstat(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Tstat,
+        .tag = NOTAG,
+        .fid = NOFID,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_msg_size Tstat failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_msg_to_buf Tstat failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 11)
+        puts("FCALL::ERROR::fcall_buf_to_msg Tstat failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid)
+        puts("FCALL::ERROR::fcall Tstat failure");
+}
+
+static void _test_Rstat(void) {
+    unsigned char buf[256];
+    struct fcall_stat stat = { .qid = { ~0, ~0, ~0}, .length = ~0 };
+    unsigned res;
+    fcall fout, fin = {
+        .type = Rstat,
+        .tag = NOTAG,
+        .nstat = sizeof(stat),
+        .stat = &stat,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 33)
+        puts("FCALL::ERROR::fcall_msg_size Rstat failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 33)
+        puts("FCALL::ERROR::fcall_msg_to_buf Rstat failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 33)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rstat failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.nstat != fout.nstat ||
+        memcmp(fin.stat, fout.stat, sizeof(stat)) != 0)
+        puts("FCALL::ERROR::fcall Rclunk failure");
+}
+
 void test_fcall(void) {
     _test_path_size();
     _test_path_split();
@@ -554,4 +607,6 @@ void test_fcall(void) {
     _test_Rwrite();
     _test_Tclunk();
     _test_Rclunk();
+    _test_Tstat();
+    _test_Rstat();
 }
