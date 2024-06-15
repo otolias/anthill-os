@@ -79,6 +79,17 @@ int fflush(FILE *stream);
 int fgetc(FILE *stream);
 
 /*
+* Get the file descriptor associated with stream.
+*
+* On success, returns the file descriptor.
+* On failure, returns -1 and sets errno to indicate the error.
+*
+* errno:
+* - EBADF The stream is not associated with a file
+*/
+int fileno(FILE *stream);
+
+/*
 * Open the file whose path name is the string pointed to by _pathname_ with
 * the indicated _mode_.
 *

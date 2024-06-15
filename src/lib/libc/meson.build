@@ -26,6 +26,7 @@ libc_sources = files([
   'stdio' / 'fclose.c',
   'stdio' / 'fflush.c',
   'stdio' / 'fgetc.c',
+  'stdio' / 'fileno.c',
   'stdio' / 'fopen.c',
   'stdio' / 'fprintf.c',
   'stdio' / 'fputc.c',
