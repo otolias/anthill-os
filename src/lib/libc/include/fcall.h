@@ -67,6 +67,14 @@
 * size[4] Rclunk tag[2]
 *
 * Close file represented by _fid_
+*
+* size[4] Tstat tag[2] fid[4]
+* size[4] Rstat tag[2] nstat[2] stat[nstat]
+*
+* Inquire about the file represented by _fid_.
+* _stat_ contains:
+* - qid[16]   file qid
+* - length[8] file size in bytes
 */
 
 #ifndef _FCALL_H
@@ -99,6 +107,11 @@ struct qid {
     unsigned int  type;
     unsigned int  version;
     unsigned long id;
+};
+
+struct fcall_stat {
+    struct qid qid;
+    unsigned long length;
 };
 
 /* qid types */
@@ -150,6 +163,10 @@ typedef struct {
             unsigned       count;  /* Number of bytes (Tread, Rread, Twrite, Rwrite) */
             unsigned char* data;   /* Data read/to write (Rread, Twrite) */
         };
+        struct { /* Rstat */
+            unsigned short nstat; /* Stat length */
+            struct fcall_stat* stat; /* File stat */
+        };
     };
 } fcall;
 
@@ -172,6 +189,8 @@ enum fcall_types {
     Rwrite,
     Tclunk,
     Rclunk,
+    Tstat,
+    Rstat,
 };
 
 /*

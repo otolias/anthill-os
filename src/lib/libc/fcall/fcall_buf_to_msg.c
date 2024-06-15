@@ -146,11 +146,19 @@ unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall) {
             break;
 
         case Tclunk:
+        case Tstat:
             fcall->fid = _get_uint(ptr);
             ptr += INT_SIZE;
             break;
 
         case Rclunk:
+            break;
+
+        case Rstat:
+            fcall->nstat = _get_ushort(ptr);
+            ptr += SHRT_SIZE;
+            fcall->stat = (struct fcall_stat *) ptr;
+            ptr += fcall->nstat;
             break;
 
         default:

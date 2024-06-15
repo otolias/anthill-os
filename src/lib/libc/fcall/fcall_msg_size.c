@@ -93,10 +93,16 @@ unsigned fcall_msg_size(const fcall *fcall) {
             break;
 
         case Tclunk:
+        case Tstat:
             size += INT_SIZE; /* fid */
             break;
 
         case Rclunk:
+            break;
+
+        case Rstat:
+            size += SHRT_SIZE; /* nstat size */
+            size += fcall->nstat; /* stat */
             break;
 
         default:

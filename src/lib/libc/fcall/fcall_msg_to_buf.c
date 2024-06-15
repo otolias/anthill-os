@@ -143,7 +143,14 @@ unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned lengt
             break;
 
         case Tclunk:
+        case Tstat:
             ptr += _put_uint(ptr, fcall->fid);
+            break;
+
+        case Rstat:
+            ptr += _put_ushort(ptr, fcall->nstat);
+            memmove(ptr, fcall->stat, fcall->nstat);
+            ptr += fcall->nstat;
             break;
 
         case Rclunk:
