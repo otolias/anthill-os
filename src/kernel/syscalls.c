@@ -1,36 +1,13 @@
 #include "kernel/syscalls.h"
 
+#include <stddef.h>
+
 #include <drivers/uart.h>
 #include <kernel/errno.h>
 #include <kernel/mm.h>
 #include <kernel/mqueue.h>
 #include <kernel/task.h>
 #include <kernel/sys/types.h>
-
-const void *system_call_table[] = {
-    (void *) sys_write,
-    (void *) sys_exit,
-    (void *) sys_mmap,
-    (void *) sys_munmap,
-    (void *) sys_mq_open,
-    (void *) sys_mq_close,
-    (void *) sys_mq_unlink,
-    (void *) sys_mq_send,
-    (void *) sys_mq_receive,
-    (void *) getpid,
-};
-
-int sys_write(char *buffer) {
-    int written = 0;
-    char c;
-
-    while ((c = (char) *(buffer++))) {
-        uart_send_char(c);
-        written++;
-    }
-
-    return written;
-}
 
 void sys_exit(void) {
     task_exit();
@@ -71,6 +48,18 @@ ssize_t sys_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg
     return mqueue_receive(mqdes, msg_ptr, msg_len, msg_prio);
 }
 
-pid_t getpid(void) {
+pid_t sys_getpid(void) {
     return task_current_pid();
 }
+
+const void *system_call_table[] = {
+    (void *) sys_exit,
+    (void *) sys_mmap,
+    (void *) sys_munmap,
+    (void *) sys_mq_open,
+    (void *) sys_mq_close,
+    (void *) sys_mq_unlink,
+    (void *) sys_mq_send,
+    (void *) sys_mq_receive,
+    (void *) sys_getpid,
+};
