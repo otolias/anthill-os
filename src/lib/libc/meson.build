@@ -31,6 +31,7 @@ libc_sources = files([
   'stdio' / 'fprintf.c',
   'stdio' / 'fputc.c',
   'stdio' / 'fputs.c',
+  'stdio' / 'fread.c',
   'stdio' / 'printf.c',
   'stdio' / 'puts.c',
   'stdio' / 'snprintf.c',

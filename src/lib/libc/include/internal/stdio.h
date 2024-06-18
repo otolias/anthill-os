@@ -41,9 +41,15 @@ bool file_init(void);
 FILE* file_open(const char *pathname, int oflag);
 
 /*
-* Read from _stream_. Returns the number of bytes read.
+* Read _n_ bytes from _stream_.
+*
+* On success, returns the number of bytes read.
+* On failure, returns 0 and sets errno to indicate the error.
+*
+* errno:
+* - EIO
 */
-unsigned file_read(FILE *stream);
+unsigned file_read(FILE *stream, unsigned n);
 
 /*
 * Write _stream_ buffer to file. Returns the number of bytes written.

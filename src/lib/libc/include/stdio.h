@@ -122,6 +122,17 @@ FILE* fopen(const char *restrict pathname, const char *restrict mode);
 */
 int fputc(int c, FILE *stream);
 
+/*
+* Put up to _nitems_ of size _size_ to _ptr_ from _stream_.
+*
+* On success, returns the number of elements succesfully read.
+* On failure, returns 0 and sets errno to indicate the error.
+*
+* errno:
+* - EIO Physical I/O error, or data could not be retrieved.
+*/
+size_t fread(void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
+
 /* Format handling */
 
 /*

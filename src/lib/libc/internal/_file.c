@@ -169,7 +169,7 @@ FILE *file_open(const char *restrict pathname, int oflag) {
     return f;
 }
 
-unsigned file_read(FILE *stream) {
+unsigned file_read(FILE *stream, unsigned n) {
     if (!_check_init())
         { errno = EIO; return 0; }
 
@@ -178,7 +178,7 @@ unsigned file_read(FILE *stream) {
             return 0;
     }
 
-    if (stream->buf_end - stream->buf < BUFSIZ) {
+    if (stream->buf_end - stream->buf < n) {
         stream->flags |= 1 << F_EOF;
         return 0;
     }
@@ -187,8 +187,8 @@ unsigned file_read(FILE *stream) {
 
     unsigned current_buffer_size = 0;
 
-    while (current_buffer_size < BUFSIZ) {
-        unsigned remaining = BUFSIZ - current_buffer_size;
+    while (current_buffer_size < n) {
+        unsigned remaining = n - current_buffer_size;
         unsigned count = remaining > VFS_MAX_IOUNIT ? VFS_MAX_IOUNIT : remaining;
         vfs_msg.fcall.type = Tread;
         vfs_msg.fcall.tag = tag_count++;
@@ -200,10 +200,10 @@ unsigned file_read(FILE *stream) {
         if (!vfs_msg_send(&vfs_msg, mq_vfs, mq_in))
             { errno = EIO; return 0; }
 
-        unsigned n = (vfs_msg.fcall.count < count) ? vfs_msg.fcall.count : count;
-        memcpy(stream->buf + current_buffer_size, vfs_msg.fcall.data, n);
+        unsigned read = (vfs_msg.fcall.count < count) ? vfs_msg.fcall.count : count;
+        memcpy(stream->buf + current_buffer_size, vfs_msg.fcall.data, read);
 
-        current_buffer_size += n;
+        current_buffer_size += read;
 
         if (vfs_msg.fcall.count < count)
             break;
