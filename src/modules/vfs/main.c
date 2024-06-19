@@ -157,6 +157,38 @@ static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
     return vfs_msg_put(vfs_msg, buf);
 }
 
+static unsigned short _stat(struct vfs_msg *vfs_msg, char *buf) {
+    struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOCLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    const struct vnode *vnode = vfs_client_get_fid(client, vfs_msg->fcall.fid);
+    if (!vnode) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOFID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    char stat_buf[VFS_MAX_MSG_LEN];
+    struct vfs_msg stat_msg;
+    stat_msg.fcall.type = Tstat;
+
+    if (vnode_forward(vnode, &stat_msg, stat_buf) == 0 ||
+        stat_msg.fcall.type != Rstat) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ESERVER;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    vfs_msg->fcall.type = Rstat;
+    vfs_msg->fcall.nstat = stat_msg.fcall.nstat;
+    vfs_msg->fcall.stat = stat_msg.fcall.stat;
+    return vfs_msg_put(vfs_msg, buf);
+}
+
 static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
     struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
     if (!client) {
@@ -231,6 +263,12 @@ static unsigned _write(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
+    if (write_msg.fcall.type != Rwrite) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ESERVER;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
     vfs_msg->fcall.type = Rwrite;
     vfs_msg->fcall.count = write_msg.fcall.count;
     return vfs_msg_put(vfs_msg, buf);
@@ -261,6 +299,10 @@ static void _handle_message(char *buf) {
 
         case Tread:
             len = _read(&vfs_msg, buf);
+            break;
+
+        case Tstat:
+            len = _stat(&vfs_msg, buf);
             break;
 
         case Twalk:
