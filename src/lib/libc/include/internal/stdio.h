@@ -9,6 +9,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 /* File handling */
@@ -28,6 +29,11 @@ bool file_close(FILE *stream);
 * Close VFS connections.
 */
 void file_deinit(void);
+
+/*
+* Get _stat_ info for stream associated with fid. Returns 0 on success and -1 on failure.
+*/
+int file_get_stat(unsigned fid, struct stat *stat);
 
 /*
 * Initialise VFS connections.

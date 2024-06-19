@@ -65,6 +65,8 @@ libc_sources = files([
   'syscalls.c',
   'sys' / 'mman' / 'mmap.c',
   'sys' / 'mman' / 'munmap.c',
+  'sys' / 'stat' / 'fstat.c',
+  'sys' / 'stat' / 'stat.c',
   'sys' / 'vfs' / 'vfs_msg.c',
   'unistd' / 'getpid.c',
 ])

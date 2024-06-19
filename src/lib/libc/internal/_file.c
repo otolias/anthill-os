@@ -69,6 +69,29 @@ void file_deinit(void) {
     if (mq_vfs != -1) { mq_close(mq_vfs); mq_vfs = 0; }
 }
 
+int file_get_stat(unsigned fid, struct stat *stat) {
+    char buf[VFS_MAX_MSG_LEN];
+    struct vfs_msg vfs_msg;
+    vfs_msg.fcall.type = Tstat;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = fid;
+    vfs_msg.mq_id = mq_in;
+
+    if (!vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in)) {
+        errno = EIO;
+        return -1;
+    }
+
+    if (vfs_msg.fcall.type != Rstat) {
+        errno = EBADF;
+        return -1;
+    }
+
+    stat->st_size = vfs_msg.fcall.stat->length;
+
+    return 0;
+}
+
 bool file_init(void) {
     /* This function is called once during the process initialisation. In case it fails
      * because the VFS server has not been initialised or it is called during the VFS
