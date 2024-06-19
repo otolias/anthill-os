@@ -49,6 +49,16 @@ size_t rd_get_size(const struct header *header) {
     return size;
 }
 
+unsigned rd_get_stat(const struct header *header, struct fcall_stat *stat) {
+    stat->qid.type = rd_get_type(header);
+    if (stat->qid.type == QTFILE)
+        stat->length = rd_get_size(header);
+    else
+        stat->length = 0;
+
+    return sizeof(*stat);
+}
+
 unsigned int rd_get_type(const struct header *header) {
     switch(header->type) {
         case RDT_FILE:

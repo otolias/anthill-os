@@ -1,6 +1,7 @@
 #ifndef _MOD_RD_H
 #define _MOD_RD_H
 
+#include <fcall.h>
 #include <pstring.h>
 
 struct header {
@@ -14,23 +15,23 @@ struct header {
     char type;        /* File type flag */
     char link[100];   /* Name of linked file */
     char magic[6];    /* Format representation ("ustar") */
-    char version[3];  /* Version representation */
+    char version[2];  /* Version representation */
     char uname[32];   /* User Name */
     char gname[32];   /* Group Name */
     char devmajor[8]; /* Major device representation */
     char devminor[8]; /* Minor device representation */
     char prefix[155]; /* Prefix */
-    char padding[11]; /* Unused null values */
+    char padding[12]; /* Unused null values */
 };
 
 /* Type flags */
-#define RDT_FILE  0 /* Normal File */
-#define RDT_HLINK 1 /* Hard Link */
-#define RDT_SLINK 2 /* Symbolic link */
-#define RDT_CHDEV 3 /* Character device */
-#define RDT_BLCK  4 /* Block device */
-#define RDT_DIR   5 /* Directory */
-#define RDT_FIFO  6 /* Named pipe (FIFO) */
+#define RDT_FILE  '0' /* Normal File */
+#define RDT_HLINK '1' /* Hard Link */
+#define RDT_SLINK '2' /* Symbolic link */
+#define RDT_CHDEV '3' /* Character device */
+#define RDT_BLCK  '4' /* Block device */
+#define RDT_DIR   '5' /* Directory */
+#define RDT_FIFO  '6' /* Named pipe (FIFO) */
 
 /*
 * Get header for file _path_
@@ -44,6 +45,12 @@ struct header* rd_find(const pstring *path);
 * Get size of file represented by _header_
 */
 size_t rd_get_size(const struct header *header);
+
+/*
+* Put stat information for file represented by _header_ to _stat_. Returns total number
+* of bytes to be written.
+*/
+unsigned rd_get_stat(const struct header *header, struct fcall_stat *stat);
 
 /*
 * Convert tar type representation to 9p type representation
