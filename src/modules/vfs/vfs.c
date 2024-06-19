@@ -76,7 +76,7 @@ static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned s
             child->qid.version = 0;
             child->children = NULL;
             child->children_no = 0;
-            child->mount_node = vnode->mount_node;
+            child->mount_node = mount;
             child->mq_id = vnode->mq_id;
         }
 
@@ -163,7 +163,7 @@ unsigned short vnode_scan(pstring *elements, unsigned short n, struct qid *wqid,
         struct vnode *child = vnode_find_child(vnode, element);
 
         if (!child) {
-            if (_expand(mount, element, n - mount_index) != VFS_OK)
+            if (_expand(mount, mount_element, n - mount_index) != VFS_OK)
                 return i;
             else
                 continue;
