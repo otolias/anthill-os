@@ -42,6 +42,7 @@ static struct vnode* _add_child(struct vnode *vnode) {
 static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned short n) {
     unsigned new_fid = fid_count++;
 
+    char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
     vfs_msg.fcall.type = Twalk;
     vfs_msg.fcall.tag = tag_count++;
@@ -51,10 +52,10 @@ static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned s
     vfs_msg.fcall.wname = elements;
     vfs_msg.mq_id = mq_in;
 
-    if (!vfs_msg_send(&vfs_msg, mount->mq_id, mq_in))
+    if (!vfs_msg_send(&vfs_msg, buf, mount->mq_id, mq_in))
         return VFS_MQERR;
 
-    if (vfs_msg.fcall.type == Rerror)
+    if (vfs_msg.fcall.type != Rwalk)
         return VFS_MQERR;
 
     struct vnode *vnode = mount;
@@ -191,6 +192,7 @@ enum vfs_error vfs_init() {
     if (root->mq_id == -1)
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
+    char buf[VFS_MAX_MSG_LEN];
     char uname_buf[16];
     char aname_buf[16];
     pstring *uname = pstrconv(uname_buf, "vfs/client", 16);
@@ -208,7 +210,7 @@ enum vfs_error vfs_init() {
     vfs_msg.fcall.aname = aname;
     vfs_msg.mq_id = mq_in;
 
-    if (!vfs_msg_send(&vfs_msg, root->mq_id, mq_in))
+    if (!vfs_msg_send(&vfs_msg, buf, root->mq_id, mq_in))
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
     if (vfs_msg.fcall.type != Rattach)
@@ -250,7 +252,7 @@ enum vfs_error vfs_init() {
     vfs_msg.fcall.aname = aname;
     vfs_msg.mq_id = mq_in;
 
-    if (!vfs_msg_send(&vfs_msg, uart->mq_id, mq_in))
+    if (!vfs_msg_send(&vfs_msg, buf, uart->mq_id, mq_in))
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
     if (vfs_msg.fcall.type != Rattach)
@@ -280,7 +282,7 @@ enum vfs_error vfs_init() {
     vfs_msg.fcall.aname = aname;
     vfs_msg.mq_id = mq_in;
 
-    if (!vfs_msg_send(&vfs_msg, pl011->mq_id, mq_in))
+    if (!vfs_msg_send(&vfs_msg, buf, pl011->mq_id, mq_in))
         { root = vnode_remove(root); return VFS_NOTFOUND; }
 
     if (vfs_msg.fcall.type != Rattach)
