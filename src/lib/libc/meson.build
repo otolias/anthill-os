@@ -22,6 +22,7 @@ libc_sources = files([
   'pstring' / 'pstriter.c',
   'pstring' / 'pstrlen.c',
   'pstring' / 'pstrtoz.c',
+  'spawn' / 'posix_spawn.c',
   'stdio' / '_std.c',
   'stdio' / 'fclose.c',
   'stdio' / 'fflush.c',
