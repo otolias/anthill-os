@@ -41,13 +41,14 @@ void *file_alloc(FILE *stream) {
 }
 
 bool file_close(FILE *stream) {
+    char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
     vfs_msg.fcall.type = Tclunk;
     vfs_msg.fcall.tag = tag_count++;
     vfs_msg.fcall.fid = stream->fid;
     vfs_msg.mq_id = mq_in;
 
-    bool success = vfs_msg_send(&vfs_msg, mq_vfs, mq_in);
+    bool success = vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in);
 
     if (vfs_msg.fcall.type != Rclunk)
         success = false;
@@ -96,6 +97,7 @@ bool file_init(void) {
     pstring *uname = pstrconv(uname_buf, vfs_name, 16);
     pstring *aname = pstrconv(aname_buf, "/", 16);
 
+    char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
     vfs_msg.fcall.type = Tattach;
     vfs_msg.fcall.tag = tag;
@@ -105,7 +107,10 @@ bool file_init(void) {
     vfs_msg.fcall.aname = aname;
     vfs_msg.mq_id = mq_in;
 
-    if (!vfs_msg_send(&vfs_msg, mq_vfs, mq_in))
+    if (vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in) == 0)
+        return false;
+
+    if (vfs_msg.fcall.type != Rattach)
         return false;
 
     open_files[0].fid = 3;
@@ -120,6 +125,7 @@ FILE *file_open(const char *restrict pathname, int oflag) {
         { errno = EACCES; return NULL; }
 
     unsigned int fid = fid_count++;
+    char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
     vfs_msg.fcall.type = Twalk;
     vfs_msg.fcall.tag = tag_count++;
@@ -131,7 +137,10 @@ FILE *file_open(const char *restrict pathname, int oflag) {
         { errno = EACCES; return NULL; }
 
     /* TODO: Relative path handling */
-    if (!vfs_msg_send(&vfs_msg, mq_vfs, mq_in))
+    if (vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in) == 0)
+        { errno = EACCES; free(vfs_msg.fcall.wname); return NULL; }
+
+    if (vfs_msg.fcall.type != Rwalk)
         { errno = EACCES; free(vfs_msg.fcall.wname); return NULL; }
 
     free(vfs_msg.fcall.wname);
@@ -147,7 +156,10 @@ FILE *file_open(const char *restrict pathname, int oflag) {
     vfs_msg.fcall.fid = fid;
     vfs_msg.mq_id = mq_in;
 
-    if (!vfs_msg_send(&vfs_msg, mq_vfs, mq_in))
+    if (!vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in))
+        { errno = EACCES; return NULL; }
+
+    if (vfs_msg.fcall.type != Ropen)
         { errno = EACCES; return NULL; }
 
     FILE *f = NULL;
@@ -190,6 +202,7 @@ unsigned file_read(FILE *stream, unsigned n) {
     while (current_buffer_size < n) {
         unsigned remaining = n - current_buffer_size;
         unsigned count = remaining > VFS_MAX_IOUNIT ? VFS_MAX_IOUNIT : remaining;
+        char buf[VFS_MAX_MSG_LEN];
         vfs_msg.fcall.type = Tread;
         vfs_msg.fcall.tag = tag_count++;
         vfs_msg.fcall.fid = stream->fid;
@@ -197,7 +210,10 @@ unsigned file_read(FILE *stream, unsigned n) {
         vfs_msg.fcall.offset = stream->seek_offset + current_buffer_size;
         vfs_msg.mq_id = mq_in;
 
-        if (!vfs_msg_send(&vfs_msg, mq_vfs, mq_in))
+        if (!vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in))
+            { errno = EIO; return 0; }
+
+        if (vfs_msg.fcall.type != Rread) 
             { errno = EIO; return 0; }
 
         unsigned read = (vfs_msg.fcall.count < count) ? vfs_msg.fcall.count : count;
@@ -221,6 +237,7 @@ unsigned file_write(FILE *stream) {
     if (!stream->buf)
         return 0;
 
+    char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
     unsigned remaining = stream->buf_pos - stream->buf;
     unsigned bytes_sent = 0;
@@ -236,7 +253,7 @@ unsigned file_write(FILE *stream) {
         vfs_msg.fcall.data = (unsigned char *) stream->buf;
         vfs_msg.mq_id = mq_in;
 
-        if (!vfs_msg_send(&vfs_msg, mq_vfs, mq_in))
+        if (!vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in))
             { errno = EIO; return bytes_sent; }
 
         bytes_sent += vfs_msg.fcall.count;

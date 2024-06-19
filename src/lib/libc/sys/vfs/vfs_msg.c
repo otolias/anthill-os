@@ -30,8 +30,7 @@ unsigned vfs_msg_put(struct vfs_msg *msg, char *buf) {
     return len + MQ_ID_SIZE;
 }
 
-unsigned vfs_msg_send(struct vfs_msg *msg, mqd_t out, mqd_t in) {
-    char buf[VFS_MAX_MSG_LEN];
+unsigned vfs_msg_send(struct vfs_msg *msg, char *buf, mqd_t out, mqd_t in) {
     unsigned len;
 
     len = vfs_msg_put(msg, buf);

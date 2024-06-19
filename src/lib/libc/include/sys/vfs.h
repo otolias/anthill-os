@@ -26,9 +26,11 @@ unsigned vfs_msg_parse(struct vfs_msg *msg, char* buf);
 unsigned vfs_msg_put(struct vfs_msg *msg, char *buf);
 
 /*
-* Send _msg_ to _out_ and receive response from _in_. Returns the number
-* of bytes of the response on success, or zero on failure
+* Write _msg_ to _buf_, send to _out_ and receive response from _in_.
+*
+* On success, returns the number of bytes of the response.
+* On failure, returns 0.
 */
-unsigned vfs_msg_send(struct vfs_msg *msg, mqd_t out, mqd_t in);
+unsigned vfs_msg_send(struct vfs_msg *msg, char *buf, mqd_t out, mqd_t in);
 
 #endif /* _SYS_VFS_H */
