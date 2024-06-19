@@ -12,31 +12,67 @@ void main(void) {
     uart_init();
 
     void *file;
-    const void *address;
+    ssize_t res;
 
     file = ramdisk_lookup("./modules/mod_rd");
-    address = task_exec(file);
-    kprintf("modules/mod_rd loaded at address %x\n", address);
+    res = task_exec(file);
+    if (res > 0)
+        kprintf("KERNEL::modules/mod_rd loaded at address %x\n",
+                ((struct task *) res)->process_address);
+    else {
+        kprintf("KERNEL::modules/mod_rd failed to load. Exiting...\n");
+        return;
+    }
 
     file = ramdisk_lookup("./modules/mod_uart");
-    address = task_exec(file);
-    kprintf("modules/mod_uart loaded at address %x\n", address);
+    res = task_exec(file);
+    if (res > 0)
+        kprintf("KERNEL::modules/mod_uart loaded at address %x\n",
+                ((struct task *) res)->process_address);
+    else {
+        kprintf("KERNEL::modules/mod_uart failed to load. Exiting...\n");
+        return;
+    }
 
     file = ramdisk_lookup("./modules/mod_pl011");
-    address = task_exec(file);
-    kprintf("modules/mod_pl011 loaded at address %x\n", address);
+    res = task_exec(file);
+    if (res > 0)
+        kprintf("KERNEL::modules/mod_pl011 loaded at address %x\n",
+                ((struct task *) res)->process_address);
+    else {
+        kprintf("KERNEL::modules/mod_pl011 failed to load. Exiting...\n");
+        return;
+    }
 
     file = ramdisk_lookup("./modules/mod_vfs");
-    address = task_exec(file);
-    kprintf("modules/mod_vfs loaded at address %x\n", address);
+    res = task_exec(file);
+    if (res > 0)
+        kprintf("KERNEL::modules/mod_vfs loaded at address %x\n",
+                ((struct task *) res)->process_address);
+    else {
+        kprintf("KERNEL::modules/mod_vfs failed to load. Exiting...\n");
+        return;
+    }
 
     file = ramdisk_lookup("./bin/test_suite");
-    address = task_exec(file);
-    kprintf("bin/test_suite loaded at address %x\n", address);
+    res = task_exec(file);
+    if (res > 0)
+        kprintf("KERNEL::bin/test_suite loaded at address %x\n",
+                ((struct task *) res)->process_address);
+    else {
+        kprintf("KERNEL::bin/test_suite failed to load. Exiting...\n");
+        return;
+    }
 
     file = ramdisk_lookup("./bin/hello");
-    address = task_exec(file);
-    kprintf("bin/hello loaded at address %x\n", address);
+    res = task_exec(file);
+    if (res > 0)
+        kprintf("KERNEL::bin/hello loaded at address %x\n",
+                ((struct task *) res)->process_address);
+    else {
+        kprintf("KERNEL::bin/hello failed to load. Exiting...\n");
+        return;
+    }
 
     while (1)
         task_schedule();

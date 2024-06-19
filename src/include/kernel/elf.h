@@ -111,7 +111,7 @@ typedef struct {
 /*
 * Validate elf header
 *
-* Returns 1 if valid header, 0 if not
+* Returns 0 if valid header, -1 if not
 */
 short elf_validate(const Elf64_Ehdr *ehdr);
 

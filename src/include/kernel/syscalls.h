@@ -10,7 +10,8 @@
 #define SYS_MQ_SEND    6
 #define SYS_MQ_RECV    7
 #define SYS_GETPID     8
-#define TOTAL_SYSCALLS 9
+#define SYS_SPAWN      9
+#define TOTAL_SYSCALLS 10
 
 #ifndef __ASSEMBLER__
 

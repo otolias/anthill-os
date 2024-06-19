@@ -14,5 +14,6 @@
 #define ERANGE   11
 #define EMFILE   12
 #define EIO      13
+#define ENOEXEC  14
 
 #endif /* _KERNEL_ERRNO_H */

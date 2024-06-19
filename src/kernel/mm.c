@@ -8,9 +8,9 @@
 
 static char memory_map[PAGING_PAGES] = {0,};
 
-void* get_free_pages(unsigned long bytes) {
+void* get_free_pages(size_t size) {
     size_t i = 0;
-    unsigned long pages_needed = (bytes / PAGE_SIZE) + 1;
+    unsigned long pages_needed = (size / PAGE_SIZE) + 1;
 
     while (i < PAGING_PAGES) {
         size_t j = i + pages_needed;
@@ -36,7 +36,7 @@ void* get_free_pages(unsigned long bytes) {
         return (void *) (LOW_MEMORY + i * PAGE_SIZE);
     }
 
-    return 0;
+    return NULL;
 }
 
 void free_pages(void *page) {

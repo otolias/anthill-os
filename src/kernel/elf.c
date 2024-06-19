@@ -5,15 +5,15 @@
 
 short elf_validate(const Elf64_Ehdr *ehdr) {
     if (strncmp((char *) ehdr->e_ident, "\x7f""ELF", 4))
-        return 0;
+        return -1;
 
     if (ehdr->e_type != 3)
-        return 0;
+        return -1;
 
     if (ehdr->e_machine != 0xb7)
-        return 0;
+        return -1;
 
-    return 1;
+    return 0;
 }
 
 size_t elf_get_image_size(const Elf64_Ehdr *ehdr) {

@@ -21,12 +21,12 @@ enum task_state {
 struct task {
     struct cpu_context cpu_context; /* Stored CPU context. Do not change position */
     pid_t pid;                      /* process ID */
-    size_t process_address;         /* Page start address */
-    size_t user_stack;              /* User stack address */
-    size_t kernel_stack;            /* Kernel stack address */
-    long counter;                   /* How long the task has been running (decreases) */
-    long priority;                  /* How much time the task is given */
-    int preempt_count;              /* If non-zero, task must not be interrupted */
+    void* process_address;          /* Page start address */
+    void* user_stack;               /* User stack address */
+    void* kernel_stack;             /* Kernel stack address */
+    long  counter;                  /* How long the task has been running (decreases) */
+    long  priority;                 /* How much time the task is given */
+    int   preempt_count;            /* If non-zero, task must not be interrupted */
     enum task_state state;          /* Current task state */
 };
 
@@ -56,9 +56,12 @@ void task_tick(void);
 void task_schedule(void);
 
 /*
-* Load _file_ dependencies and execute. Returns a pointer to the process address
+* Load _file_ dependencies and execute.
+*
+* On success, returns a pointer to the task.
+* On failure, returns -errno.
 */
-const void* task_exec(const void *file);
+ssize_t task_exec(const void *file);
 
 /*
 * Terminate process
