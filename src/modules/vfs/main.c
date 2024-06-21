@@ -151,6 +151,12 @@ static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
+    if (read_msg.fcall.type != Rread) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ESERVER;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
     vfs_msg->fcall.type = Rread;
     vfs_msg->fcall.count = read_msg.fcall.count;
     vfs_msg->fcall.data = read_msg.fcall.data;
