@@ -64,13 +64,13 @@ void main(void) {
         return;
     }
 
-    file = ramdisk_lookup("./bin/hello");
+    file = ramdisk_lookup("./bin/sh");
     res = task_exec(file);
     if (res > 0)
-        kprintf("KERNEL::bin/hello loaded at address %x\n",
+        kprintf("KERNEL::bin/sh loaded at address %x\n",
                 ((struct task *) res)->process_address);
     else {
-        kprintf("KERNEL::bin/hello failed to load. Exiting...\n");
+        kprintf("KERNEL::bin/sh failed to load. Exiting...\n");
         return;
     }
 
