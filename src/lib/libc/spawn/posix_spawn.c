@@ -28,7 +28,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
         { fclose(f); errno = ENOMEM; return -1; }
 
     /* Load file to memory */
-    size_t bytes = fread(address, 1, buffer.st_size, f);
+    off_t bytes = fread(address, 1, buffer.st_size, f);
     if (bytes != buffer.st_size) {
         munmap(address, buffer.st_size);
         fclose(f);

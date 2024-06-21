@@ -18,6 +18,7 @@ typedef struct {} posix_spawnattr_t;
 * errno:
 * - EACCES _path_ is not a regular file
 * - EIO    Error reading the file
+* - ENOMEM Not enough available space
 * - ENOENT _path_ does not exist
 * - ENOEXC Unrecognised file format
 */
