@@ -19,8 +19,6 @@
 #define SYSTEM_TIMER_IRQ_1    (1 << 1)
 #define SYSTEM_TIMER_IRQ_3    (1 << 3)
 
-#define UART_IRQ              (1 << 29)
-
 /*
 * Enable interrupts
 */

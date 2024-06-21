@@ -3,7 +3,6 @@
 #include <stdint.h>
 
 #include "drivers/timer.h"
-#include "drivers/uart.h"
 
 #include "kernel/kprintf.h"
 
@@ -30,7 +29,7 @@ const char *entry_error_messages[] = {
 };
 
 void enable_interrupt_controller() {
-    *ENABLE_IRQS_1 |= (SYSTEM_TIMER_IRQ_1 | UART_IRQ);
+    *ENABLE_IRQS_1 |= (SYSTEM_TIMER_IRQ_1);
 }
 
 void enable_irq() {
@@ -44,10 +43,6 @@ void handle_irq() {
             case SYSTEM_TIMER_IRQ_1:
                 handle_timer_irq();
                 irq &= ~SYSTEM_TIMER_IRQ_1;
-                break;
-            case UART_IRQ:
-                handle_uart_irq();
-                irq &= ~UART_IRQ;
                 break;
             default:
                 debug_log("Unknown pending irq: %x\n", irq);

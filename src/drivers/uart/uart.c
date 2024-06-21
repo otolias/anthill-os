@@ -40,23 +40,3 @@ void uart_send_char(char c) {
     // Write the character to the buffer
     *AUX_MU_IO_REG = c;
 }
-
-/*
-* Receive character via uart
-*/
-static char uart_get_char(void) {
-    char c;
-    // Wait until buffer isn't empty
-    while (!(*AUX_MU_LSR_REG & 0x01)) {
-        __asm__ volatile("nop");
-    }
-    // Read it and return
-    c = (char) (*AUX_MU_IO_REG);
-    return c == '\r' ? '\n' : c;
-}
-
-void handle_uart_irq(void) {
-    uart_send_char(uart_get_char());
-    *AUX_MU_IIR_REG |= 0xff;
-}
-

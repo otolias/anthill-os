@@ -21,13 +21,10 @@
 * Initialise uart
 */
 void uart_init();
+
 /*
 * Send character via uart
 */
 void uart_send_char(char c);
-/*
-* UART Interrupt handler
-*/
-void handle_uart_irq();
 
 #endif
