@@ -6,7 +6,7 @@ typedef int mode_t;
 #endif /* mode_t */
 
 #ifndef off_t
-typedef unsigned long off_t;
+typedef long off_t;
 #endif /* off_t */
 
 #ifndef pid_t
