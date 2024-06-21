@@ -1,6 +1,9 @@
 #include "string.h"
 
 void *memcpy(void *restrict s1, const void *restrict s2, size_t n) {
+    if (n == 0)
+        return s1;
+
     char *d = s1;
     const char *s = s2;
 

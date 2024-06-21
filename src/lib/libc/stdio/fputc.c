@@ -10,12 +10,12 @@ int fputc(int c, FILE *stream) {
             return EOF;
     }
 
-    if (stream->buf == stream->buf_end) {
+    if (stream->buf == stream->w_end) {
         errno = EIO;
         return EOF;
     }
 
-    *stream->buf_pos++ = c;
+    *stream->w_pos++ = c;
 
     return c;
 }

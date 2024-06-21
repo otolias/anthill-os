@@ -12,20 +12,20 @@ size_t fread(void *restrict ptr, size_t size, size_t nitems, FILE *restrict stre
     size_t remaining_size = size * nitems;
 
     /* Copy current buffer */
-    if (stream->buf && stream->buf_end != stream->buf_pos) {
-        size_t n = stream->buf_end - stream->buf_pos;
-        memcpy(ptr, stream->buf_pos, n);
+    if (stream->buf && stream->r_end != stream->r_pos) {
+        size_t n = stream->r_end - stream->r_pos;
+        memcpy(ptr, stream->r_pos, n);
         remaining_size -= n;
         read += n;
     }
 
-    char *saved_buf = stream->buf;
-    char *saved_buf_pos = stream->buf_pos;
-    char *saved_buf_end = stream->buf_end;
+    unsigned char *saved_buf = stream->buf;
+    unsigned char *saved_buf_pos = stream->r_pos;
+    unsigned char *saved_buf_end = stream->r_end;
 
     stream->buf = ptr;
-    stream->buf_pos = stream->buf + read;
-    stream->buf_end = (char *) ptr + remaining_size;
+    stream->r_pos = stream->buf + read;
+    stream->r_end = (unsigned char *) ptr + remaining_size;
 
     read += file_read(stream, size * nitems);
 
@@ -33,9 +33,9 @@ size_t fread(void *restrict ptr, size_t size, size_t nitems, FILE *restrict stre
         stream->flags |= 1 << F_EOF;
 
     stream->buf = saved_buf;
-    stream->buf_pos = saved_buf_pos;
-    stream->buf_end = saved_buf_end;
-    stream->seek_offset += read;
+    stream->r_pos = saved_buf_pos;
+    stream->r_end = saved_buf_end;
+    stream->offset += read;
 
     return read / size;
 }

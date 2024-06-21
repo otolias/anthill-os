@@ -34,8 +34,15 @@ void *file_alloc(FILE *stream) {
     if (!stream->buf)
         { errno = ENOMEM; return 0; }
 
-    stream->buf_end = stream->buf + BUFSIZ;
-    stream->buf_pos = stream->buf;
+    if (stream->flags & (1 << F_READ)) {
+        stream->r_pos = stream->buf;
+        stream->r_end = stream->buf;
+    }
+
+    if (stream->flags & (1 << F_WRITE)) {
+        stream->w_pos = stream->buf;
+        stream->w_end = stream->buf + BUFSIZ;
+    }
 
     return stream->buf;
 }
@@ -53,17 +60,24 @@ bool file_close(FILE *stream) {
     if (vfs_msg.fcall.type != Rclunk)
         success = false;
 
+    if (stream->buf)
+        free(stream->buf);
+
     stream->fid = NOFID;
     stream->flags = 0;
-    stream->seek_offset = 0;
-    stream->chunk_index = -1;
-    stream->buf_pos = NULL;
-    stream->buf_end = NULL;
+    stream->offset = 0;
+    stream->buf = NULL;
+    stream->r_pos = NULL;
+    stream->r_end = NULL;
+    stream->w_pos = NULL;
+    stream->w_end = NULL;
 
     return success;
 }
 
 void file_deinit(void) {
+    fflush(stdout); fflush(stderr);
+
     if (mq_in != -1) { mq_close(mq_in); mq_in = 0; mq_unlink(vfs_name); }
 
     if (mq_vfs != -1) { mq_close(mq_vfs); mq_vfs = 0; }
@@ -168,11 +182,22 @@ FILE *file_open(const char *restrict pathname, int oflag) {
 
     free(vfs_msg.fcall.wname);
 
-    if (oflag & O_RDONLY) vfs_msg.fcall.mode = OREAD;
-    else if (oflag & O_WRONLY) vfs_msg.fcall.mode = OWRITE;
-    else vfs_msg.fcall.mode = O_RDWR;
+    int file_flags = 0;
+    if (oflag & O_RDONLY) {
+        vfs_msg.fcall.mode = OREAD;
+        file_flags |= (1 << F_READ);
+    }
+    else if (oflag & O_WRONLY) {
+        vfs_msg.fcall.mode = OWRITE;
+        file_flags |= (1 << F_WRITE);
+    }
+    else {
+        vfs_msg.fcall.mode = O_RDWR;
+        file_flags |= (1 << F_READ | 1 << F_WRITE);
+    }
 
     if (oflag & O_TRUNC) vfs_msg.fcall.mode |= OTRUNC;
+    if (oflag & O_APPEND) file_flags |= (1 << F_APPEND);
 
     vfs_msg.fcall.type = Topen;
     vfs_msg.fcall.tag = tag_count++;
@@ -197,9 +222,8 @@ FILE *file_open(const char *restrict pathname, int oflag) {
         { errno = EMFILE; return NULL; }
 
     f->fid = fid;
-    f->flags |= 1 << F_OPEN;
-    f->seek_offset = 0;
-    f->chunk_index = -1;
+    f->flags |= file_flags | 1 << F_OPEN;
+    f->offset = 0;
 
     return f;
 }
@@ -213,7 +237,9 @@ unsigned file_read(FILE *stream, unsigned n) {
             return 0;
     }
 
-    if (stream->buf_end - stream->buf < n) {
+    size_t buf_fill = stream->r_end - stream->r_pos;
+
+    if (buf_fill > 0 && buf_fill < n) {
         stream->flags |= 1 << F_EOF;
         return 0;
     }
@@ -230,7 +256,7 @@ unsigned file_read(FILE *stream, unsigned n) {
         vfs_msg.fcall.tag = tag_count++;
         vfs_msg.fcall.fid = stream->fid;
         vfs_msg.fcall.count = count;
-        vfs_msg.fcall.offset = stream->seek_offset + current_buffer_size;
+        vfs_msg.fcall.offset = stream->offset + current_buffer_size;
         vfs_msg.mq_id = mq_in;
 
         if (!vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in))
@@ -248,21 +274,28 @@ unsigned file_read(FILE *stream, unsigned n) {
             break;
     }
 
-    stream->buf_end = stream->buf + current_buffer_size;
-    stream->chunk_index++;
+    stream->r_pos = stream->buf;
+    stream->r_end = stream->buf + current_buffer_size;
     return current_buffer_size;
 }
 
-unsigned file_write(FILE *stream) {
+ssize_t file_write(FILE *stream) {
     if (!_check_init())
         { errno = EIO; return 0; }
 
-    if (!stream->buf)
+    if (!(stream->flags & (1 << F_WRITE | 1 << F_OPEN))) {
+        errno = EBADF;
+        return EOF;
+    }
+
+    unsigned buf_fill = stream->w_end - stream->w_pos;
+
+    if (!stream->buf || buf_fill == 0)
         return 0;
 
     char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
-    unsigned remaining = stream->buf_pos - stream->buf;
+    unsigned remaining = stream->w_pos - stream->buf;
     unsigned bytes_sent = 0;
 
     while (remaining > 0) {
@@ -271,7 +304,7 @@ unsigned file_write(FILE *stream) {
         vfs_msg.fcall.type = Twrite;
         vfs_msg.fcall.tag = tag_count++;
         vfs_msg.fcall.fid = stream->fid;
-        vfs_msg.fcall.offset = stream->seek_offset + bytes_sent;
+        vfs_msg.fcall.offset = stream->offset + bytes_sent;
         vfs_msg.fcall.count = count;
         vfs_msg.fcall.data = (unsigned char *) stream->buf;
         vfs_msg.mq_id = mq_in;
@@ -280,6 +313,7 @@ unsigned file_write(FILE *stream) {
             { errno = EIO; return bytes_sent; }
 
         bytes_sent += vfs_msg.fcall.count;
+        stream->offset += bytes_sent;
 
         if (vfs_msg.fcall.count < count)
             { errno = EIO; return bytes_sent; }
@@ -287,6 +321,9 @@ unsigned file_write(FILE *stream) {
         remaining -= vfs_msg.fcall.count;
     }
 
-    stream->buf_pos = stream->buf;
+    if (stream->flags & (1 << F_APPEND))
+        stream->offset = -1;
+
+    stream->w_pos = stream->buf;
     return bytes_sent;
 }

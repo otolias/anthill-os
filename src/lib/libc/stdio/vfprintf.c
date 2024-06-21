@@ -10,18 +10,18 @@ int vfprintf(FILE *restrict stream, const char *restrict format, va_list ap) {
             return EOF;
     }
 
-    int n = stream->buf_end - stream->buf_pos;
+    int n = stream->w_end - stream->w_pos;
     int res = formatter(stream->buf, format, ap, n);
     if (res > n) {
         errno = EIO;
         return EOF;
     }
 
-    stream->buf_pos += res;
+    stream->w_pos += res;
 
     /* Flush if the last character is a new line or more than half of the buffer is
-     * filed */
-    if (*(stream->buf_pos - 1) == '\n' || stream->buf_pos - stream->buf > BUFSIZ / 2) {
+     * filled */
+    if (*(stream->w_pos - 1) == '\n' || stream->w_pos - stream->buf > BUFSIZ / 2) {
         fflush(stream);
     }
 

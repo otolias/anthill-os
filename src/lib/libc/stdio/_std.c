@@ -1,28 +1,31 @@
 #include "stdio.h"
 
-static char stdin_buf[BUFSIZ];
+static unsigned char stdin_buf[BUFSIZ];
 FILE __stdin = {
     .fid = 0,
-    .flags = (1 << F_OPEN),
+    .flags = (1 << F_OPEN | 1 << F_READ),
+    .offset = -1,
     .buf = stdin_buf,
-    .buf_pos = stdin_buf,
-    .buf_end = stdin_buf + BUFSIZ,
+    .r_pos = stdin_buf,
+    .r_end = stdin_buf,
 };
 
-static char stdout_buf[BUFSIZ];
+static unsigned char stdout_buf[BUFSIZ];
 FILE __stdout = {
     .fid = 1,
-    .flags = (1 << F_OPEN),
+    .flags = (1 << F_OPEN | 1 << F_WRITE | 1 << F_APPEND),
+    .offset = -1,
     .buf = stdout_buf,
-    .buf_pos = stdout_buf,
-    .buf_end = stdout_buf + BUFSIZ,
+    .w_pos = stdout_buf,
+    .w_end = stdout_buf + BUFSIZ,
 };
 
-static char stderr_buf[BUFSIZ];
+static unsigned char stderr_buf[BUFSIZ];
 FILE __stderr = {
     .fid = 2,
-    .flags = (1 << F_OPEN),
+    .flags = (1 << F_OPEN | 1 << F_WRITE | 1 << F_APPEND),
+    .offset = -1,
     .buf = stderr_buf,
-    .buf_pos = stderr_buf,
-    .buf_end = stderr_buf + BUFSIZ,
+    .w_pos = stderr_buf,
+    .w_end = stderr_buf + BUFSIZ,
 };

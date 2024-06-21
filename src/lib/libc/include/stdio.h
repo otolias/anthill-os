@@ -20,17 +20,21 @@
 #define EOF -1
 
 /* File flag offsets */
-#define F_OPEN 0 << 0
-#define F_EOF  1 << 1
+#define F_OPEN   0 << 0
+#define F_EOF    1 << 1
+#define F_READ   1 << 2
+#define F_WRITE  1 << 3
+#define F_APPEND 1 << 4
 
 typedef struct {
-    unsigned fid;         /* File descriptor */
-    int      flags;       /* File status flags */
-    size_t   seek_offset; /* Seek offset */
-    ssize_t  chunk_index; /* Current buffer chunk index */
-    char*    buf;         /* Stream buffer */
-    char*    buf_pos;     /* Current buffer position */
-    char*    buf_end;     /* Pointer to end of buffer */
+    unsigned       fid;    /* File descriptor */
+    int            flags;  /* File status flags */
+    off_t          offset; /* Seek offset */
+    unsigned char* buf;    /* Stream buffer */
+    unsigned char* r_pos;  /* Current read position */
+    unsigned char* r_end;  /* End of read buffer */
+    unsigned char* w_pos;  /* Current write position */
+    unsigned char* w_end;  /* End of write buffer */
 } FILE;
 
 extern FILE __stdin;
@@ -40,6 +44,8 @@ extern FILE __stderr;
 #define stdin  &__stdin
 #define stdout &__stdout
 #define stderr &__stderr
+
+extern FILE open_files[FOPEN_MAX];
 
 /* File handling */
 
@@ -61,7 +67,8 @@ int fclose(FILE *stream);
 * On failure, returns EOF and sets errno to indicate the error.
 *
 * errno:
-* - EIO Physical I/O error.
+* - EBADF _stream_ is not open for writing
+* - EIO   Physical I/O error.
 */
 int fflush(FILE *stream);
 
@@ -73,7 +80,7 @@ int fflush(FILE *stream);
 *
 * errno:
 * - ENOMEM Not enough available space.
-* - EBADF  The stream's underlying stream is not a valid file descriptor.
+* - EBADF  The stream's underlying stream is nota  file descriptor open for reading.
 * - EIO    Physical I/O error, or data could not be retrieved.
 */
 int fgetc(FILE *stream);
@@ -132,6 +139,57 @@ int fputc(int c, FILE *stream);
 * - EIO Physical I/O error, or data could not be retrieved.
 */
 size_t fread(void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream);
+
+/*
+* Write up to _nitems_ of size _size_ from the array pointed to by _ptr_ to _stream_.
+* If _nitems_ or _size_ is 0, returns 0.
+*
+* On success, returns the number of elements written.
+* On failure, returns 0 and sets errno to indicate the error.
+*
+* errno:
+* - ENOMEM Not enough available space
+*/
+size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
+              FILE *restrict stream);
+
+/*
+* Put bytes from _stream_ and a terminating character to _lineptr_ of size _n_,
+* until _delimiter_ is encountered.
+*
+* _delimiter_ is an int, but it must be representable by an unsigned char.
+* _lineptr_ must be a null pointer or a malloc'd buffer of size _n_.
+*
+* On success, returns the number of bytes writen to _lineptr_, excluding the
+* terminating character.
+* On failure, returns -1 and sets errno to indicate the error.
+*
+* errno:
+* - EBADF  The stream's underlying stream is not a valid file descriptor.
+* - EINVAL _lineptr_ or _n_ is a null pointer
+* - EIO    Physical I/O error, or data could not be retrieved.
+* - ENOMEM Not enough available space
+*/
+ssize_t getdelim(char **restrict lineptr, size_t *restrict n, int delimiter,
+                 FILE *restrict stream);
+
+/*
+* Put bytes from _stream_ and a terminating character to _lineptr_ of size _n_,
+* until a newline is encountered.
+*
+* _lineptr_ must be a null pointer or a malloc'd buffer of size _n_.
+*
+* On success, returns the number of bytes writen to _lineptr_, excluding the
+* terminating character.
+* On failure, returns -1 and sets errno to indicate the error.
+*
+* errno:
+* - EBADF  The stream's underlying stream is not a valid file descriptor.
+* - EINVAL _lineptr_ or _n_ is a null pointer
+* - EIO    Physical I/O error, or data could not be retrieved.
+* - ENOMEM Not enough available space
+*/
+ssize_t getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
 
 /* Format handling */
 

@@ -1,18 +1,12 @@
 #include "stdio.h"
 
 #include <errno.h>
-#include <stddef.h>
-#include <stdlib.h>
 
 #include "internal/stdio.h"
 
 int fclose(FILE *stream) {
-    if (stream->buf) {
+    if (stream->buf && stream->flags & (1 << F_WRITE) && stream->w_pos != stream->w_end)
         fflush(stream);
-
-        free(stream->buf);
-        stream->buf = NULL;
-    }
 
     if (!file_close(stream)) {
         errno = EIO;

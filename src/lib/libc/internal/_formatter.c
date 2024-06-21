@@ -2,14 +2,14 @@
 
 #include <stdbool.h>
 
-static int _char(char c, char *buffer, int loc, const int n) {
+static int _char(unsigned char c, unsigned char *buffer, int loc, const int n) {
     if (loc < n)
         buffer[loc] = c;
 
     return loc + 1;
 }
 
-static int _string(const char *string, char* buffer, int loc, const int n) {
+static int _string(const char *string, unsigned char* buffer, int loc, const int n) {
     unsigned char c;
 
     while ((c = *(string++))) {
@@ -19,8 +19,8 @@ static int _string(const char *string, char* buffer, int loc, const int n) {
     return loc;
 }
 
-static int _uint(unsigned long val, const unsigned char base, char *buffer, int loc,
-                 const int n) {
+static int _uint(unsigned long val, const unsigned char base, unsigned char *buffer,
+                 int loc, const int n) {
     unsigned long div = 1;
 
     while (val / div >= base) {
@@ -31,14 +31,15 @@ static int _uint(unsigned long val, const unsigned char base, char *buffer, int 
         long digit = val / div;
         val %= div;
         div /= base;
-        char c = (char) (digit >= 10) ? digit + 87 : digit + 48;
+        unsigned char c = (unsigned char) (digit >= 10) ? digit + 87 : digit + 48;
         loc = _char(c, buffer, loc, n);
     }
 
     return loc;
 }
 
-static int _int(long val, const unsigned char base, char *buffer, int loc, const int n) {
+static int _int(long val, const unsigned char base, unsigned char *buffer, int loc,
+                const int n) {
     if (val < 0) {
         val *= -1;
 
@@ -50,7 +51,7 @@ static int _int(long val, const unsigned char base, char *buffer, int loc, const
 
 }
 
-int formatter(char* buffer, const char *format, va_list args, size_t max_size) {
+int formatter(unsigned char* buffer, const char *format, va_list args, size_t max_size) {
     char c;
     int size = 0;
     const int n = (int) max_size;

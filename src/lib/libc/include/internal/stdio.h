@@ -15,8 +15,13 @@
 /* File handling */
 
 /*
-* Allocate read/write buffer for _stream_. Returns a pointer to the allocated space
-* on success or a null pointer on failure.
+* Allocate buffer for _stream_.
+*
+* On success, returns a pointer to the allocated space.
+* On failure, rreturns a null pointer and sets errno to indicate the failure.
+*
+* errno:
+* - ENOMEM
 */
 void *file_alloc(FILE *stream);
 
@@ -58,9 +63,16 @@ FILE* file_open(const char *pathname, int oflag);
 unsigned file_read(FILE *stream, unsigned n);
 
 /*
-* Write _stream_ buffer to file. Returns the number of bytes written.
+* Write _stream_ buffer to file.
+*
+* On success, returns the number of bytes written.
+* On failure, returns EOF and sets errno to indicate the error.
+*
+* errno:
+* - EBADF
+* - EIO
 */
-unsigned file_write(FILE *stream);
+ssize_t file_write(FILE *stream);
 
 /* Format handling */
 
@@ -68,6 +80,6 @@ unsigned file_write(FILE *stream);
 * Formats _format_ according to _args_ and puts the result in _buffer_,
 * up to _max_size_ bytes
 */
-int formatter(char* buffer, const char *format, va_list args, size_t max_size);
+int formatter(unsigned char* buffer, const char *format, va_list args, size_t max_size);
 
 #endif /* _INTERNAL_STDIO_H */
