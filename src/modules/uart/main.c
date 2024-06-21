@@ -10,8 +10,9 @@
 
 mqd_t mq_in = -1;
 
-FCALL_ERROR(EINVALID, "Invalid message");
 FCALL_ERROR(ECLIENT, "Client error");
+FCALL_ERROR(EINVALID, "Invalid message");
+FCALL_ERROR(EUNKNOWN, "Unknown type");
 
 static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     if (vfs_msg->fcall.uname->len == 0)
@@ -39,7 +40,7 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     return vfs_msg_put(vfs_msg, buf);
 }
 
-static unsigned short _write(struct vfs_msg *vfs_msg, char *buf) {
+static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
     const struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
     if (!client) {
         vfs_msg->fcall.type = Rerror;
@@ -47,9 +48,20 @@ static unsigned short _write(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (vfs_msg->fcall.offset != 0) {
+    unsigned char read_buf[vfs_msg->fcall.count];
+    unsigned count = uart_read(read_buf, vfs_msg->fcall.count);
+
+    vfs_msg->fcall.type = Rread;
+    vfs_msg->fcall.count = count;
+    vfs_msg->fcall.data = (unsigned char *) read_buf;
+    return vfs_msg_put(vfs_msg, buf);
+}
+
+static unsigned short _write(struct vfs_msg *vfs_msg, char *buf) {
+    const struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
         vfs_msg->fcall.type = Rerror;
-        vfs_msg->fcall.ename = &EINVALID;
+        vfs_msg->fcall.ename = &ECLIENT;
         return vfs_msg_put(vfs_msg, buf);
     }
 
@@ -70,12 +82,18 @@ static void _handle_message(char *buf) {
             len = _attach(&vfs_msg, buf);
             break;
 
+        case Tread:
+            len = _read(&vfs_msg, buf);
+            break;
+
         case Twrite:
             len = _write(&vfs_msg, buf);
             break;
 
         default:
-            break;
+            vfs_msg.fcall.type = Rerror;
+            vfs_msg.fcall.ename = &EUNKNOWN;
+            len = vfs_msg_put(&vfs_msg, buf);
     }
 
     mq_send(vfs_msg.mq_id, buf, len, 0);
