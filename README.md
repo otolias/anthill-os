@@ -8,7 +8,6 @@ arm-os
 * [Ninja](https://github.com/ninja-build/ninja)
 * [QEMU](https://github.com/qemu/qemu) 2.12 or newer
 * GDB for debugging (optional)
-* [Unity](https://github.com/ThrowTheSwitch/Unity) for unit tests (optional)
 
 ## Build Instructions
 
@@ -18,16 +17,6 @@ meson install -C build
 ```
 
 This will build the project and create the sysroot under build/sysroot
-
-## Testing
-
-To run tests, you must have Unity installed
-
-```
-meson test -C build
-```
-
-This will compile and run tests natively
 
 ## Running
 

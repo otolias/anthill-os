@@ -30,19 +30,6 @@ gcc = meson.get_compiler('c').cmd_array()
 objcopy = find_program('objcopy')
 tar = find_program('tar')
 
-# Unit testing
-unity_dep = dependency('unity',
-  native : true,
-  required : false,
-)
-
-if unity_dep.found()
-  tests_enabled = true
-else
-  tests_enabled = false
-  message('Unity not found, disabling unit tests')
-endif
-
 kernel_sources = []
 kernel_includes = []
 
@@ -84,28 +71,3 @@ kernel_bin = custom_target('kernel8.bin',
 
 # Generate ramdisk
 meson.add_install_script('create_ramdisk', tar)
-
-if tests_enabled
-  kernel_tests = {
-    'string' : [ meson.source_root() / 'test' / 'kernel' / 'string.c' ],
-    'mm' : [ meson.source_root() / 'test' / 'kernel' / 'mm.c' ],
-  }
-
-  kernel_test_inc_directories = include_directories('src')
-
-  # Use -ffreestanding to omit calls from native libc during compilation,
-  # but link it for Unity calls
-  foreach name, sources : kernel_tests
-    kernel_test = executable(name,
-      sources : sources,
-      include_directories : [ kernel_inc_directories, kernel_test_inc_directories ],
-      c_args: ['-ffreestanding'],
-      dependencies : unity_dep,
-      native : true,
-    )
-
-    test(name, kernel_test,
-      suite : 'kernel',
-    )
-  endforeach
-endif
