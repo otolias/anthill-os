@@ -16,7 +16,7 @@ void sys_exit(void) {
 ssize_t sys_mmap(__attribute__((unused)) void *addr, size_t len,
                  __attribute__((unused)) int prot, __attribute__((unused)) int flags,
                  __attribute__((unused)) int fildes, __attribute__((unused)) off_t off) {
-    const void *address = get_free_pages(len);
+    const void *address = mm_get_pages(len);
     if (!address)
         return -ENOMEM;
 
@@ -24,7 +24,7 @@ ssize_t sys_mmap(__attribute__((unused)) void *addr, size_t len,
 }
 
 int sys_munmap(void *addr, __attribute__((unused))size_t len) {
-    free_pages(addr);
+    mm_free_pages(addr);
     return 0;
 }
 

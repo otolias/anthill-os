@@ -6,9 +6,22 @@
 #define PAGE_CONS   1
 #define PAGE_END    2
 
+extern volatile char kernel_end;
+
 static char memory_map[PAGING_PAGES] = {0,};
 
-void* get_free_pages(size_t size) {
+void mm_free_pages(void *page) {
+    unsigned long p = (unsigned long) page - LOW_MEMORY;
+
+    while (memory_map[p / PAGE_SIZE] == PAGE_CONS) {
+        memory_map[p / PAGE_SIZE] = PAGE_FREE;
+        p += PAGE_SIZE;
+    }
+
+    memory_map[p / PAGE_SIZE] = PAGE_FREE;
+}
+
+void* mm_get_pages(size_t size) {
     size_t i = 0;
     unsigned long pages_needed = (size / PAGE_SIZE) + 1;
 
@@ -39,13 +52,6 @@ void* get_free_pages(size_t size) {
     return NULL;
 }
 
-void free_pages(void *page) {
-    unsigned long p = (unsigned long) page - LOW_MEMORY;
-
-    while (memory_map[p / PAGE_SIZE] == PAGE_CONS) {
-        memory_map[p / PAGE_SIZE] = PAGE_FREE;
-        p += PAGE_SIZE;
-    }
-
-    memory_map[p / PAGE_SIZE] = PAGE_FREE;
+void mm_init(void) {
+    mm_get_pages((size_t) &kernel_end);
 }

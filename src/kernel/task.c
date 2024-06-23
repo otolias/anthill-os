@@ -75,7 +75,7 @@ ssize_t task_exec(const void *file) {
         const Elf64_Ehdr *ehdr = (Elf64_Ehdr *) ramdisk_lookup("./lib/ld.so");
 
         /* Get pages */
-        linker_page = get_free_pages(elf_get_image_size(ehdr));
+        linker_page = mm_get_pages(elf_get_image_size(ehdr));
         if (!linker_page) {
             kprintf("Error loading linker\n");
             return -EINVAL;
@@ -91,20 +91,20 @@ ssize_t task_exec(const void *file) {
     const unsigned long elf_memory_size = elf_get_image_size(ehdr);
     const unsigned long process_size = elf_memory_size + sizeof(struct task);
 
-    void *process_addr = get_free_pages(process_size + STACK_SIZE);
+    void *process_addr = mm_get_pages(process_size + STACK_SIZE);
     if (process_addr == 0) {
         return -ENOMEM;
     }
 
     _task_load(ehdr, process_addr);
 
-    void *user_stack = get_free_pages(0);
+    void *user_stack = mm_get_pages(0);
     if (user_stack == NULL)
-        { free_pages(process_addr); return -ENOMEM; }
+        { mm_free_pages(process_addr); return -ENOMEM; }
 
-    void *kernel_stack = get_free_pages(0);
+    void *kernel_stack = mm_get_pages(0);
     if (kernel_stack == NULL)
-        { free_pages(process_addr); free_pages(user_stack); return -ENOMEM; }
+        { mm_free_pages(process_addr); mm_free_pages(user_stack); return -ENOMEM; }
 
     /* Add process pages to stack */
     size_t *sp = user_stack;
@@ -192,9 +192,9 @@ void task_exit(void) {
         }
     }
 
-    free_pages((void *) current_task->process_address);
-    free_pages((void *) current_task->user_stack);
-    free_pages((void *) current_task->kernel_stack);
+    mm_free_pages((void *) current_task->process_address);
+    mm_free_pages((void *) current_task->user_stack);
+    mm_free_pages((void *) current_task->kernel_stack);
     current_task = NULL;
     task_schedule();
 }

@@ -1,11 +1,13 @@
-#include "drivers/irq.h"
-#include "drivers/timer.h"
-#include "drivers/uart.h"
+#include <drivers/irq.h>
+#include <drivers/timer.h>
+#include <drivers/uart.h>
 #include <kernel/kprintf.h>
+#include <kernel/mm.h>
 #include <kernel/ramdisk.h>
 #include <kernel/task.h>
 
 void main(void) {
+    mm_init();
     timer_init();
     enable_interrupt_controller();
     enable_irq();
