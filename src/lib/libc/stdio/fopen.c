@@ -34,11 +34,5 @@ FILE *fopen(const char *restrict pathname, const char *restrict mode) {
         return NULL;
     }
 
-    FILE *f = file_open(pathname, oflag);
-    if (!f) {
-        errno = ENOSPC;
-        return NULL;
-    }
-
-    return f;
+    return file_open(pathname, oflag);
 }

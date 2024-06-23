@@ -46,8 +46,15 @@ int file_get_stat(unsigned fid, struct stat *stat);
 bool file_init(void);
 
 /*
-* Open file for whose path name is pointed to by _pathname_ with
-* mode specified by _oflag_
+* Open file for whose path name is equal to the one pointed to by _pathname_ with mode
+* specified by _oflag_.
+*
+* On success, returns a pointer to the opened stream.
+* On failure, returns a null pointer and sets errno to indicate the error.
+*
+* errno:
+* - EACCES
+* - EMFILE
 */
 FILE* file_open(const char *pathname, int oflag);
 

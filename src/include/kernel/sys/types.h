@@ -1,6 +1,10 @@
 #ifndef _KERNEL_SYS_TYPES_H
 #define _KERNEL_SYS_TYPES_H
 
+#ifndef ino_t
+typedef unsigned long ino_t;
+#endif /* ino_t */
+
 #ifndef mode_t
 typedef int mode_t;
 #endif /* mode_t */

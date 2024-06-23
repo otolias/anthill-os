@@ -33,4 +33,8 @@
 #define O_APPEND 1 << 7
 #endif /* O_APPEND */
 
+#ifndef O_DIRECTORY
+#define O_DIRECTORY 1 << 8
+#endif /* O_DIRECTORY */
+
 #endif /* _FCNTL_H */

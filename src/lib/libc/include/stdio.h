@@ -26,7 +26,7 @@
 #define F_WRITE  1 << 3
 #define F_APPEND 1 << 4
 
-typedef struct {
+struct __file {
     unsigned       fid;    /* File descriptor */
     int            flags;  /* File status flags */
     off_t          offset; /* Seek offset */
@@ -35,7 +35,9 @@ typedef struct {
     unsigned char* r_end;  /* End of read buffer */
     unsigned char* w_pos;  /* Current write position */
     unsigned char* w_end;  /* End of write buffer */
-} FILE;
+};
+
+typedef struct __file FILE;
 
 extern FILE __stdin;
 extern FILE __stdout;
