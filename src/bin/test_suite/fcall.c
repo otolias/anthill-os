@@ -561,30 +561,35 @@ static void _test_Tstat(void) {
 
 static void _test_Rstat(void) {
     unsigned char buf[256];
-    struct fcall_stat stat = { .qid = { ~0, ~0, ~0}, .length = ~0 };
     unsigned res;
     fcall fout, fin = {
         .type = Rstat,
         .tag = NOTAG,
-        .nstat = sizeof(stat),
-        .stat = &stat,
+        .nstat = 30,
+        .stat = {
+            .qid = { ~0, ~0, ~0},
+            .length = ~0,
+            .name = (pstring *) "\4\0file",
+        },
     };
 
     res = fcall_msg_size(&fin);
-    if (res != 33)
+    if (res != 39)
         puts("FCALL::ERROR::fcall_msg_size Rstat failure");
 
     res = fcall_msg_to_buf(&fin, buf, 256);
-    if (res != 33)
+    if (res != 39)
         puts("FCALL::ERROR::fcall_msg_to_buf Rstat failure");
 
     res = fcall_buf_to_msg(buf, &fout);
-    if (res != 33)
+    if (res != 39)
         puts("FCALL::ERROR::fcall_buf_to_msg Rstat failure");
 
     if (fin.type != fout.type || fin.tag != fout.tag || fin.nstat != fout.nstat ||
-        memcmp(fin.stat, fout.stat, sizeof(stat)) != 0)
-        puts("FCALL::ERROR::fcall Rclunk failure");
+        memcmp(&fin.stat.qid, &fout.stat.qid, sizeof(struct qid)) != 0 ||
+        fin.stat.length != fout.stat.length ||
+        memcmp(fin.stat.name, fout.stat.name, 6) != 0)
+        puts("FCALL::ERROR::fcall Rstat failure");
 }
 
 void test_fcall(void) {
