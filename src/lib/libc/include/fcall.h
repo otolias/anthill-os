@@ -75,6 +75,7 @@
 * _stat_ contains:
 * - qid[16]   file qid
 * - length[8] file size in bytes
+* - name[s]   file name
 */
 
 #ifndef _FCALL_H
@@ -110,8 +111,9 @@ struct qid {
 };
 
 struct fcall_stat {
-    struct qid qid;
+    struct qid    qid;
     unsigned long length;
+    pstring*      name;
 };
 
 /* qid types */
@@ -164,8 +166,8 @@ typedef struct {
             unsigned char* data;   /* Data read/to write (Rread, Twrite) */
         };
         struct { /* Rstat */
-            unsigned short nstat; /* Stat length */
-            struct fcall_stat* stat; /* File stat */
+            unsigned short    nstat; /* Stat length */
+            struct fcall_stat stat; /* File stat */
         };
     };
 } fcall;

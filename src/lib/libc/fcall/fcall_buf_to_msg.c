@@ -157,8 +157,16 @@ unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall) {
         case Rstat:
             fcall->nstat = _get_ushort(ptr);
             ptr += SHRT_SIZE;
-            fcall->stat = (struct fcall_stat *) ptr;
-            ptr += fcall->nstat;
+            fcall->stat.qid.type = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->stat.qid.version = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->stat.qid.id = _get_ulong(ptr);
+            ptr += LONG_SIZE;
+            fcall->stat.length = _get_ulong(ptr);
+            ptr += LONG_SIZE;
+            fcall->stat.name = (pstring *) ptr;
+            ptr += pstrlen(fcall->stat.name);
             break;
 
         default:
