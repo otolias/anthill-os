@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static void _test_memcmp(void) {
@@ -92,6 +93,29 @@ static void _test_strcnt(void) {
         puts("STRING::ERROR::strcnt with non existing character failed");
 }
 
+static void _test_strdup(void) {
+    const char s[] = "A String";
+
+    char *new = strdup(s);
+    if (new == NULL || memcmp(s, new, 9) != 0)
+        puts("STRING::ERROR::strdup failed");
+
+    free(new);
+}
+
+static void _test_strrchr(void) {
+    const char s[] = "aba";
+
+    if (strrchr(s, 'a') != s + 2)
+        puts("STRING::ERROR::strrchr failed");
+
+    if (strchr(s, 'c') != NULL)
+        puts("STRING::ERROR::strrchr NULL check failed");
+
+    if (strchr("", 'a') != NULL)
+        puts("STRING::ERROR::strrchr empty string check failed");
+}
+
 static void _test_strspn(void) {
     char s[] = "str/str-";
 
@@ -146,6 +170,8 @@ void test_string(void) {
     _test_memset();
     _test_strchr();
     _test_strcnt();
+    _test_strdup();
+    _test_strrchr();
     _test_strspn();
     _test_strcspn();
     _test_strtok();
