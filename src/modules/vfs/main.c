@@ -139,28 +139,13 @@ static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    char read_buf[VFS_MAX_MSG_LEN];
-    struct vfs_msg read_msg;
-    read_msg.fcall.type = Tread;
-    read_msg.fcall.offset = vfs_msg->fcall.offset;
-    read_msg.fcall.count = vfs_msg->fcall.count;
-
-    if (vnode_forward(vnode, &read_msg, read_buf) == 0) {
+    if (vnode_forward(vnode, buf) != VFS_OK) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ESERVER;
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (read_msg.fcall.type != Rread) {
-        vfs_msg->fcall.type = Rerror;
-        vfs_msg->fcall.ename = &ESERVER;
-        return vfs_msg_put(vfs_msg, buf);
-    }
-
-    vfs_msg->fcall.type = Rread;
-    vfs_msg->fcall.count = read_msg.fcall.count;
-    vfs_msg->fcall.data = read_msg.fcall.data;
-    return vfs_msg_put(vfs_msg, buf);
+    return vfs_msg_parse(vfs_msg, buf);
 }
 
 static unsigned short _stat(struct vfs_msg *vfs_msg, char *buf) {
@@ -178,21 +163,13 @@ static unsigned short _stat(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    char stat_buf[VFS_MAX_MSG_LEN];
-    struct vfs_msg stat_msg;
-    stat_msg.fcall.type = Tstat;
-
-    if (vnode_forward(vnode, &stat_msg, stat_buf) == 0 ||
-        stat_msg.fcall.type != Rstat) {
+    if (vnode_forward(vnode, buf) != VFS_OK) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ESERVER;
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    vfs_msg->fcall.type = Rstat;
-    vfs_msg->fcall.nstat = stat_msg.fcall.nstat;
-    vfs_msg->fcall.stat = stat_msg.fcall.stat;
-    return vfs_msg_put(vfs_msg, buf);
+    return vfs_msg_parse(vfs_msg, buf);
 }
 
 static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
@@ -256,28 +233,13 @@ static unsigned _write(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    char write_buf[VFS_MAX_MSG_LEN];
-    struct vfs_msg write_msg;
-    write_msg.fcall.type = Twrite;
-    write_msg.fcall.offset = vfs_msg->fcall.offset;
-    write_msg.fcall.count = vfs_msg->fcall.count;
-    write_msg.fcall.data = vfs_msg->fcall.data;
-
-    if (vnode_forward(vnode, &write_msg, write_buf) == 0) {
+    if (vnode_forward(vnode, buf) != VFS_OK) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ESERVER;
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (write_msg.fcall.type != Rwrite) {
-        vfs_msg->fcall.type = Rerror;
-        vfs_msg->fcall.ename = &ESERVER;
-        return vfs_msg_put(vfs_msg, buf);
-    }
-
-    vfs_msg->fcall.type = Rwrite;
-    vfs_msg->fcall.count = write_msg.fcall.count;
-    return vfs_msg_put(vfs_msg, buf);
+    return vfs_msg_parse(vfs_msg, buf);
 }
 
 /*

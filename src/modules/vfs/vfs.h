@@ -37,9 +37,9 @@ struct vnode* vnode_find_child(const struct vnode* vnode, const pstring *name);
 struct vnode* vnode_get_root();
 
 /*
-* Forwards _vfs_msg_ to _vnode_ mount node
+* Forwards vfs_msg _buf_ to _vnode_
 */
-unsigned vnode_forward(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *buf);
+enum vfs_error vnode_forward(const struct vnode *vnode, char *buf);
 
 /*
 * Deallocate memory of _node_ and its children

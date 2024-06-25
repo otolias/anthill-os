@@ -105,28 +105,31 @@ struct vnode* vnode_get_root() {
     return root;
 }
 
-unsigned vnode_forward(const struct vnode *vnode, struct vfs_msg *vfs_msg, char *buf) {
-    unsigned len;
-    vfs_msg->fcall.tag = tag_count++;
-    vfs_msg->fcall.fid = vnode->fid;
-    vfs_msg->mq_id = mq_in;
+enum vfs_error vnode_forward(const struct vnode *vnode, char *buf) {
+    unsigned msg_size;
 
-    len = vfs_msg_put(vfs_msg, buf);
-    if (len == 0)
-        return 0;
+    /* Keep old tag and mq_id */
+    unsigned short old_tag = *((unsigned short *) (buf + FCALL_TAG_OFF));
+    msg_size = (unsigned) *(buf + FCALL_SIZE_OFF);
+    mqd_t old_mq = *((mqd_t *) (buf + msg_size));
 
-    if (mq_send(vnode->mq_id, buf, len, 0) == -1)
-        return 0;
+    /* Replace tag, fid and mq_id */
+    *(buf + FCALL_TAG_OFF) = tag_count++;
+    *(buf + FCALL_FID_OFF) = vnode->fid;
+    *(buf + msg_size) = mq_in;
+
+    if (mq_send(vnode->mq_id, buf, msg_size + sizeof(mqd_t), 0) == -1)
+        return VFS_MQERR;
 
     if (mq_receive(mq_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
-        return 0;
+        return VFS_MQERR;
 
-    if (vfs_msg_parse(vfs_msg, buf) == 0)
-        return 0;
+    /* Restore tag and mq_id */
+    *(buf + FCALL_TAG_OFF) = old_tag;
+    msg_size = (unsigned) *(buf + FCALL_SIZE_OFF);
+    *(buf + msg_size) = old_mq;
 
-    len = vfs_msg_parse(vfs_msg, buf);
-
-    return len;
+    return VFS_OK;
 }
 
 struct vnode* vnode_remove(struct vnode *node) {
