@@ -63,6 +63,7 @@ libc_sources = files([
   'string' / 'strlen.c',
   'string' / 'strncpy.c',
   'string' / 'strcspn.c',
+  'string' / 'strrchr.c',
   'string' / 'strspn.c',
   'string' / 'strtok.c',
   'syscalls.c',

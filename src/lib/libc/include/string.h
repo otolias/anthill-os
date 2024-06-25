@@ -99,6 +99,14 @@ char *strncpy(char *restrict s1, const char *restrict s2, size_t n);
 size_t strcspn(const char *s1, const char *s2);
 
 /*
+* Locate the last occurence of _c_ in the string pointed to by _s_.
+*
+* On success, returns a pointer to the byte.
+* On failure, returns a null pointer.
+*/
+char *strrchr(const char *s, int c);
+
+/*
 * Compute the number of bytes of the initial segment of the
 * string pointed to by _s1_ which consists entirely of bytes
 * from the string pointed to by _s2_
