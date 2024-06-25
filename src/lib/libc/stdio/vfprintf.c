@@ -11,7 +11,7 @@ int vfprintf(FILE *restrict stream, const char *restrict format, va_list ap) {
     }
 
     int n = stream->w_end - stream->w_pos;
-    int res = formatter(stream->buf, format, ap, n);
+    int res = formatter(stream->w_pos, format, ap, n);
     if (res > n) {
         errno = EIO;
         return EOF;

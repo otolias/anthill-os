@@ -30,7 +30,7 @@ size_t fread(void *restrict ptr, size_t size, size_t nitems, FILE *restrict stre
     read += file_read(stream, size * nitems);
 
     if (read < remaining_size)
-        stream->flags |= 1 << F_EOF;
+        stream->flags |= F_EOF;
 
     stream->buf = saved_buf;
     stream->r_pos = saved_buf_pos;

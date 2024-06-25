@@ -20,7 +20,7 @@
 #define EOF -1
 
 /* File flag offsets */
-#define F_OPEN   0 << 0
+#define F_OPEN   1 << 0
 #define F_EOF    1 << 1
 #define F_READ   1 << 2
 #define F_WRITE  1 << 3

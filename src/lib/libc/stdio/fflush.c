@@ -6,7 +6,7 @@
 #include "internal/stdio.h"
 
 int fflush(FILE *stream) {
-    if (stream == NULL || !(stream->flags & (1 << F_OPEN | 1 << F_WRITE))) {
+    if (stream == NULL || !(stream->flags & (F_OPEN | F_WRITE))) {
         errno = EBADF;
         return EOF;
     }

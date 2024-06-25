@@ -34,12 +34,12 @@ void *file_alloc(FILE *stream) {
     if (!stream->buf)
         { errno = ENOMEM; return 0; }
 
-    if (stream->flags & (1 << F_READ)) {
+    if (stream->flags & F_READ) {
         stream->r_pos = stream->buf;
         stream->r_end = stream->buf;
     }
 
-    if (stream->flags & (1 << F_WRITE)) {
+    if (stream->flags & F_WRITE) {
         stream->w_pos = stream->buf;
         stream->w_end = stream->buf + BUFSIZ;
     }
@@ -101,7 +101,7 @@ int file_get_stat(unsigned fid, struct stat *stat) {
         return -1;
     }
 
-    stat->st_size = vfs_msg.fcall.stat->length;
+    stat->st_size = vfs_msg.fcall.stat.length;
 
     return 0;
 }
@@ -150,6 +150,7 @@ bool file_init(void) {
     if (vfs_msg.fcall.type != Rattach)
         return false;
 
+    open_files[0].flags |= F_OPEN;
     open_files[0].fid = 3;
 
     initialised = true;
@@ -170,34 +171,39 @@ FILE *file_open(const char *restrict pathname, int oflag) {
     vfs_msg.fcall.newfid = fid;
     vfs_msg.mq_id = mq_in;
 
-    if (fcall_path_split(&vfs_msg.fcall, pathname) == 0)
+    pstring *wname;
+    unsigned short nwname = fcall_path_split(&wname, pathname);
+    if (nwname == 0)
         { errno = EACCES; return NULL; }
+
+    vfs_msg.fcall.nwname = nwname;
+    vfs_msg.fcall.wname = wname;
 
     /* TODO: Relative path handling */
     if (vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in) == 0)
-        { errno = EACCES; free(vfs_msg.fcall.wname); return NULL; }
+        { errno = EACCES; free(wname); return NULL; }
 
     if (vfs_msg.fcall.type != Rwalk)
-        { errno = EACCES; free(vfs_msg.fcall.wname); return NULL; }
+        { errno = EACCES; free(wname); return NULL; }
 
-    free(vfs_msg.fcall.wname);
+    free(wname);
 
     int file_flags = 0;
     if (oflag & O_RDONLY) {
         vfs_msg.fcall.mode = OREAD;
-        file_flags |= (1 << F_READ);
+        file_flags |= F_READ;
     }
     else if (oflag & O_WRONLY) {
         vfs_msg.fcall.mode = OWRITE;
-        file_flags |= (1 << F_WRITE);
+        file_flags |= F_WRITE;
     }
     else {
         vfs_msg.fcall.mode = O_RDWR;
-        file_flags |= (1 << F_READ | 1 << F_WRITE);
+        file_flags |= (F_READ | F_WRITE);
     }
 
     if (oflag & O_TRUNC) vfs_msg.fcall.mode |= OTRUNC;
-    if (oflag & O_APPEND) file_flags |= (1 << F_APPEND);
+    if (oflag & O_APPEND) file_flags |= F_APPEND;
 
     vfs_msg.fcall.type = Topen;
     vfs_msg.fcall.tag = tag_count++;
@@ -222,7 +228,7 @@ FILE *file_open(const char *restrict pathname, int oflag) {
         { errno = EMFILE; return NULL; }
 
     f->fid = fid;
-    f->flags |= file_flags | 1 << F_OPEN;
+    f->flags |= file_flags | F_OPEN;
     f->offset = 0;
 
     return f;
@@ -240,7 +246,7 @@ unsigned file_read(FILE *stream, unsigned n) {
     size_t buf_fill = stream->r_end - stream->r_pos;
 
     if (buf_fill > 0 && buf_fill < n) {
-        stream->flags |= 1 << F_EOF;
+        stream->flags |= F_EOF;
         return 0;
     }
 
@@ -283,7 +289,7 @@ ssize_t file_write(FILE *stream) {
     if (!_check_init())
         { errno = EIO; return 0; }
 
-    if (!(stream->flags & (1 << F_WRITE | 1 << F_OPEN))) {
+    if (!(stream->flags & (F_WRITE | F_OPEN))) {
         errno = EBADF;
         return EOF;
     }
@@ -321,7 +327,7 @@ ssize_t file_write(FILE *stream) {
         remaining -= vfs_msg.fcall.count;
     }
 
-    if (stream->flags & (1 << F_APPEND))
+    if (stream->flags & F_APPEND)
         stream->offset = -1;
 
     stream->w_pos = stream->buf;
