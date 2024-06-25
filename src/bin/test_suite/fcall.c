@@ -30,27 +30,22 @@ static void _test_path_size(void) {
 }
 
 static void _test_path_split(void) {
-    unsigned short res;
-    fcall f = {
-        .type = Twalk,
-        .tag = NOTAG,
-        .fid = NOFID,
-        .newfid = NOFID,
-    };
+    pstring *wname;
+    unsigned short nwname;
 
     const char *p1 = "/file";
-    res = fcall_path_split(&f, p1);
-    if (res != 1 || res != f.nwname || memcmp(f.wname, "\4\0file", 6) != 0)
+    nwname = fcall_path_split(&wname, p1);
+    if (nwname != 1 || memcmp(wname, "\4\0file", 6) != 0)
         puts("FCALL::ERROR::fcall_path_split /file failure");
     else
-        free(f.wname);
+        free(wname);
 
     const char *p2 = "/dir/file";
-    res = fcall_path_split(&f, p2);
-    if (res != 2 || res != f.nwname || memcmp(f.wname, "\3\0dir\4\0file", 11) != 0)
+    nwname = fcall_path_split(&wname, p2);
+    if (nwname != 2 || memcmp(wname, "\3\0dir\4\0file", 11) != 0)
         puts("FCALL::ERROR::fcall_path_split /dir/file failure");
     else
-        free(f.wname);
+        free(wname);
 }
 
 static void _test_Tversion(void) {
