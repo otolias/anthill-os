@@ -76,6 +76,17 @@ size_t strcnt(const char *s, const char c);
 char *strcpy(char *restrict s1, const char *restrict s2);
 
 /*
+* Duplicate string pointed to by _s_. The new string is malloc'd.
+*
+* On success, returns a pointer to the new string.
+* On failure, returns a null pointer and sets errno to indicate the error.
+*
+* errno:
+* - ENOMEM Not enough available memory
+*/
+char *strdup(const char *s);
+
+/*
 * Calculate the number of bytes in the string to which
 * _s_ points, not including the terminating characted.
 */
