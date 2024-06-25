@@ -93,6 +93,10 @@
 #define INT_SIZE  4
 #define LONG_SIZE 8
 
+#define FCALL_SIZE_OFF 0
+#define FCALL_TAG_OFF  5
+#define FCALL_FID_OFF  7
+
 /* File modes */
 #define OREAD   1 << 0 /* Read only */
 #define OWRITE  1 << 1 /* Write only */
@@ -118,7 +122,7 @@ struct fcall_stat {
 
 /* qid types */
 #define QTFILE 0
-#define QTDIR  31 << 1
+#define QTDIR  1 << 31
 
 /*
 * A data structure for storing and parsing 9p messages.
@@ -229,11 +233,11 @@ unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall);
 unsigned short fcall_path_size(fcall *fcall);
 
 /*
-* Splits _path_ delimited by slashes to an array of malloc'd pstring elements.
+* Splits _path_ delimited by slashes to _wname_, an array of malloc'd pstring elements.
 *
-* On success, sets nwname and wname fields of _fcall_ and returns number of elements.
+* On success, returns number of elements.
 * On failure, returns 0 and no memory is allocated.
 */
-unsigned short fcall_path_split(fcall *fcall, const char *path);
+unsigned short fcall_path_split(pstring **wname, const char *path);
 
 #endif /* _FCALL_H */

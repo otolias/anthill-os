@@ -6,16 +6,16 @@
 #include <string.h>
 #include <sys/types.h>
 
-unsigned short fcall_path_split(fcall *fcall, const char *path) {
+unsigned short fcall_path_split(pstring **wname, const char *path) {
     size_t nwname = strcnt(path, '/');
     if (nwname > SHRT_MAX)
         return 0;
 
     /* Allocate space */
-    pstring *wname = malloc(strlen(path) + nwname * sizeof(pstring));
-    if (!wname) return 0;
+    *wname = malloc(strlen(path) + nwname * sizeof(pstring));
+    if (!*wname) return 0;
 
-    char *ptr = (char *) wname;
+    char *ptr = (char *) *wname;
     const char *l, *r;
 
     r = strchr(path, '/');
@@ -30,9 +30,6 @@ unsigned short fcall_path_split(fcall *fcall, const char *path) {
 
         ptr += len + sizeof(pstring);
     } while(r);
-
-    fcall->nwname = nwname;
-    fcall->wname = wname;
 
     return nwname;
 }
