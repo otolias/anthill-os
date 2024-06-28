@@ -43,14 +43,6 @@ static unsigned _put_qid(unsigned char *ptr, const struct qid *qid) {
     return n;
 }
 
-static unsigned _put_stat(unsigned char *ptr, const struct fcall_stat *stat) {
-    unsigned n = 0;
-    n += _put_qid(ptr + n, &stat->qid);
-    n += _put_ulong(ptr + n, stat->length);
-    n += _put_pstring(ptr + n, stat->name);
-    return n;
-}
-
 unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned length) {
     unsigned char *ptr = buf;
 
@@ -157,7 +149,8 @@ unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned lengt
 
         case Rstat:
             ptr += _put_ushort(ptr, fcall->nstat);
-            ptr += _put_stat(ptr, &fcall->stat);
+            memcpy(ptr, fcall->stat, fcall->nstat);
+            ptr += fcall->nstat;
             break;
 
         case Rclunk:

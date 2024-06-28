@@ -115,9 +115,9 @@ struct qid {
 };
 
 struct fcall_stat {
-    struct qid    qid;
-    unsigned long length;
-    pstring*      name;
+    struct qid    qid;      /* File qid */
+    unsigned long length;   /* File length */
+    unsigned char buffer[]; /* Variable length buffer */
 };
 
 /* qid types */
@@ -170,8 +170,8 @@ typedef struct {
             unsigned char* data;   /* Data read/to write (Rread, Twrite) */
         };
         struct { /* Rstat */
-            unsigned short    nstat; /* Stat length */
-            struct fcall_stat stat; /* File stat */
+            unsigned short     nstat; /* Stat length */
+            struct fcall_stat* stat;  /* File stat */
         };
     };
 } fcall;
