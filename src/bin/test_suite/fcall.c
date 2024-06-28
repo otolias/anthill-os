@@ -556,16 +556,19 @@ static void _test_Tstat(void) {
 
 static void _test_Rstat(void) {
     unsigned char buf[256];
+    struct fcall_stat *stat = malloc(sizeof(*stat) + 6);
+    stat->qid.type = ~0;
+    stat->qid.version = ~0;
+    stat->qid.id = ~0;
+    stat->length = ~0;
+    memcpy(stat->buffer, "\4\0file", 6);
+
     unsigned res;
     fcall fout, fin = {
         .type = Rstat,
         .tag = NOTAG,
         .nstat = 30,
-        .stat = {
-            .qid = { ~0, ~0, ~0},
-            .length = ~0,
-            .name = (pstring *) "\4\0file",
-        },
+        .stat = stat,
     };
 
     res = fcall_msg_size(&fin);
@@ -581,10 +584,10 @@ static void _test_Rstat(void) {
         puts("FCALL::ERROR::fcall_buf_to_msg Rstat failure");
 
     if (fin.type != fout.type || fin.tag != fout.tag || fin.nstat != fout.nstat ||
-        memcmp(&fin.stat.qid, &fout.stat.qid, sizeof(struct qid)) != 0 ||
-        fin.stat.length != fout.stat.length ||
-        memcmp(fin.stat.name, fout.stat.name, 6) != 0)
+        memcmp(fin.stat, fout.stat, fin.nstat) != 0)
         puts("FCALL::ERROR::fcall Rstat failure");
+
+    free(stat);
 }
 
 void test_fcall(void) {
