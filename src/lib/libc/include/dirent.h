@@ -13,6 +13,18 @@ struct dirent {
 };
 
 /*
+* Close directory stream _dirp_.
+*
+* On success, returns 0.
+* On failure, returns -1 and sets errno to indicate the error.
+*
+* errno:
+* - EBADF Invalid file descriptor
+* - EIO   Physical I/O error
+*/
+int closedir(DIR *dirp);
+
+/*
 * Open directory whose path name is equal to the string pointed to by _dirname_.
 *
 * On success, returns a pointer to the DIR object controlling the stream.

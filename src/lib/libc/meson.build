@@ -1,6 +1,7 @@
 libc_sources = files([
   'ctype' / 'isdigit.c',
   'ctype' / 'isspace.c',
+  'dirent' / 'closedir.c',
   'dirent' / 'opendir.c',
   'dirent' / 'readdir.c',
   'errno' / 'errno.c',
