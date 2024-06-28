@@ -101,7 +101,7 @@ int file_get_stat(unsigned fid, struct stat *stat) {
         return -1;
     }
 
-    stat->st_size = vfs_msg.fcall.stat.length;
+    stat->st_size = vfs_msg.fcall.stat->length;
 
     return 0;
 }
@@ -204,6 +204,7 @@ FILE *file_open(const char *restrict pathname, int oflag) {
 
     if (oflag & O_TRUNC) vfs_msg.fcall.mode |= OTRUNC;
     if (oflag & O_APPEND) file_flags |= F_APPEND;
+    if (oflag & O_DIRECTORY) file_flags |= F_DIR;
 
     vfs_msg.fcall.type = Topen;
     vfs_msg.fcall.tag = tag_count++;

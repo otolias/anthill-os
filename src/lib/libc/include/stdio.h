@@ -25,6 +25,7 @@
 #define F_READ   1 << 2
 #define F_WRITE  1 << 3
 #define F_APPEND 1 << 4
+#define F_DIR    1 << 5
 
 struct __file {
     unsigned       fid;    /* File descriptor */

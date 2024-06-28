@@ -7,8 +7,9 @@
 typedef struct __file DIR;
 
 struct dirent {
-    ino_t d_ino;
-    char  d_name[];
+    ino_t         d_ino;
+    unsigned long d_len;
+    char          d_name[];
 };
 
 /*
@@ -22,5 +23,19 @@ struct dirent {
 * - EMFILE No available file descriptors
 */
 DIR *opendir(const char *dirname);
+
+/*
+* Return directory entries of stream specified by _dirp_.
+*
+* On success, returns a pointer to a structure representing the directory stream at the
+* current offset.
+* On failure, returns a null pointer and sets errno to indicate the error.
+*
+* errno
+* - EBADF     Invalid file descriptor
+* - EIO       Physical I/O error, or data could not be retrieved.
+* - EOVERFLOW Directory entry name is too long.
+*/
+struct dirent *readdir(DIR *dirp);
 
 #endif /* _DIRENT_H */
