@@ -44,10 +44,15 @@ DIR *opendir(const char *dirname);
 * On failure, returns a null pointer and sets errno to indicate the error.
 *
 * errno
-* - EBADF     Invalid file descriptor
+* -EBADF     Invalid file descriptor
 * - EIO       Physical I/O error, or data could not be retrieved.
 * - EOVERFLOW Directory entry name is too long.
 */
 struct dirent *readdir(DIR *dirp);
+
+/*
+* Reset the seek offset of _dirp_ to the beginning of the directory.
+*/
+void rewinddir(DIR *dirp);
 
 #endif /* _DIRENT_H */

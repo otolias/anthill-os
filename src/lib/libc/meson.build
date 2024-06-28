@@ -4,6 +4,7 @@ libc_sources = files([
   'dirent' / 'closedir.c',
   'dirent' / 'opendir.c',
   'dirent' / 'readdir.c',
+  'dirent' / 'rewinddir.c',
   'errno' / 'errno.c',
   'fcall' / 'fcall_buf_to_msg.c',
   'fcall' / 'fcall_msg_size.c',
