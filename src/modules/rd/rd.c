@@ -11,6 +11,25 @@
 const char *ramdisk = (char *) 0x3e000000;
 
 /*
+* Returns whether _child_ is an immediate child of _parent_
+*/
+static bool _is_child(const struct header *parent, const struct header *child) {
+    size_t parent_depth = strcnt(parent->name, '/');
+    size_t child_depth = strcnt(child->name, '/');
+
+    if (memcmp(parent->name, child->name, strlen(parent->name)) != 0)
+        return false;
+
+    if (child->type == RDT_DIR && child_depth - parent_depth != 1)
+        return false;
+
+    if (child->type == RDT_FILE && child_depth - parent_depth != 0)
+        return false;
+
+    return true;
+}
+
+/*
 * Returns if _header_ is a valid tar header
 */
 static bool _is_header(const struct header *header) {
@@ -105,28 +124,27 @@ unsigned int rd_get_type(const struct header *header) {
 
 unsigned rd_read_dir(const struct header *header, unsigned char *buf, size_t offset,
                      unsigned count, size_t n) {
-    size_t name_length = strlen(header->name);
     const struct header *child = header + GET_BLOCKS(rd_get_size(header));
     unsigned written = 0;
     unsigned index = 0;
     unsigned char *buf_pos = buf;
 
     while (_is_header(child)) {
-        if (memcmp(header, child, name_length) != 0 || offset > index) {
-            index++;
+        if (!_is_child(header, child)) {
             child += GET_BLOCKS(rd_get_size(child));
             continue;
         }
 
-        unsigned res = rd_get_stat(child, (struct fcall_stat *) buf_pos, n - written);
-        if (res == 0) break;
+        if (offset < index) {
+            unsigned res = rd_get_stat(child, (struct fcall_stat *) buf_pos, n - written);
+            if (res == 0) break;
 
-        written += res;
-        buf_pos += res;
+            written += res;
+            buf_pos += res;
+        }
+
         index++;
-
         if (index == offset - count) break;
-
         child += GET_BLOCKS(rd_get_size(child));
     }
 
