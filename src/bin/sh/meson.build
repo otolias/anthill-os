@@ -1,5 +1,6 @@
 sh_sources = [
   'main.c',
+  'sh.c',
 ]
 
 sh = executable('sh',

@@ -4,14 +4,9 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-enum sh_error {
-    SH_OK,
-    SH_NOMEM,
-    SH_INVALID,
-    SH_NOTFOUND,
-    SH_CONT,
-};
+#include "sh.h"
 
 static enum sh_error _loop(char **buf, size_t *buf_size) {
     size_t pos = 0;
@@ -52,24 +47,31 @@ static enum sh_error _loop(char **buf, size_t *buf_size) {
     return SH_OK;
 }
 
-static enum sh_error _execute(const char *buf) {
-    errno = 0;
-    pid_t pid;
+static enum sh_error _execute(char *buf) {
+    char *cmd = strtok(buf, " ");
+    char *arg = strtok(NULL, " ");
 
-    if (posix_spawn(&pid, buf, 0, 0, 0, 0) != 0) {
-        switch (errno) {
-            case EACCES:
-            case ENOEXEC:
-                return SH_INVALID;
-            case EIO:
-            case ENOENT:
-                return SH_NOTFOUND;
-            case ENOMEM:
-                return SH_NOMEM;
+    if (strcmp(cmd, "ls") == 0)
+        return cmd_ls();
+    else if (strcmp(cmd, "cd") == 0)
+        return cmd_cd(arg);
+    else {
+        errno = 0;
+        pid_t pid;
+
+        if (posix_spawn(&pid, cmd, 0, 0, 0, 0) != 0) {
+            switch (errno) {
+                case EACCES:
+                case ENOEXEC:
+                    return SH_INVALID;
+                case EIO:
+                case ENOENT:
+                    return SH_NOTFOUND;
+                case ENOMEM:
+                    return SH_NOMEM;
+            }
         }
     }
-
-    printf("Started %s with pid %ld\n", buf, pid);
 
     return SH_OK;
 }
@@ -77,6 +79,11 @@ static enum sh_error _execute(const char *buf) {
 int main(void) {
     char *buf = NULL;
     size_t buf_size = 0;
+
+    if (sh_init() != SH_OK) {
+        sh_deinit();
+        return 1;
+    }
 
     while (1) {
         printf("> ");
