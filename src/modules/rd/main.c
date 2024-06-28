@@ -68,9 +68,25 @@ static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    char read_buf[vfs_msg->fcall.count];
-    unsigned count = rd_read(header, read_buf, vfs_msg->fcall.offset,
-                             vfs_msg->fcall.count);
+    unsigned char read_buf[VFS_MAX_IOUNIT];
+    unsigned count;
+
+    switch (header->type) {
+        case RDT_FILE:
+            count = rd_read_file(header, read_buf, vfs_msg->fcall.offset,
+                                 vfs_msg->fcall.count);
+            break;
+
+        case RDT_DIR:
+            count = rd_read_dir(header, read_buf, vfs_msg->fcall.offset,
+                                vfs_msg->fcall.count, VFS_MAX_IOUNIT);
+            break;
+
+        default:
+            vfs_msg->fcall.type = Rerror;
+            vfs_msg->fcall.ename = &EINVALID;
+            return vfs_msg_put(vfs_msg, buf);
+    }
 
     vfs_msg->fcall.type = Rread;
     vfs_msg->fcall.count = count;
@@ -93,16 +109,15 @@ static unsigned short _stat(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    struct fcall_stat stat;
-    if (rd_get_stat(header, &stat) == 0) {
+    vfs_msg->fcall.type = Rstat;
+    unsigned char stat_buf[VFS_MAX_IOUNIT];
+    vfs_msg->fcall.stat = (struct fcall_stat *) stat_buf;
+    vfs_msg->fcall.nstat = rd_get_stat(header, vfs_msg->fcall.stat, VFS_MAX_IOUNIT);
+    if (vfs_msg->fcall.nstat == 0) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOTFOUND;
         return vfs_msg_put(vfs_msg, buf);
     }
-
-    vfs_msg->fcall.type = Rstat;
-    vfs_msg->fcall.nstat = sizeof(stat);
-    vfs_msg->fcall.stat = &stat;
 
     return vfs_msg_put(vfs_msg, buf);
 }

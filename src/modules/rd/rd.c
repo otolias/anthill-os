@@ -3,6 +3,7 @@
 #include <fcall.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define GET_BLOCKS(size) (((size) + 511) / 512) + 1
@@ -32,6 +33,20 @@ struct header* rd_find(const pstring *path) {
     return header;
 }
 
+unsigned rd_get_name(const struct header *header, unsigned char *buf, size_t n) {
+    char *temp = strdup(header->name);
+    char *name = strrchr(temp, '/');
+
+    if (*(name + 1) == 0) {
+        *name = 0;
+        name = strrchr(temp, '/');
+    }
+
+    pstring *res = pstrconv(buf, name + 1, n);
+    free(temp);
+    return pstrlen(res);
+}
+
 size_t rd_get_size(const struct header *header) {
     if (!_is_header(header))
         return 0;
@@ -49,14 +64,25 @@ size_t rd_get_size(const struct header *header) {
     return size;
 }
 
-unsigned rd_get_stat(const struct header *header, struct fcall_stat *stat) {
-    stat->qid.type = rd_get_type(header);
-    if (stat->qid.type == QTFILE)
-        stat->length = rd_get_size(header);
-    else
-        stat->length = 0;
+unsigned rd_get_stat(const struct header *header, struct fcall_stat *stat, size_t n) {
+    unsigned size = 0;
+    size += sizeof(stat->qid);
+    if (size > n) return 0;
 
-    return sizeof(*stat);
+    stat->qid.type = rd_get_type(header);
+    stat->qid.version = 0;
+    stat->qid.id = 0;
+
+    size += sizeof(stat->length);
+    if (size > n) return 0;
+    stat->length = rd_get_size(header);
+
+    unsigned char *buf_pos = stat->buffer;
+    unsigned res = rd_get_name(header, buf_pos, n - size);
+    size += res;
+    if (res == 0 || size > n) return 0;
+
+    return size;
 }
 
 unsigned int rd_get_type(const struct header *header) {
@@ -77,7 +103,38 @@ unsigned int rd_get_type(const struct header *header) {
     }
 }
 
-unsigned rd_read(const struct header *header, char *buf, size_t offset, unsigned count) {
+unsigned rd_read_dir(const struct header *header, unsigned char *buf, size_t offset,
+                     unsigned count, size_t n) {
+    size_t name_length = strlen(header->name);
+    const struct header *child = header + GET_BLOCKS(rd_get_size(header));
+    unsigned written = 0;
+    unsigned index = 0;
+    unsigned char *buf_pos = buf;
+
+    while (_is_header(child)) {
+        if (memcmp(header, child, name_length) != 0 || offset > index) {
+            index++;
+            child += GET_BLOCKS(rd_get_size(child));
+            continue;
+        }
+
+        unsigned res = rd_get_stat(child, (struct fcall_stat *) buf_pos, n - written);
+        if (res == 0) break;
+
+        written += res;
+        buf_pos += res;
+        index++;
+
+        if (index == offset - count) break;
+
+        child += GET_BLOCKS(rd_get_size(child));
+    }
+
+    return written;
+}
+
+unsigned rd_read_file(const struct header *header, unsigned char *buf, size_t offset,
+                      unsigned count) {
     size_t file_size = rd_get_size(header);
     unsigned len = offset + count < file_size ? count : file_size - offset;
 
