@@ -29,9 +29,8 @@ int strncmp(const char *s1, const char *s2, size_t n) {
 
 size_t strlen(const char *s) {
     const char *c = s;
-    size_t size = 0;
-    while (c++) size++;
-    return size;
+    while (*c) c++;
+    return c - s;
 }
 
 size_t strhash(const char *s) {
