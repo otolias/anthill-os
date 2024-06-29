@@ -28,6 +28,7 @@ struct task {
     long  priority;                 /* How much time the task is given */
     int   preempt_count;            /* If non-zero, task must not be interrupted */
     enum task_state state;          /* Current task state */
+    struct task*    parent;         /* Parent task */
 };
 
 /*

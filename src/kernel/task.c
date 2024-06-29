@@ -122,6 +122,7 @@ ssize_t task_exec(const void *file) {
     new_task->state = TASK_RUNNING;
     new_task->counter = new_task->priority;
     new_task->preempt_count = 1;
+    new_task->parent = current_task;
 
     new_task->cpu_context.x19 = (size_t) ELF_OFF(linker_page, linker_page->e_entry);
     new_task->cpu_context.x20 = (size_t) sp;
@@ -195,6 +196,7 @@ void task_exit(void) {
     mm_free_pages((void *) current_task->process_address);
     mm_free_pages((void *) current_task->user_stack);
     mm_free_pages((void *) current_task->kernel_stack);
+    task_unblock(current_task->parent->pid);
     current_task = NULL;
     task_schedule();
 }
