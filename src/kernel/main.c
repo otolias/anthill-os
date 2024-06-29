@@ -17,7 +17,7 @@ void main(void) {
     ssize_t res;
 
     file = ramdisk_lookup("./modules/mod_rd");
-    res = task_exec(file);
+    res = task_exec(file, NULL);
     if (res > 0)
         kprintf("KERNEL::modules/mod_rd loaded at address %x\n",
                 ((struct task *) res)->process_address);
@@ -27,7 +27,7 @@ void main(void) {
     }
 
     file = ramdisk_lookup("./modules/mod_uart");
-    res = task_exec(file);
+    res = task_exec(file, NULL);
     if (res > 0)
         kprintf("KERNEL::modules/mod_uart loaded at address %x\n",
                 ((struct task *) res)->process_address);
@@ -37,7 +37,7 @@ void main(void) {
     }
 
     file = ramdisk_lookup("./modules/mod_pl011");
-    res = task_exec(file);
+    res = task_exec(file, NULL);
     if (res > 0)
         kprintf("KERNEL::modules/mod_pl011 loaded at address %x\n",
                 ((struct task *) res)->process_address);
@@ -47,7 +47,7 @@ void main(void) {
     }
 
     file = ramdisk_lookup("./modules/mod_vfs");
-    res = task_exec(file);
+    res = task_exec(file, NULL);
     if (res > 0)
         kprintf("KERNEL::modules/mod_vfs loaded at address %x\n",
                 ((struct task *) res)->process_address);
@@ -57,7 +57,7 @@ void main(void) {
     }
 
     file = ramdisk_lookup("./bin/test_suite");
-    res = task_exec(file);
+    res = task_exec(file, NULL);
     if (res > 0)
         kprintf("KERNEL::bin/test_suite loaded at address %x\n",
                 ((struct task *) res)->process_address);
@@ -67,7 +67,7 @@ void main(void) {
     }
 
     file = ramdisk_lookup("./bin/sh");
-    res = task_exec(file);
+    res = task_exec(file, NULL);
     if (res > 0)
         kprintf("KERNEL::bin/sh loaded at address %x\n",
                 ((struct task *) res)->process_address);

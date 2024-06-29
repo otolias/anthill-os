@@ -9,7 +9,7 @@
 int posix_spawn(pid_t *restrict pid, const char *restrict path,
                 __attribute__((unused)) const posix_spawn_file_actions_t *file_actions,
                 __attribute__((unused)) const posix_spawnattr_t *restrict attrp,
-                __attribute__((unused)) char *const argv[restrict],
+                char *const argv[restrict],
                 __attribute__((unused)) char *const envp[restrict]) {
     /* Get file size */
     FILE *f = fopen(path, "r");
@@ -36,7 +36,7 @@ int posix_spawn(pid_t *restrict pid, const char *restrict path,
         return -1;
     }
 
-    ssize_t res = SYSCALL_2(SYS_SPAWN, (long) pid, (long) address);
+    ssize_t res = SYSCALL_3(SYS_SPAWN, (long) pid, (long) address, (long) argv);
     if (res <= 0) {
         errno = -res;
         munmap(address, buffer.st_size);

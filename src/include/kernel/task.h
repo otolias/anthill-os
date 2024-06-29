@@ -57,12 +57,12 @@ void task_tick(void);
 void task_schedule(void);
 
 /*
-* Load _file_ dependencies and execute.
+* Load _file_ dependencies and execute with _argv_ arguments.
 *
 * On success, returns a pointer to the task.
 * On failure, returns -errno.
 */
-ssize_t task_exec(const void *file);
+ssize_t task_exec(const void *file, char *const args[restrict]);
 
 /*
 * Terminate process

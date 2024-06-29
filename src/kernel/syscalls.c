@@ -52,8 +52,8 @@ pid_t sys_getpid(void) {
     return task_current_pid();
 }
 
-int sys_spawn(pid_t *pid, void *file) {
-    ssize_t res = task_exec(file);
+int sys_spawn(pid_t *pid, void *file, char *const argv[restrict]) {
+    ssize_t res = task_exec(file, argv);
     *pid = ((struct task *) res)->pid;
     task_current_block();
     return res;

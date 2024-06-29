@@ -7,9 +7,10 @@ typedef struct {} posix_spawn_file_actions_t;
 typedef struct {} posix_spawnattr_t;
 
 /*
-* Create a child process from the process image specified by _path_.
+* Create a child process from the process image specified by _path_ with _argv_
+* arguments.
 *
-* _file_actions_, _attrp_, _argv_ and _envp_ are currently ignored.
+* _file_actions_, _attrp_ and _envp_ are currently ignored.
 *
 * On success, sets the pid of the new process to _pid_ (if not a null pointer) and
 * returns 0.

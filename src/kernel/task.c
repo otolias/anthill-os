@@ -67,7 +67,7 @@ static void _task_load(const Elf64_Ehdr *ehdr, const void *address) {
     }
 }
 
-ssize_t task_exec(const void *file) {
+ssize_t task_exec(const void *file, char *const args[restrict]) {
     current_task->preempt_count++;
 
     /* Load linker if not already loaded*/
@@ -106,10 +106,46 @@ ssize_t task_exec(const void *file) {
     if (kernel_stack == NULL)
         { mm_free_pages(process_addr); mm_free_pages(user_stack); return -ENOMEM; }
 
+    char *sp = user_stack;
+
+    if (args != NULL) {
+        /* Calculate argument size */
+        int argc = 0;
+        size_t arg_size = 0;
+        while (1) {
+            if (!args[argc]) break;
+            arg_size += strlen(args[argc]) + 1;
+            argc++;
+        }
+
+        /* Align arg_size */
+        if (arg_size % 8)
+            arg_size += (8 - arg_size % 8);
+
+        /* Add arguments to stack */
+        sp -= arg_size;
+        char *arg_pos = sp;
+
+        sp -= sizeof(char *) * (argc + 1);
+        char **argv = (char **) sp;
+        sp -= sizeof(size_t);
+        *((size_t *) sp) = (size_t) argc;
+
+        for (int i = 0; i < argc; i++) {
+            size_t len = strlen(args[i]) + 1;
+            memcpy(arg_pos, args[i], len);
+            argv[i] = arg_pos;
+            arg_pos += len;
+        }
+
+        argv[argc] = NULL;
+    }
+
     /* Add process pages to stack */
-    size_t *sp = user_stack;
-    *(--sp) = (size_t) process_addr;
-    *(--sp) = (size_t) file;
+    sp -= sizeof(size_t);
+    *((size_t *) sp) = (size_t) process_addr;
+    sp -= sizeof(size_t);
+    *((size_t *) sp) = (size_t) file;
 
     /* Create task struct */
     struct task *new_task = (struct task*) ELF_OFF(process_addr, elf_memory_size);
