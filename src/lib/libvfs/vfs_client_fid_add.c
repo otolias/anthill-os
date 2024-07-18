@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 
-struct fid_pair* vfs_client_add_fid(struct vfs_client *client, unsigned fid, void *obj) {
+struct fid_pair* vfs_client_fid_add(struct vfs_client *client, unsigned fid, void *obj) {
     struct fid_pair *fid_pair = calloc(1, sizeof *fid_pair);
     if (!fid_pair) return NULL;
 

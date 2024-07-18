@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-void* vfs_client_get_fid(const struct vfs_client *client, unsigned fid) {
+void* vfs_client_fid_get(const struct vfs_client *client, unsigned fid) {
     struct fid_pair *fid_pair = client->fids;
 
     while (fid_pair) {

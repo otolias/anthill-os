@@ -54,10 +54,10 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     const struct vnode *dev = vnode_find_child(root, pstrconv(pstr_buf, "dev", 16));
     struct vnode *uart = vnode_find_child(dev, pstrconv(pstr_buf, "uart", 16));
 
-    if (!vfs_client_add_fid(client, vfs_msg->fcall.fid, uart) ||
-        !vfs_client_add_fid(client, vfs_msg->fcall.fid + 1, uart) ||
-        !vfs_client_add_fid(client, vfs_msg->fcall.fid + 2, uart) ||
-        !vfs_client_add_fid(client, vfs_msg->fcall.fid + 3, root)) {
+    if (!vfs_client_fid_add(client, vfs_msg->fcall.fid, uart) ||
+        !vfs_client_fid_add(client, vfs_msg->fcall.fid + 1, uart) ||
+        !vfs_client_fid_add(client, vfs_msg->fcall.fid + 2, uart) ||
+        !vfs_client_fid_add(client, vfs_msg->fcall.fid + 3, root)) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOCLIENT;
         return vfs_msg_put(vfs_msg, buf);
@@ -85,7 +85,7 @@ static unsigned short _clunk(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (vfs_client_remove_fid(client, vfs_msg->fcall.fid) != 0) {
+    if (vfs_client_fid_remove(client, vfs_msg->fcall.fid) != 0) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOFID;
         return vfs_msg_put(vfs_msg, buf);
@@ -110,7 +110,7 @@ static unsigned short _open(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    const struct vnode *vnode = vfs_client_get_fid(client, vfs_msg->fcall.fid);
+    const struct vnode *vnode = vfs_client_fid_get(client, vfs_msg->fcall.fid);
     if (!vnode) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOFID;
@@ -132,7 +132,7 @@ static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    const struct vnode *vnode = vfs_client_get_fid(client, vfs_msg->fcall.fid);
+    const struct vnode *vnode = vfs_client_fid_get(client, vfs_msg->fcall.fid);
     if (!vnode) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOFID;
@@ -156,7 +156,7 @@ static unsigned short _stat(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    const struct vnode *vnode = vfs_client_get_fid(client, vfs_msg->fcall.fid);
+    const struct vnode *vnode = vfs_client_fid_get(client, vfs_msg->fcall.fid);
     if (!vnode) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOFID;
@@ -198,7 +198,7 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
     }
 
     if (node && nwqid == vfs_msg->fcall.nwname) {
-        if (!vfs_client_add_fid(client, vfs_msg->fcall.newfid, node)) {
+        if (!vfs_client_fid_add(client, vfs_msg->fcall.newfid, node)) {
             vfs_msg->fcall.type = Rerror;
             vfs_msg->fcall.ename = &ENOCLIENT;
             return vfs_msg_put(vfs_msg, buf);
@@ -226,7 +226,7 @@ static unsigned _write(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    const struct vnode *vnode = vfs_client_get_fid(client, vfs_msg->fcall.fid);
+    const struct vnode *vnode = vfs_client_fid_get(client, vfs_msg->fcall.fid);
     if (!vnode) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOFID;
