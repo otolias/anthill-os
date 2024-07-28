@@ -35,7 +35,7 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     vfs_msg->fcall.type = Rattach;
     vfs_msg->fcall.qid.type = QTFILE;
     vfs_msg->fcall.qid.version = 0;
-    vfs_msg->fcall.qid.id = 0;
+    vfs_msg->fcall.qid.id = vfs_msg->fcall.fid;
 
     return vfs_msg_put(vfs_msg, buf);
 }

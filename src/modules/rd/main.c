@@ -48,7 +48,7 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     vfs_msg->fcall.type = Rattach;
     vfs_msg->fcall.qid.type = rd_get_type(header);
     vfs_msg->fcall.qid.version = 0;
-    vfs_msg->fcall.qid.id = 0;
+    vfs_msg->fcall.qid.id = vfs_msg->fcall.fid;
 
     return vfs_msg_put(vfs_msg, buf);
 }
@@ -169,7 +169,7 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
 
         wqid[nwqid].type = rd_get_type(header);
         wqid[nwqid].version = 0;
-        wqid[nwqid].id = 0;
+        wqid[nwqid].id = NOFID;
 
         wname_ptr = pstriter(wname_ptr);
     }
@@ -178,8 +178,10 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOTFOUND;
     } else {
-        if (nwqid == vfs_msg->fcall.nwname)
+        if (nwqid == vfs_msg->fcall.nwname) {
             vfs_client_fid_add(client, vfs_msg->fcall.newfid, header);
+            wqid[nwqid].id = vfs_msg->fcall.newfid;
+        }
 
         vfs_msg->fcall.type = Rwalk;
         vfs_msg->fcall.nwqid = nwqid;
