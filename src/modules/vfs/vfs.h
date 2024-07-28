@@ -14,13 +14,12 @@ enum vfs_error {
 };
 
 extern mqd_t vfs_in;
-extern unsigned long id_count;
+extern unsigned id_count;
 extern unsigned tag_count;
-extern unsigned fid_count;
 
 /*
-* Setup root node
+* Setup root node and immediate children.
 */
-enum vfs_error vfs_init(void);
+enum vfs_error vfs_init();
 
 #endif /* _MOD_VFS_H */

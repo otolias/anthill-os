@@ -12,13 +12,13 @@ struct vnode _root_vnode;
 * Generate a Twalk message for the driver
 */
 static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned short n) {
-    unsigned new_fid = fid_count++;
+    unsigned new_fid = id_count++;
 
     char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
     vfs_msg.fcall.type = Twalk;
     vfs_msg.fcall.tag = tag_count++;
-    vfs_msg.fcall.fid = mount->fid;
+    vfs_msg.fcall.fid = mount->qid.id;
     vfs_msg.fcall.newfid = new_fid;
     vfs_msg.fcall.nwname = n;
     vfs_msg.fcall.wname = elements;
@@ -55,8 +55,6 @@ static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned s
         element = pstriter(element);
         vnode = child;
     }
-
-    vnode->fid = new_fid;
 
     return VFS_OK;
 }
@@ -106,7 +104,7 @@ enum vfs_error vnode_forward(const struct vnode *vnode, char *buf) {
 
     /* Replace tag, fid and mq_id */
     *(buf + FCALL_TAG_OFF) = tag_count++;
-    *(buf + FCALL_FID_OFF) = vnode->fid;
+    *(buf + FCALL_FID_OFF) = vnode->qid.id;
     *(buf + msg_size) = vfs_in;
 
     if (mq_send(vnode->mq_id, buf, msg_size + sizeof(mqd_t), 0) == -1)
@@ -134,7 +132,10 @@ struct vnode* vnode_remove(struct vnode *node) {
     }
 
     if (node->name) { free(node->name); node->name = NULL; }
-    free(node);
+
+    if (node != &_root_vnode)
+        free(node);
+
     return NULL;
 }
 

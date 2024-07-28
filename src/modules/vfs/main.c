@@ -10,7 +10,9 @@
 * Files are represented by a tree of vnodes, which hold information
 * such as its path, its children and how to access it.
 *
-* Currently, no caching is supported or considered.
+* Notes:
+* - Currently, no caching is supported or considered.
+* - Each vnode holds its driver fid in the id field of the qid structure
 */
 
 #include <errno.h>
@@ -181,8 +183,7 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (vfs_msg->fcall.fid == NOFID || vfs_msg->fcall.newfid == NOFID ||
-            vfs_msg->fcall.nwname == 0) {
+    if (vfs_msg->fcall.fid == NOFID || vfs_msg->fcall.newfid == NOFID) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &EINVALID;
         return vfs_msg_put(vfs_msg, buf);
@@ -192,11 +193,6 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
     struct qid wqid[vfs_msg->fcall.nwname];
     unsigned short nwqid = vnode_scan(vfs_msg->fcall.wname, vfs_msg->fcall.nwname,
                                       wqid, &node);
-    if (nwqid == 0) {
-        vfs_msg->fcall.type = Rerror;
-        vfs_msg->fcall.ename = &ENOFILE;
-        return vfs_msg_put(vfs_msg, buf);
-    }
 
     if (node && nwqid == vfs_msg->fcall.nwname) {
         if (!vfs_client_fid_add(client, vfs_msg->fcall.newfid, node)) {

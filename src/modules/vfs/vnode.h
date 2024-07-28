@@ -12,7 +12,6 @@ struct vnode {
     unsigned         children_no; /* Number of children */
     struct vnode*    mount_node;  /* Parent mount point */
     mqd_t            mq_id;       /* Associated mqueue channel */
-    unsigned         fid;         /* Associated mount fid */
 };
 
 extern struct vnode _root_vnode;
