@@ -8,192 +8,24 @@
 #include <string.h>
 #include <sys/vfs.h>
 
-static mqd_t mq_in = -1;
-static struct vnode *root;
-static unsigned long id_count = 0;;
-static unsigned tag_count = 0;
-static unsigned fid_count = 0;
+#include "vnode.h"
 
-/*
-* Allocate space for a child of _vnode_
-*/
-static struct vnode* _add_child(struct vnode *vnode) {
-    /* Check if more space is needed */
-    unsigned n = 1;
-    while (n < vnode->children_no) n *= 2;
+mqd_t vfs_in = -1;
+unsigned long id_count = 0;
+unsigned tag_count = 0;
+unsigned fid_count = 0;
 
-    if (vnode->children_no == 0) {
-        vnode->children = malloc(4 * sizeof(*vnode->children));
-        if (!vnode->children) return NULL;
-    } else if (n > 4 && vnode->children_no + 1 > n) {
-        void *temp = realloc(vnode->children, n * 2);
-        if (!temp) return NULL;
-
-        vnode->children = temp;
-    }
-
-    vnode->children_no++;
-    return &vnode->children[vnode->children_no - 1];
-}
-
-/*
-* Generate a Twalk message for the driver
-*/
-static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned short n) {
-    unsigned new_fid = fid_count++;
-
-    char buf[VFS_MAX_MSG_LEN];
-    struct vfs_msg vfs_msg;
-    vfs_msg.fcall.type = Twalk;
-    vfs_msg.fcall.tag = tag_count++;
-    vfs_msg.fcall.fid = mount->fid;
-    vfs_msg.fcall.newfid = new_fid;
-    vfs_msg.fcall.nwname = n;
-    vfs_msg.fcall.wname = elements;
-    vfs_msg.mq_id = mq_in;
-
-    if (!vfs_msg_send(&vfs_msg, buf, mount->mq_id, mq_in))
-        return VFS_MQERR;
-
-    if (vfs_msg.fcall.type != Rwalk)
-        return VFS_MQERR;
-
-    struct vnode *vnode = mount;
-    pstring *element = elements;
-    for (unsigned short i = 0; i < vfs_msg.fcall.nwqid; i++) {
-        struct vnode *child = vnode_find_child(vnode, element);
-        if (!child) {
-            child = _add_child(vnode);
-            if (!child) return VFS_NOMEM;
-
-            child->name = pstrdup(NULL, element, 0);
-            if (!child->name)
-                { child = vnode_remove(child); child = NULL; return VFS_NOMEM; }
-            memcpy(&child->qid, &vfs_msg.fcall.wqid[i], sizeof(struct qid));
-
-            child->qid.id = id_count++;
-            child->qid.type = vfs_msg.fcall.wqid[i].type;
-            child->qid.version = 0;
-            child->children = NULL;
-            child->children_no = 0;
-            child->mount_node = mount;
-            child->mq_id = vnode->mq_id;
-        }
-
-        element = pstriter(element);
-        vnode = child;
-    }
-
-    vnode->fid = new_fid;
-
-    return VFS_OK;
-}
-
-struct vnode* vnode_find_child(const struct vnode* vnode, const pstring *name) {
-    for (unsigned i = 0; i < vnode->children_no; i++) {
-        if (!vnode->children[i].name) continue;
-
-        if (memcmp(name->s, vnode->children[i].name->s, name->len) == 0) {
-            return &vnode->children[i];
-        }
-    }
-
-    return NULL;
-}
-
-struct vnode* vnode_get_root() {
-    return root;
-}
-
-enum vfs_error vnode_forward(const struct vnode *vnode, char *buf) {
-    unsigned msg_size;
-
-    /* Keep old tag and mq_id */
-    unsigned short old_tag = *((unsigned short *) (buf + FCALL_TAG_OFF));
-    msg_size = (unsigned) *(buf + FCALL_SIZE_OFF);
-    mqd_t old_mq = *((mqd_t *) (buf + msg_size));
-
-    /* Replace tag, fid and mq_id */
-    *(buf + FCALL_TAG_OFF) = tag_count++;
-    *(buf + FCALL_FID_OFF) = vnode->fid;
-    *(buf + msg_size) = mq_in;
-
-    if (mq_send(vnode->mq_id, buf, msg_size + sizeof(mqd_t), 0) == -1)
-        return VFS_MQERR;
-
-    if (mq_receive(mq_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
-        return VFS_MQERR;
-
-    /* Restore tag and mq_id */
-    *(buf + FCALL_TAG_OFF) = old_tag;
-    msg_size = (unsigned) *(buf + FCALL_SIZE_OFF);
-    *(buf + msg_size) = old_mq;
-
-    return VFS_OK;
-}
-
-struct vnode* vnode_remove(struct vnode *node) {
-    if (!node) return NULL;
-
-    if (node->children) {
-        for (unsigned i = 0; i < node->children_no; i++)
-            node->children = vnode_remove(&node->children[i]);
-
-        free(node->children); node->children = NULL;
-    }
-
-    if (node->name) { free(node->name); node->name = NULL; }
-    free(node);
-    return NULL;
-}
-
-unsigned short vnode_scan(pstring *elements, unsigned short n, struct qid *wqid,
-                          struct vnode **node) {
-    struct vnode *mount = root;
-    struct vnode *vnode = mount;
-    pstring *mount_element = elements;
-    pstring *element = mount_element;
-    unsigned short i = 0, mount_index = 0;
-
-    while (i < n) {
-        if (vnode->mount_node == NULL) {
-            mount = vnode;
-            mount_element = element;
-            mount_index = i;
-        }
-
-        wqid[i] = vnode->qid;
-        struct vnode *child = vnode_find_child(vnode, element);
-
-        if (!child) {
-            if (_expand(mount, mount_element, n - mount_index) != VFS_OK)
-                return i;
-            else
-                continue;
-        }
-
-        vnode = child;
-        element = pstriter(element);
-        i++;
-    }
-
-    *node = vnode;
-
-    return n;
-}
-
-enum vfs_error vfs_init() {
+enum vfs_error vfs_init(void) {
     errno = 0;
-    mq_in = mq_open("vfs/client", O_RDONLY | O_CREAT | O_EXCL);
-    if (mq_in == -1) return VFS_NOMEM;
+    vfs_in = mq_open("vfs/client", O_RDONLY | O_CREAT | O_EXCL);
+    if (vfs_in == -1) return VFS_NOMEM;
 
-    root = calloc(1, sizeof *root);
-    if (!root) return VFS_NOMEM;
+    struct vnode *root = vnode_get_root();
 
     errno = 0;
     root->mq_id = mq_open("vfs/mod/rd", O_WRONLY);
     if (root->mq_id == -1)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     char buf[VFS_MAX_MSG_LEN];
     char uname_buf[16];
@@ -211,13 +43,13 @@ enum vfs_error vfs_init() {
     vfs_msg.fcall.afid = NOFID;
     vfs_msg.fcall.uname = uname;
     vfs_msg.fcall.aname = aname;
-    vfs_msg.mq_id = mq_in;
+    vfs_msg.mq_id = vfs_in;
 
-    if (!vfs_msg_send(&vfs_msg, buf, root->mq_id, mq_in))
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+    if (!vfs_msg_send(&vfs_msg, buf, root->mq_id, vfs_in))
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     if (vfs_msg.fcall.type != Rattach)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     root->qid.type = vfs_msg.fcall.qid.type;
     root->qid.id = id_count++;
@@ -227,7 +59,7 @@ enum vfs_error vfs_init() {
     root->children_no = 0;
 
     /* Setup /dev */
-    struct vnode *dev = _add_child(root);
+    struct vnode *dev = vnode_add_child(root);
     if (!dev) return VFS_NOTFOUND;
 
     dev->name = pstrconv(NULL, "dev", 0);
@@ -238,13 +70,13 @@ enum vfs_error vfs_init() {
     dev->mq_id = root->mq_id;
 
     /* Setup /dev/uart */
-    struct vnode *uart = _add_child(dev);
+    struct vnode *uart = vnode_add_child(dev);
     if (!uart) return VFS_NOTFOUND;
 
     errno = 0;
     uart->mq_id = mq_open("vfs/mod/uart", O_WRONLY);
     if (uart->mq_id == -1)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     fid = fid_count++;
     vfs_msg.fcall.type = Tattach;
@@ -253,13 +85,13 @@ enum vfs_error vfs_init() {
     vfs_msg.fcall.afid = NOFID;
     vfs_msg.fcall.uname = uname;
     vfs_msg.fcall.aname = aname;
-    vfs_msg.mq_id = mq_in;
+    vfs_msg.mq_id = vfs_in;
 
-    if (!vfs_msg_send(&vfs_msg, buf, uart->mq_id, mq_in))
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+    if (!vfs_msg_send(&vfs_msg, buf, uart->mq_id, vfs_in))
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     if (vfs_msg.fcall.type != Rattach)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     uart->name = pstrconv(NULL, "uart", 0);
     uart->qid.type = vfs_msg.fcall.qid.type;
@@ -268,13 +100,13 @@ enum vfs_error vfs_init() {
     uart->fid = fid;
 
     /* Setup /dev/pl011 */
-    struct vnode *pl011 = _add_child(dev);
+    struct vnode *pl011 = vnode_add_child(dev);
     if (!pl011) return VFS_NOTFOUND;
 
     errno = 0;
     pl011->mq_id = mq_open("vfs/mod/pl011", O_WRONLY);
     if (pl011->mq_id == -1)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     fid = fid_count++;
     vfs_msg.fcall.type = Tattach;
@@ -283,13 +115,13 @@ enum vfs_error vfs_init() {
     vfs_msg.fcall.afid = NOFID;
     vfs_msg.fcall.uname = uname;
     vfs_msg.fcall.aname = aname;
-    vfs_msg.mq_id = mq_in;
+    vfs_msg.mq_id = vfs_in;
 
-    if (!vfs_msg_send(&vfs_msg, buf, pl011->mq_id, mq_in))
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+    if (!vfs_msg_send(&vfs_msg, buf, pl011->mq_id, vfs_in))
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     if (vfs_msg.fcall.type != Rattach)
-        { root = vnode_remove(root); return VFS_NOTFOUND; }
+        { vnode_remove(root); return VFS_NOTFOUND; }
 
     pl011->name = pstrconv(NULL, "pl011", 0);
     pl011->qid.type = vfs_msg.fcall.qid.type;

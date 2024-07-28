@@ -1,6 +1,7 @@
 mod_vfs_sources = [
   'main.c',
   'vfs.c',
+  'vnode.c',
 ]
 
 mod_vfs = executable('mod_vfs',

@@ -22,6 +22,7 @@
 #include <vfs/client.h>
 
 #include "vfs.h"
+#include "vnode.h"
 
 /* Errors */
 FCALL_ERROR(EINVALID, "Invalid message");
