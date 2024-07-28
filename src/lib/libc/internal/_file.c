@@ -17,7 +17,7 @@ static bool initialised = false;
 static mqd_t mq_in = -1;
 static mqd_t mq_vfs = -1;
 static char vfs_name[16];
-static unsigned fid_count = 4;
+static unsigned fid_count = 2;
 static unsigned short tag_count = 0;
 
 static bool _check_init(void) {
@@ -172,8 +172,8 @@ FILE *file_open(const char *restrict pathname, int oflag) {
     vfs_msg.mq_id = mq_in;
 
     pstring *wname;
-    unsigned short nwname = fcall_path_split(&wname, pathname);
-    if (nwname == 0)
+    int nwname = fcall_path_split(&wname, pathname);
+    if (nwname == -1)
         { errno = EACCES; return NULL; }
 
     vfs_msg.fcall.nwname = nwname;

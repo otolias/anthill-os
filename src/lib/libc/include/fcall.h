@@ -236,8 +236,8 @@ unsigned short fcall_path_size(fcall *fcall);
 * Splits _path_ delimited by slashes to _wname_, an array of malloc'd pstring elements.
 *
 * On success, returns number of elements.
-* On failure, returns 0 and no memory is allocated.
+* On failure, returns -1 and no memory is allocated.
 */
-unsigned short fcall_path_split(pstring **wname, const char *path);
+int fcall_path_split(pstring **wname, const char *path);
 
 #endif /* _FCALL_H */

@@ -2,18 +2,24 @@
 
 #include <limits.h>
 #include <pstring.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 
-unsigned short fcall_path_split(pstring **wname, const char *path) {
+int fcall_path_split(pstring **wname, const char *path) {
+    if (strcmp(path, "/") == 0) {
+        *wname = NULL;
+        return 0;
+    }
+
     size_t nwname = strcnt(path, '/');
     if (nwname > SHRT_MAX)
-        return 0;
+        return -1;
 
     /* Allocate space */
     *wname = malloc(strlen(path) + nwname * sizeof(pstring));
-    if (!*wname) return 0;
+    if (!*wname) return -1;
 
     char *ptr = (char *) *wname;
     const char *l, *r;
