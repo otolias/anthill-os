@@ -2,6 +2,7 @@
 
 #include <fcall.h>
 #include <pstring.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,19 +34,25 @@ static void _test_path_split(void) {
     pstring *wname;
     unsigned short nwname;
 
-    const char *p1 = "/file";
+    const char *p1 = "/";
     nwname = fcall_path_split(&wname, p1);
+    if (nwname != 0 || wname != NULL)
+        puts("FCALL::ERROR::fcall_path_split / failure");
+
+    const char *p2 = "/file";
+    nwname = fcall_path_split(&wname, p2);
     if (nwname != 1 || memcmp(wname, "\4\0file", 6) != 0)
         puts("FCALL::ERROR::fcall_path_split /file failure");
     else
         free(wname);
 
-    const char *p2 = "/dir/file";
-    nwname = fcall_path_split(&wname, p2);
+    const char *p3 = "/dir/file";
+    nwname = fcall_path_split(&wname, p3);
     if (nwname != 2 || memcmp(wname, "\3\0dir\4\0file", 11) != 0)
         puts("FCALL::ERROR::fcall_path_split /dir/file failure");
     else
         free(wname);
+
 }
 
 static void _test_Tversion(void) {
