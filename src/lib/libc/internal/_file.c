@@ -151,7 +151,7 @@ bool file_init(void) {
         return false;
 
     open_files[0].flags |= F_OPEN;
-    open_files[0].fid = 3;
+    open_files[0].fid = 0;
 
     initialised = true;
 

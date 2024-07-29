@@ -57,10 +57,8 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     const struct vnode *dev = vnode_find_child(root, pstrconv(pstr_buf, "dev", 16));
     struct vnode *uart = vnode_find_child(dev, pstrconv(pstr_buf, "uart", 16));
 
-    if (!vfs_client_fid_add(client, vfs_msg->fcall.fid, uart) ||
-        !vfs_client_fid_add(client, vfs_msg->fcall.fid + 1, uart) ||
-        !vfs_client_fid_add(client, vfs_msg->fcall.fid + 2, uart) ||
-        !vfs_client_fid_add(client, vfs_msg->fcall.fid + 3, root)) {
+    if (!vfs_client_fid_add(client, vfs_msg->fcall.fid, root) ||
+        !vfs_client_fid_add(client, vfs_msg->fcall.fid + 1, uart)) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOCLIENT;
         return vfs_msg_put(vfs_msg, buf);

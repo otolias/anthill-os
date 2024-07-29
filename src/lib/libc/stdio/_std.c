@@ -2,7 +2,7 @@
 
 static unsigned char stdin_buf[BUFSIZ];
 FILE __stdin = {
-    .fid = 0,
+    .fid = 1,
     .flags = (F_OPEN | F_READ),
     .offset = -1,
     .buf = stdin_buf,
@@ -22,7 +22,7 @@ FILE __stdout = {
 
 static unsigned char stderr_buf[BUFSIZ];
 FILE __stderr = {
-    .fid = 2,
+    .fid = 1,
     .flags = (F_OPEN | F_WRITE | F_APPEND),
     .offset = -1,
     .buf = stderr_buf,
