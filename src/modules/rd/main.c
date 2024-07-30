@@ -180,7 +180,7 @@ static unsigned short _walk(struct vfs_msg *vfs_msg, char *buf) {
     } else {
         if (nwqid == vfs_msg->fcall.nwname) {
             vfs_client_fid_add(client, vfs_msg->fcall.newfid, header);
-            wqid[nwqid].id = vfs_msg->fcall.newfid;
+            wqid[nwqid - 1].id = vfs_msg->fcall.newfid;
         }
 
         vfs_msg->fcall.type = Rwalk;
