@@ -140,13 +140,31 @@ static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (vnode_forward(vnode, buf) != VFS_OK) {
-        vfs_msg->fcall.type = Rerror;
-        vfs_msg->fcall.ename = &ESERVER;
-        return vfs_msg_put(vfs_msg, buf);
-    }
+    if (vnode->mq_id == -1) {
+        unsigned char read_buf[vfs_msg->fcall.count];
+        unsigned count = vnode_read_dir(vnode, read_buf, vfs_msg->fcall.offset,
+                                        vfs_msg->fcall.count);
 
-    return vfs_msg_parse(vfs_msg, buf);
+        if (count == 0) {
+            vfs_msg->fcall.type = Rerror;
+            vfs_msg->fcall.ename = &ESERVER;
+            return vfs_msg_put(vfs_msg, buf);
+        }
+
+        vfs_msg->fcall.type = Rread;
+        vfs_msg->fcall.count = count;
+        vfs_msg->fcall.data = read_buf;
+
+        return vfs_msg_put(vfs_msg, buf);
+    } else {
+        if (vnode_forward(vnode, buf) != VFS_OK) {
+            vfs_msg->fcall.type = Rerror;
+            vfs_msg->fcall.ename = &ESERVER;
+            return vfs_msg_put(vfs_msg, buf);
+        }
+
+        return vfs_msg_parse(vfs_msg, buf);
+    }
 }
 
 static unsigned short _stat(struct vfs_msg *vfs_msg, char *buf) {

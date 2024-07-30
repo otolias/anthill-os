@@ -41,11 +41,8 @@ static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned s
             child->name = pstrdup(NULL, element, 0);
             if (!child->name)
                 { child = vnode_remove(child); child = NULL; return VFS_NOMEM; }
-            memcpy(&child->qid, &vfs_msg.fcall.wqid[i], sizeof(struct qid));
 
-            child->qid.id = id_count++;
-            child->qid.type = vfs_msg.fcall.wqid[i].type;
-            child->qid.version = 0;
+            child->qid = vfs_msg.fcall.wqid[i];
             child->children = NULL;
             child->children_no = 0;
             child->mount_node = mount;
@@ -121,6 +118,31 @@ enum vfs_error vnode_forward(const struct vnode *vnode, char *buf) {
     return VFS_OK;
 }
 
+unsigned vnode_read_dir(const struct vnode *vnode, unsigned char *buf,
+                        unsigned long offset, unsigned count) {
+    unsigned char *buf_pos = buf;
+
+    for (unsigned i = offset; i < vnode->children_no; i++) {
+        const struct vnode *child = &vnode->children[i];
+
+        size_t stat_len = sizeof(vnode->qid) + sizeof(unsigned long) +
+            pstrlen(child->name);
+
+        if (buf_pos - buf + stat_len > count) break;
+
+        memcpy(buf_pos, &child->qid, sizeof(child->qid));
+        buf_pos += sizeof(child->qid);
+
+        memset(buf_pos, 0, sizeof(unsigned long));
+        buf_pos += sizeof(unsigned long);
+
+        pstrdup(buf_pos, child->name, pstrlen(child->name));
+        buf_pos += pstrlen(child->name);
+    }
+
+    return buf_pos - buf;
+}
+
 struct vnode* vnode_remove(struct vnode *node) {
     if (!node) return NULL;
 
@@ -141,10 +163,10 @@ struct vnode* vnode_remove(struct vnode *node) {
 
 unsigned short vnode_scan(pstring *elements, unsigned short n, struct qid *wqid,
                           struct vnode **node) {
-    struct vnode *mount = vnode_get_root();
-    struct vnode *vnode = mount;
-    pstring *mount_element = elements;
-    pstring *element = mount_element;
+    struct vnode *mount;
+    struct vnode *vnode = vnode_get_root();
+    pstring *mount_element;
+    pstring *element = elements;
     unsigned short i = 0, mount_index = 0;
 
     while (i < n) {

@@ -43,6 +43,16 @@ struct vnode* vnode_get_root();
 enum vfs_error vnode_forward(const struct vnode *vnode, char *buf);
 
 /*
+* Put up to _count_ bytes of directory entries to _buf_ represented by _vnode_ starting
+* from _offset_.
+*
+* On success, returns the number of bytes written.
+* On failure, returns 0.
+*/
+unsigned vnode_read_dir(const struct vnode *vnode, unsigned char *buf,
+                        unsigned long offset, unsigned count);
+
+/*
 * Deallocate memory of _node_ and its children
 *
 * Returns null pointer

@@ -178,6 +178,14 @@ enum vfs_error vfs_init() {
 
     struct vnode *root = vnode_get_root();;
 
+    root->qid.type = QTDIR;
+    root->qid.version = 0;
+    root->qid.id = id_count++;
+    root->children = NULL;
+    root->children_no = 0;
+    root->mount_node = NULL;
+    root->mq_id = -1;
+
     char uname_buf[16];
     char aname_buf[16];
     uname = pstrconv(uname_buf, "vfs/client", 16);
