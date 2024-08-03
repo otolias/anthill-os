@@ -30,16 +30,38 @@ enum pl011_error pl011_init(void) {
     return PL011_OK;
 }
 
+unsigned pl011_read(unsigned char *data, unsigned n) {
+    unsigned i = 0, timeout = 15000;
+
+    while (timeout--)
+        if (!(*FR & FR_RXFE)) break;
+
+    while (!(*FR & FR_RXFE)) {
+        if (i == n) break;
+        int c = *DR;
+        if (c & (DR_FE & DR_PE & DR_BE & DR_OE)) break;
+
+        data[i++] = (unsigned char) c;
+    }
+
+    return i;
+}
+
 unsigned pl011_write(const unsigned char *data, unsigned n) {
     unsigned i;
 
     for (i = 0; i < n; i++) {
-        /* Wait until FIFO is empty */
-        while ((*DR & DR_OE) != 0)
-            __asm__ volatile("nop");
+        while (*FR & FR_TXFF) {
+            unsigned timeout = 150;
+            while (timeout--) __asm__ volatile("nop");
+        }
 
         *DR = data[i];
     }
+
+    /* Wait for data to be read */
+    while (1)
+        if (!(*FR & FR_RXFE)) break;
 
     return i;
 }

@@ -39,6 +39,23 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     return vfs_msg_put(vfs_msg, buf);
 }
 
+static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
+    const struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ECLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    unsigned char read_buf[vfs_msg->fcall.count];
+    unsigned count = pl011_read(read_buf, vfs_msg->fcall.count);
+
+    vfs_msg->fcall.type = Rread;
+    vfs_msg->fcall.count = count;
+    vfs_msg->fcall.data = read_buf;
+    return vfs_msg_put(vfs_msg, buf);
+}
+
 static unsigned short _write(struct vfs_msg *vfs_msg, char *buf) {
     const struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
     if (!client) {
@@ -62,6 +79,10 @@ static void _handle_message(char *buf) {
     switch (vfs_msg.fcall.type) {
         case Tattach:
             len = _attach(&vfs_msg, buf);
+            break;
+
+        case Tread:
+            len = _read(&vfs_msg, buf);
             break;
 
         case Twrite:

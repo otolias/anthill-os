@@ -20,13 +20,21 @@
 #define ITOP  (volatile uint32_t *) (MMIO_BASE + 0x00201088)
 #define TDR   (volatile uint32_t *) (MMIO_BASE + 0x0020108c)
 
-#define DR_OE (1 << 1)
+#define DR_FE   (1 << 8)
+#define DR_PE   (1 << 9)
+#define DR_BE   (1 << 10)
+#define DR_OE   (1 << 11)
+#define FR_RXFE (1 << 4)
+#define FR_TXFF (1 << 5)
+#define FR_TXFE (1 << 7)
 
 enum pl011_error {
     PL011_OK,
 };
 
 enum pl011_error pl011_init(void);
+
+unsigned pl011_read(unsigned char *data, unsigned n);
 
 unsigned pl011_write(const unsigned char *data, unsigned n);
 
