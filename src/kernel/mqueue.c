@@ -39,7 +39,7 @@ size_t mqueue_count = 0;
 /*
 * Find open mqueue by _id_
 */
-static struct mqueue* _mqueue_find(mqd_t id) {
+static struct mqueue* _find(mqd_t id) {
     for (size_t i = 0; i < MQ_MAX_OPEN; i++) {
         if (open_queues[i].id == id)
             return &open_queues[i];
@@ -51,7 +51,7 @@ static struct mqueue* _mqueue_find(mqd_t id) {
 /*
 * Find open mqueue by _hash_
 */
-static struct mqueue* _mqueue_find_hash(size_t hash) {
+static struct mqueue* _find_hash(size_t hash) {
     for (size_t i = 0; i < MQ_MAX_OPEN; i++) {
         if (open_queues[i].id && open_queues[i].hash == hash)
             return &open_queues[i];
@@ -64,7 +64,7 @@ static struct mqueue* _mqueue_find_hash(size_t hash) {
 * Find _mqueue_ subscriber with _pid_. If _pid_ is 0, returns
 * any subscriber
 */
-static struct mq_task* _mqueue_find_subscriber(struct mqueue* mqueue, pid_t pid) {
+static struct mq_task* _find_subscriber(struct mqueue* mqueue, pid_t pid) {
     for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
         if ((pid && mqueue->subs[i].pid == pid) || (!pid && mqueue->subs[i].pid > 0))
             return &mqueue->subs[i];
@@ -80,7 +80,7 @@ static struct mq_task* _mqueue_find_subscriber(struct mqueue* mqueue, pid_t pid)
 * - BLCK_RECV for blocked tasks waiting to receive
 * - BLCK_SEND for blocked tasks waiting to send
 */
-static void _mqueue_unblock_subscribers(struct mqueue *mqueue, int flag) {
+static void _unblock_subscribers(struct mqueue *mqueue, int flag) {
     for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
         if (mqueue->subs[i].flags & flag) {
             mqueue->subs[i].flags ^= flag;
@@ -92,7 +92,7 @@ static void _mqueue_unblock_subscribers(struct mqueue *mqueue, int flag) {
 /*
 * Subscribe _pid_ to _mqueue_ with access _flags_
 */
-static bool _mqueue_subscribe(struct mqueue* mqueue, pid_t pid, int flags) {
+static bool _subscribe(struct mqueue* mqueue, pid_t pid, int flags) {
     for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
         if (!mqueue->subs[i].pid) {
             mqueue->subs[i].pid = pid;
@@ -107,8 +107,8 @@ static bool _mqueue_subscribe(struct mqueue* mqueue, pid_t pid, int flags) {
 /*
 * Unsubscribe _pid_ from _mqueue_
 */
-static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
-    struct mq_task *mq_task = _mqueue_find_subscriber(mqueue, pid);
+static bool _unsubscribe(struct mqueue* mqueue, pid_t pid) {
+    struct mq_task *mq_task = _find_subscriber(mqueue, pid);
 
     if (!mq_task)
         return false;
@@ -123,7 +123,7 @@ static bool _mqueue_unsubscribe(struct mqueue* mqueue, pid_t pid) {
 * Enqueue message pointed to by _msg_ptr_ with length _msg_len_ in
 * _mqueue_
 */
-static bool _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t msg_len) {
+static bool _enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t msg_len) {
     if (mqueue->tail == mqueue->attr.mq_maxmsg - 1)
         mqueue->tail = -1;
 
@@ -136,7 +136,7 @@ static bool _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t m
 
     /* Unblock any task that is waiting for a message */
     if (mqueue->attr.mq_curmsg == 0)
-        _mqueue_unblock_subscribers(mqueue, BLCK_RECV);
+        _unblock_subscribers(mqueue, BLCK_RECV);
 
     mqueue->attr.mq_curmsg++;
 
@@ -144,19 +144,23 @@ static bool _mqueue_enqueue(struct mqueue* mqueue, const char *msg_ptr, size_t m
 }
 
 /*
-* Copy first message of _mqueue_ to _msg_ptr_
+* Copy first message of _mqueue_ to _msg_ptr_, if _msg_len_ is less than the message
 */
-static ssize_t _mqueue_dequeue(struct mqueue *mqueue, char *msg_ptr) {
-    if (mqueue->head == mqueue->attr.mq_maxmsg - 1)
-        mqueue->head = -1;
-
+static ssize_t _dequeue(struct mqueue *mqueue, char *msg_ptr, size_t msg_len) {
     if (!mqueue->attr.mq_curmsg)
         return 0;
 
-    const struct mq_message *mq_message = &mqueue->messages[++mqueue->head];
+    if (mqueue->head == mqueue->attr.mq_maxmsg - 1)
+        mqueue->head = -1;
+
+    const struct mq_message *mq_message = &mqueue->messages[mqueue->head + 1];
+
+    if (mq_message->size > msg_len)
+        return -EMSGSIZE;
 
     memcpy(msg_ptr, &mq_message->message, mq_message->size);
 
+    mqueue->head++;
     mqueue->attr.mq_curmsg--;
 
     return mq_message->size;
@@ -165,11 +169,11 @@ static ssize_t _mqueue_dequeue(struct mqueue *mqueue, char *msg_ptr) {
 /*
 * Destroy _mqueue_
 */
-static void _mqueue_destroy(struct mqueue* mqueue) {
+static void _destroy(struct mqueue* mqueue) {
     mqueue->open = false;
 
     /* Check if there are pending subscribed processes */
-    if (_mqueue_find_subscriber(mqueue, 0))
+    if (_find_subscriber(mqueue, 0))
         return;
 
     mqueue->id = 0;
@@ -179,7 +183,7 @@ static void _mqueue_destroy(struct mqueue* mqueue) {
 int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode,
                 const struct mq_attr *attr) {
     size_t hash = strhash(name);
-    struct mqueue *mqueue = _mqueue_find_hash(hash);
+    struct mqueue *mqueue = _find_hash(hash);
 
     if (oflag & O_CREAT) {
         if (oflag & O_EXCL && mqueue) {
@@ -228,44 +232,43 @@ int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode
     if (!mqueue || !mqueue->open)
         return -ENOENT;
 
-    if(!_mqueue_subscribe(mqueue, task_current_pid(), oflag))
+    if(!_subscribe(mqueue, task_current_pid(), oflag))
         return -EACCES;
 
     return mqueue->id;
 }
 
 int mqueue_close(mqd_t mqdes) {
-    struct mqueue *mqueue = _mqueue_find(mqdes);
+    struct mqueue *mqueue = _find(mqdes);
 
     if (!mqueue)
         return -EBADF;
 
-    _mqueue_unsubscribe(mqueue, task_current_pid());
+    _unsubscribe(mqueue, task_current_pid());
 
     if (!mqueue->open) {
-
         /* Check if this is the last pending connection */
-        if (!_mqueue_find_subscriber(mqueue, 0))
-            _mqueue_destroy(mqueue);
+        if (!_find_subscriber(mqueue, 0))
+            _destroy(mqueue);
     }
 
     return 0;
 }
 
 int mqueue_unlink(const char *name) {
-    struct mqueue *mqueue = _mqueue_find_hash(strhash(name));
+    struct mqueue *mqueue = _find_hash(strhash(name));
 
     if (!mqueue)
         return -ENOENT;
 
-    _mqueue_destroy(mqueue);
+    _destroy(mqueue);
 
     return 0;
 }
 
 int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
                 __attribute__((unused)) unsigned msg_prio) {
-    struct mqueue *mqueue = _mqueue_find(id);
+    struct mqueue *mqueue = _find(id);
 
     if (!mqueue)
         return -EBADF;
@@ -273,13 +276,13 @@ int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
     if ((long) msg_len > mqueue->attr.mq_msgsize)
         return -EMSGSIZE;
 
-    struct mq_task *mq_task = _mqueue_find_subscriber(mqueue, task_current_pid());
+    struct mq_task *mq_task = _find_subscriber(mqueue, task_current_pid());
 
     if (!mq_task || mq_task->flags & O_RDONLY)
         return -EACCES;
 
     while(1) {
-        if(_mqueue_enqueue(mqueue, msg_ptr, msg_len))
+        if(_enqueue(mqueue, msg_ptr, msg_len))
             break;
 
         if (mq_task->flags & O_NONBLOCK) {
@@ -295,15 +298,12 @@ int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
 
 ssize_t mqueue_receive(mqd_t id, char *msg_ptr, size_t msg_len,
                        __attribute__((unused)) unsigned *msg_prio) {
-    struct mqueue *mqueue = _mqueue_find(id);
+    struct mqueue *mqueue = _find(id);
 
     if (!mqueue)
         return -EBADF;
 
-    if ((long) msg_len < mqueue->attr.mq_msgsize)
-        return -EMSGSIZE;
-
-    struct mq_task *mq_task = _mqueue_find_subscriber(mqueue, task_current_pid());
+    struct mq_task *mq_task = _find_subscriber(mqueue, task_current_pid());
 
     if (!mq_task || mq_task->flags & O_WRONLY)
         return -EACCES;
@@ -311,8 +311,8 @@ ssize_t mqueue_receive(mqd_t id, char *msg_ptr, size_t msg_len,
     ssize_t result;
 
     while(1) {
-        result = _mqueue_dequeue(mqueue, msg_ptr);
-        if (result)
+        result = _dequeue(mqueue, msg_ptr, msg_len);
+        if (result > 0)
             break;
 
         if (mq_task->flags & O_NONBLOCK) {
