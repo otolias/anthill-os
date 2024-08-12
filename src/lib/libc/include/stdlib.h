@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 
-/* --- Memory allocation functions */
+/* --- Memory allocation functions ---*/
 
 /*
 * Allocate unused space for an object of _size_ in bytes
@@ -56,7 +56,7 @@ void* realloc(void *ptr, size_t size);
 */
 void free(void *ptr);
 
-/* --- Process functions */
+/* --- Process functions --- */
 
 /*
 * Terminate process

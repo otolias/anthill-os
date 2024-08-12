@@ -7,7 +7,7 @@
 void free(void *ptr) {
     if (!ptr) return;
 
-    block_t *block = (block_t *) ((size_t) ptr - sizeof(block_t));
+    struct block *block = (struct block *) ((size_t) ptr - sizeof(struct block));
     block->available = 1;
 
     block_coalesce(block);

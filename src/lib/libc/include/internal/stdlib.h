@@ -14,22 +14,22 @@
 #define MALLOC_MAX_ORDER  12
 #define MALLOC_BLOCK_SIZE 1 << MALLOC_MAX_ORDER
 
-typedef struct {
+struct block {
     char available;
     char k;
-    void *prev;
-    void *next;
-} block_t;
+    struct block *prev;
+    struct block *next;
+};
 
 /*
 * Coalesce blocks
 */
-void block_coalesce(block_t *block);
+void block_coalesce(struct block *block);
 
 /*
 * Iterate through the available blocks and find one with k equal to _order_
 */
-block_t* block_find(char order);
+struct block* block_find(char order);
 
 /*
 * Get _ptr_ allocation size in bytes. Returns 0 if block for _ptr_ isn't found.

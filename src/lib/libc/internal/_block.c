@@ -3,17 +3,13 @@
 #include <stddef.h>
 #include <sys/mman.h>
 
-static short _expand(block_t *block);
-static void _shrink(block_t *block);
-static void _split(block_t *block);
-
-block_t *first_block;
+struct block *first_block;
 
 /*
 * Get more memory for the allocator from _block_
 */
-static short _expand(block_t *block) {
-    block_t *new_block = mmap(0, MALLOC_BLOCK_SIZE, 0, MAP_ANONYMOUS, 0, 0);
+static short _expand(struct block *block) {
+    struct block *new_block = mmap(0, MALLOC_BLOCK_SIZE, 0, MAP_ANONYMOUS, 0, 0);
 
     if(!new_block)
         return 1;
@@ -35,11 +31,11 @@ static short _expand(block_t *block) {
 /*
  * Release memory from the allocator from _block_
 */
-static void _shrink(block_t *block) {
+static void _shrink(struct block *block) {
     if (block->next)
         return;
 
-    block_t *prev = block->prev;
+    struct block *prev = block->prev;
     prev->next = NULL;
 
     munmap(block, MALLOC_BLOCK_SIZE);
@@ -48,9 +44,9 @@ static void _shrink(block_t *block) {
 /*
 * Split the given _block_ to two blocks of lower k
 */
-static void _split(block_t *block) {
+static void _split(struct block *block) {
     block->k--;
-    block_t *new_block = (block_t *) ((size_t) block + (2 << block->k));
+    struct block *new_block = (struct block *) ((size_t) block + (2 << block->k));
     new_block->available = 1;
     new_block->k = block->k;
     new_block->next = block->next;
@@ -58,17 +54,17 @@ static void _split(block_t *block) {
     block->next = new_block;
 }
 
-void block_coalesce(block_t *block) {
+void block_coalesce(struct block *block) {
     if (block->k == MALLOC_MAX_ORDER) {
         _shrink(block);
         return;
     }
 
-    block_t *buddy = (block_t *) ((size_t) block ^ (size_t) (1 << block->k));
+    struct block *buddy = (struct block *) ((size_t) block ^ (size_t) (1 << block->k));
 
     while (buddy && buddy->available) {
         if (buddy > block) {
-            block_t *temp = buddy;
+            struct block *temp = buddy;
             buddy = block;
             block = temp;
         }
@@ -76,12 +72,12 @@ void block_coalesce(block_t *block) {
         block->k++;
         block->next = buddy->next;
 
-        buddy = (block_t *) ((size_t) block ^ (size_t) (1 << block->k));
+        buddy = (struct block *) ((size_t) block ^ (size_t) (1 << block->k));
     }
 }
 
-block_t* block_find(char order) {
-    block_t *current_block = first_block;
+struct block* block_find(char order) {
+    struct block *current_block = first_block;
 
     while (current_block) {
         if (!current_block->available || current_block->k < order) {
@@ -107,8 +103,8 @@ block_t* block_find(char order) {
 }
 
 size_t block_get_size(void *ptr) {
-    const block_t *block = (block_t *) ((size_t) ptr - sizeof(block_t));
-    const block_t *current_block = first_block;
+    const struct block *block = (struct block *) ((size_t) ptr - sizeof(struct block));
+    const struct block *current_block = first_block;
 
     while (current_block) {
         if (current_block == block)
