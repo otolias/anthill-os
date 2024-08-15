@@ -5,12 +5,12 @@
 
 #include <drivers/gpio.h>
 
-#define PAGE_SIZE       4096
+#define PAGE_SIZE     4096
 
-#define LOW_MEMORY      PAGE_SIZE
-#define HIGH_MEMORY     MMIO_BASE
+#define LOW_MEMORY    0x80000
+#define HIGH_MEMORY   MMIO_BASE
 
-#define PAGING_PAGES    ((HIGH_MEMORY - LOW_MEMORY) / PAGE_SIZE)
+#define PAGING_PAGES ((HIGH_MEMORY - LOW_MEMORY) / PAGE_SIZE)
 
 /*
 * Deallocate pages starting from page _page_
