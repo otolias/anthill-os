@@ -19,22 +19,17 @@ enum task_state {
 * Task descriptor
 */
 struct task {
-    struct cpu_context cpu_context; /* Stored CPU context. Do not change position */
-    pid_t pid;                      /* process ID */
-    void* process_address;          /* Page start address */
-    void* user_stack;               /* User stack address */
-    void* kernel_stack;             /* Kernel stack address */
-    long  counter;                  /* How long the task has been running (decreases) */
-    long  priority;                 /* How much time the task is given */
-    int   preempt_count;            /* If non-zero, task must not be interrupted */
-    enum task_state state;          /* Current task state */
-    struct task*    parent;         /* Parent task */
+    struct cpu_context cpu_context;     /* Stored CPU Context. DO NOT change position */
+    pid_t              pid;             /* Process ID */
+    void*              process_address; /* Page start address */
+    void*              user_stack;      /* User stack address */
+    void*              kernel_stack;    /* Kernel stack address */
+    struct task*       parent;          /* Parent task */
+    enum task_state    state;           /* Current task state */
+    int                preempt_count;   /* If non-zero, task must not be interrupted */
+    long               priority;        /* Execution clock ticks given */
+    long               counter;         /* Execution clock ticks left */
 };
-
-/*
-* Returns the process ID of the current task
-*/
-pid_t task_current_pid(void);
 
 /*
 * Block current task
@@ -42,19 +37,9 @@ pid_t task_current_pid(void);
 void task_current_block(void);
 
 /*
-* Unblock task with _pid_
+* Returns the process ID of the current task
 */
-void task_unblock(pid_t pid);
-
-/*
-* De-increment task counter and call scheduler
-*/
-void task_tick(void);
-
-/*
-* Initiate round Robin scheduler
-*/
-void task_schedule(void);
+pid_t task_current_pid(void);
 
 /*
 * Load _file_ dependencies and execute with _argv_ arguments.
@@ -68,5 +53,20 @@ ssize_t task_exec(const void *file, char *const args[restrict]);
 * Terminate process
 */
 void task_exit(void);
+
+/*
+* Initiate Round Robin scheduler
+*/
+void task_schedule(void);
+
+/*
+* De-increment task counter and call scheduler
+*/
+void task_tick(void);
+
+/*
+* Unblock task with _pid_
+*/
+void task_unblock(pid_t pid);
 
 #endif /* _TASK_H */

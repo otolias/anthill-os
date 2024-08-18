@@ -18,37 +18,8 @@ long task_count = 0;
 
 Elf64_Ehdr *linker_page;
 
-pid_t task_current_pid(void) {
-    return current_task->pid;
-}
-
-void task_current_block(void) {
-    current_task->state = TASK_BLOCKED;
-    current_task->preempt_count--;
-    task_schedule();
-}
-
-void task_unblock(pid_t pid) {
-    for (size_t i = 0; i < TOTAL_TASKS; i++) {
-        if (tasks[i]->pid == pid) {
-            tasks[i]->state = TASK_RUNNING;
-            break;
-        }
-    }
-}
-
-void task_tick(void) {
-    current_task->counter--;
-    if (current_task->counter > 0 || current_task->preempt_count > 0) {
-        return;
-    }
-    enable_irq();
-    task_schedule();
-    disable_irq();
-}
-
 /* Load _ehdr_ in _address_ */
-static void _task_load(const Elf64_Ehdr *ehdr, const void *address) {
+static void _load(const Elf64_Ehdr *ehdr, const void *address) {
     const Elf64_Phdr *phdr = (Elf64_Phdr *) ELF_OFF(ehdr, ehdr->e_phoff);
     size_t phdr_count;
 
@@ -67,10 +38,20 @@ static void _task_load(const Elf64_Ehdr *ehdr, const void *address) {
     }
 }
 
+void task_current_block(void) {
+    current_task->state = TASK_BLOCKED;
+    current_task->preempt_count--;
+    task_schedule();
+}
+
+pid_t task_current_pid(void) {
+    return current_task->pid;
+}
+
 ssize_t task_exec(const void *file, char *const args[restrict]) {
     current_task->preempt_count++;
 
-    /* Load linker if not already loaded*/
+    /* Load linker if not already loaded */
     if (!linker_page) {
         const Elf64_Ehdr *ehdr = (Elf64_Ehdr *) ramdisk_lookup("./lib/ld.so");
 
@@ -81,7 +62,7 @@ ssize_t task_exec(const void *file, char *const args[restrict]) {
             return -EINVAL;
         };
 
-        _task_load(ehdr, linker_page);
+        _load(ehdr, linker_page);
     }
 
     const Elf64_Ehdr *ehdr = (Elf64_Ehdr *) file;
@@ -96,7 +77,7 @@ ssize_t task_exec(const void *file, char *const args[restrict]) {
         return -ENOMEM;
     }
 
-    _task_load(ehdr, process_addr);
+    _load(ehdr, process_addr);
 
     void *user_stack = mm_get_pages(0);
     if (user_stack == NULL)
@@ -154,8 +135,8 @@ ssize_t task_exec(const void *file, char *const args[restrict]) {
     new_task->process_address = process_addr;
     new_task->user_stack = user_stack;
     new_task->kernel_stack = kernel_stack;
-    new_task->priority = current_task->priority;
     new_task->state = TASK_RUNNING;
+    new_task->priority = current_task->priority;
     new_task->counter = new_task->priority;
     new_task->preempt_count = 1;
     new_task->parent = current_task;
@@ -177,50 +158,6 @@ ssize_t task_exec(const void *file, char *const args[restrict]) {
     return (ssize_t) new_task;
 }
 
-void task_schedule(void) {
-    long next_task;
-    struct task *p;
-
-    current_task->counter = 0;
-    current_task->preempt_count++;
-
-    while(1) {
-        long counter = -1;
-        // Find the running process with the highest priority
-        next_task = 0;
-
-        for (size_t i = 0; i < TOTAL_TASKS; i++) {
-            p = tasks[i];
-            if (p && p->state == TASK_RUNNING && p->counter > counter) {
-                counter = p->counter;
-                next_task = i;
-            }
-        }
-
-        // If such a process exists, switch to it
-        if (counter) {
-            break;
-        }
-
-        // If not, update task counters
-        for (size_t i = 0; i < TOTAL_TASKS; i++) {
-            p = tasks[i];
-            if (p) {
-                p->counter = (p->counter >> 1) + p->priority;
-            }
-        }
-    }
-
-    /* Switch task */
-    if (current_task != tasks[next_task]) {
-        struct task *previous_task = current_task;
-        current_task = tasks[next_task];
-        cpu_context_switch(previous_task, current_task);
-    }
-
-    current_task->preempt_count--;
-}
-
 void task_exit(void) {
     for (size_t i = 0; i < TOTAL_TASKS; i++) {
         if (tasks[i] == current_task) {
@@ -235,4 +172,56 @@ void task_exit(void) {
     task_unblock(current_task->parent->pid);
     current_task = NULL;
     task_schedule();
+}
+
+void task_schedule(void) {
+    long counter = -1;
+    size_t task_index = 0;
+    struct task *t = NULL;
+
+    current_task->counter = 0;
+    current_task->preempt_count++;
+
+    for (size_t i = 0; i < TOTAL_TASKS; i++) {
+        t = tasks[i];
+        if (!t) continue;
+
+        t->counter += t->priority;
+
+        if (t->state == TASK_RUNNING && t->counter > counter) {
+            counter = t->counter;
+            task_index = i;
+        }
+    }
+
+    t = tasks[task_index];
+    t->counter = t->priority;
+
+    /* Switch task */
+    if (current_task != t) {
+        struct task *previous_task = current_task;
+        current_task = t;
+        cpu_context_switch(previous_task, current_task);
+    }
+
+    current_task->preempt_count--;
+}
+
+void task_tick(void) {
+    current_task->counter--;
+    if (current_task->counter > 0 || current_task->preempt_count > 0)
+        return;
+
+    enable_irq();
+    task_schedule();
+    disable_irq();
+}
+
+void task_unblock(pid_t pid) {
+    for (size_t i = 0; i < TOTAL_TASKS; i++) {
+        if (tasks[i]->pid == pid) {
+            tasks[i]->state = TASK_RUNNING;
+            break;
+        }
+    }
 }
