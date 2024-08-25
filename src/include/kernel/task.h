@@ -2,7 +2,6 @@
 #define _TASK_H
 
 #define TOTAL_TASKS 64
-#define STACK_SIZE  4096
 
 #include <kernel/cpu_context.h>
 #include <kernel/sys/types.h>

@@ -2,8 +2,8 @@
 cpu_context_switch:
     // Store previous process registers
     mov     x8, x0
-    mov     x9, sp
-    mrs     x10, sp_el0
+    mrs     x9, sp_el0
+    mov     x10, sp
     stp     x19, x20, [x8], #16
     stp     x21, x22, [x8], #16
     stp     x23, x24, [x8], #16
@@ -29,7 +29,7 @@ cpu_context_switch:
     stp     x30, x10, [x8]
 
     // Restore next process registers
-    mov x8, x1
+    mov     x8, x1
     ldp     x19, x20, [x8], #16
     ldp     x21, x22, [x8], #16
     ldp     x23, x24, [x8], #16
@@ -53,6 +53,6 @@ cpu_context_switch:
     ldp     q30, q31, [x8], #32
     ldp     x29, x9, [x8], #16
     ldp     x30, x10, [x8]
-    msr     sp_el0, x10
-    mov     sp, x9
+    msr     sp_el0, x9
+    mov     sp, x10
     ret

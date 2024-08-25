@@ -19,7 +19,7 @@ short elf_validate(const Elf64_Ehdr *ehdr) {
 size_t elf_get_image_size(const Elf64_Ehdr *ehdr) {
     /* Find last PT_LOAD program header entry */
     Elf64_Phdr *phdr = (Elf64_Phdr *) ELF_OFF(ehdr, ehdr->e_phoff);
-    Elf64_Phdr *load_phdr = phdr;
+    const Elf64_Phdr *load_phdr = phdr;
     size_t phdr_count = ehdr->e_phnum;
 
     for (; phdr_count--; phdr++) {

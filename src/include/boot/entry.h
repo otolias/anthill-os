@@ -31,10 +31,6 @@
 #ifndef __ASSEMBLER__
 
 /*
-* Adds parameters and starts coroutine
-*/
-void start_coroutine();
-/*
 * Starts a function in user_mode
 * Function is stored in x19
 * Stack is stored in x20
@@ -42,4 +38,5 @@ void start_coroutine();
 void start_user();
 
 #endif /* __ASSEMBLER__ */
+
 #endif

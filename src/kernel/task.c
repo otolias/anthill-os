@@ -11,7 +11,7 @@
 #include <kernel/sys/types.h>
 #include <kernel/ramdisk.h>
 
-static struct task init_task = { .priority = 1};
+static struct task init_task = { .priority = 1 };
 struct task *current_task = &init_task;
 struct task *tasks[TOTAL_TASKS] = {&init_task, };
 long task_count = 0;
@@ -72,7 +72,7 @@ ssize_t task_exec(const void *file, char *const args[restrict]) {
     const unsigned long elf_memory_size = elf_get_image_size(ehdr);
     const unsigned long process_size = elf_memory_size + sizeof(struct task);
 
-    void *process_addr = mm_get_pages(process_size + STACK_SIZE);
+    void *process_addr = mm_get_pages(process_size);
     if (process_addr == 0) {
         return -ENOMEM;
     }
@@ -87,7 +87,7 @@ ssize_t task_exec(const void *file, char *const args[restrict]) {
     if (kernel_stack == NULL)
         { mm_free_pages(process_addr); mm_free_pages(user_stack); return -ENOMEM; }
 
-    char *sp = user_stack;
+    char *sp = (char *) user_stack + PAGE_SIZE;
 
     if (args != NULL) {
         /* Calculate argument size */
@@ -144,7 +144,7 @@ ssize_t task_exec(const void *file, char *const args[restrict]) {
     new_task->cpu_context.x19 = (size_t) ELF_OFF(linker_page, linker_page->e_entry);
     new_task->cpu_context.x20 = (size_t) sp;
     new_task->cpu_context.pc = (size_t) start_user;
-    new_task->cpu_context.sp = (size_t) kernel_stack;
+    new_task->cpu_context.ksp = (size_t) kernel_stack + PAGE_SIZE;
 
     /* Add task */
     for (size_t i = 0; i < TOTAL_TASKS; i++) {
