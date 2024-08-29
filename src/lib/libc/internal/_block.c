@@ -6,7 +6,7 @@
 struct block *first_block;
 
 /*
-* Get more memory for the allocator from _block_
+* Get more memory from the allocator for _block_
 */
 static short _expand(struct block *block) {
     struct block *new_block = mmap(0, MALLOC_BLOCK_SIZE, 0, MAP_ANONYMOUS, 0, 0);
@@ -46,7 +46,7 @@ static void _shrink(struct block *block) {
 */
 static void _split(struct block *block) {
     block->k--;
-    struct block *new_block = (struct block *) ((size_t) block + (2 << block->k));
+    struct block *new_block = (struct block *) ((size_t) block + (1 << block->k));
     new_block->available = 1;
     new_block->k = block->k;
     new_block->next = block->next;
@@ -63,7 +63,7 @@ void block_coalesce(struct block *block) {
     struct block *buddy = (struct block *) ((size_t) block ^ (size_t) (1 << block->k));
 
     while (buddy && buddy->available) {
-        if (buddy > block) {
+        if (buddy < block) {
             struct block *temp = buddy;
             buddy = block;
             block = temp;
@@ -78,9 +78,11 @@ void block_coalesce(struct block *block) {
 
 struct block* block_find(char order) {
     struct block *current_block = first_block;
+    struct block *last_block = NULL;
 
     while (current_block) {
         if (!current_block->available || current_block->k < order) {
+            last_block = current_block;
             current_block = current_block->next;
             continue;
         }
@@ -96,7 +98,7 @@ struct block* block_find(char order) {
         }
     }
 
-    if (_expand(current_block) == 0)
+    if (_expand(last_block) == 0)
         return block_find(order);
 
     return NULL;
