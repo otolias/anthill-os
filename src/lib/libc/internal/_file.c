@@ -76,6 +76,12 @@ bool file_close(FILE *stream) {
 }
 
 void file_deinit(void) {
+    for (int i = 0; i < FOPEN_MAX; i++) {
+        FILE *f = &open_files[i];
+        if (f->flags & F_OPEN)
+            fclose(f);
+    }
+
     fflush(stdout); fflush(stderr);
 
     if (mq_in != -1) { mq_close(mq_in); mq_in = 0; mq_unlink(vfs_name); }
