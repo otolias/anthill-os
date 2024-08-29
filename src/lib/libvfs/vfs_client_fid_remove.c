@@ -17,7 +17,7 @@ int vfs_client_fid_remove(const struct vfs_client *client, unsigned fid) {
     if (!pair) return -1;
 
     prev_pair->next = pair->next;
-    free(pair->obj); pair->obj = NULL;
+    pair->obj = NULL;
     free(pair);
 
     return 0;
