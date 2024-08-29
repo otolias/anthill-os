@@ -27,6 +27,11 @@ struct block {
 void block_coalesce(struct block *block);
 
 /*
+* Deallocate allocated blocks
+*/
+void block_deinit(void);
+
+/*
 * Iterate through the available blocks and find one with k equal to _order_
 */
 struct block* block_find(char order);

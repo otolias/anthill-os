@@ -76,6 +76,23 @@ void block_coalesce(struct block *block) {
     }
 }
 
+void block_deinit(void) {
+    struct block *current_block = first_block;
+    while (current_block) {
+        struct block *next_block = current_block->next;
+
+        while (next_block) {
+            if ((size_t) next_block % (1 << MALLOC_MAX_ORDER) == 0)
+                break;
+
+            next_block = next_block->next;
+        }
+
+        munmap(current_block, MALLOC_BLOCK_SIZE);
+        current_block = next_block;
+    }
+}
+
 struct block* block_find(char order) {
     struct block *current_block = first_block;
     struct block *last_block = NULL;
