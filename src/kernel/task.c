@@ -166,12 +166,11 @@ void task_exit(void) {
         }
     }
 
+    task_unblock(current_task->parent->pid);
     mm_free_pages((void *) current_task->process_address);
     mm_free_pages((void *) current_task->user_stack);
     mm_free_pages((void *) current_task->kernel_stack);
-    task_unblock(current_task->parent->pid);
-    current_task = NULL;
-    task_schedule();
+    cpu_context_switch(current_task, &init_task);
 }
 
 void task_schedule(void) {
