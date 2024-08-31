@@ -22,6 +22,7 @@ static short _expand(struct block *block) {
         new_block->prev = block;
         block->next = new_block;
     } else {
+        new_block->prev = NULL;
         first_block = new_block;
     }
 
@@ -32,11 +33,10 @@ static short _expand(struct block *block) {
  * Release memory from the allocator from _block_
 */
 static void _shrink(struct block *block) {
-    if (block->next)
-        return;
-
     struct block *prev = block->prev;
-    prev->next = NULL;
+
+    if (prev)
+        prev->next = block->next;
 
     munmap(block, MALLOC_BLOCK_SIZE);
 }
@@ -55,14 +55,9 @@ static void _split(struct block *block) {
 }
 
 void block_coalesce(struct block *block) {
-    if (block->k == MALLOC_MAX_ORDER) {
-        _shrink(block);
-        return;
-    }
-
     struct block *buddy = (struct block *) ((size_t) block ^ (size_t) (1 << block->k));
 
-    while (buddy && buddy->available) {
+    while (buddy && buddy->available && block->k < MALLOC_MAX_ORDER) {
         if (buddy < block) {
             struct block *temp = buddy;
             buddy = block;
@@ -73,6 +68,11 @@ void block_coalesce(struct block *block) {
         block->next = buddy->next;
 
         buddy = (struct block *) ((size_t) block ^ (size_t) (1 << block->k));
+    }
+
+    if (block->k == MALLOC_MAX_ORDER && block != first_block) {
+        _shrink(block);
+        return;
     }
 }
 
