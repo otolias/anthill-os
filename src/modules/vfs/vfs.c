@@ -157,6 +157,7 @@ static enum vfs_error _setup_dev(struct vnode *root) {
     dev->children = NULL;
     dev->children_no = 0;
     dev->mount_node = NULL;
+    dev->mq_id = -1;
 
     enum vfs_error err;
 

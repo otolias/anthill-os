@@ -6,12 +6,13 @@
 #include <pstring.h>
 
 struct vnode {
-    pstring*         name;        /* File name */
-    struct qid       qid;         /* File information */
-    struct vnode*    children;    /* Array of children */
-    unsigned         children_no; /* Number of children */
-    struct vnode*    mount_node;  /* Parent mount point */
-    mqd_t            mq_id;       /* Associated mqueue channel */
+    pstring*      name;         /* File name */
+    struct qid    qid;          /* File information */
+    struct vnode* children;     /* Array of children */
+    struct vnode* mount_node;   /* Parent mount point */
+    struct vnode* channel_node; /* If remote, communication node */
+    unsigned      children_no;  /* Number of children */
+    mqd_t         mq_id;        /* Associated mqueue channel */
 };
 
 extern struct vnode _root_vnode;
@@ -23,6 +24,14 @@ extern struct vnode _root_vnode;
 * On failure, returns a null pointer.
 */
 struct vnode* vnode_add_child(struct vnode *vnode);
+
+/*
+* Send Tattach message to _channel_ and setup file tree under _mount_.
+*
+* On success, returns a pointer to _mount_.
+* On failure, returns a null pointer.
+*/
+struct vnode* vnode_attach(const struct vnode *channel, struct vnode *mount);
 
 /*
 * Search in children of _vnode_ for vnode with name _name_
@@ -68,5 +77,10 @@ struct vnode* vnode_remove(struct vnode *node);
 */
 unsigned short vnode_scan(pstring *elements, unsigned short n, struct qid *wqid,
                           struct vnode **node);
+
+/*
+* Wrap _buf_ of size _n_ with a Twrite and a Tread message to _vnode_
+*/
+enum vfs_error vnode_wrap(const struct vnode *vnode, unsigned char *buf, size_t n);
 
 #endif /* _MOD_VFS_VNODE_H */

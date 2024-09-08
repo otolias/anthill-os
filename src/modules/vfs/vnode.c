@@ -14,7 +14,7 @@ struct vnode _root_vnode;
 static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned short n) {
     unsigned new_fid = id_count++;
 
-    char buf[VFS_MAX_MSG_LEN];
+    unsigned char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
     vfs_msg.fcall.type = Twalk;
     vfs_msg.fcall.tag = tag_count++;
@@ -24,8 +24,20 @@ static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned s
     vfs_msg.fcall.wname = elements;
     vfs_msg.mq_id = vfs_in;
 
-    if (!vfs_msg_send(&vfs_msg, buf, mount->mq_id, vfs_in))
-        return VFS_MQERR;
+    if (mount->channel_node) {
+        unsigned len = fcall_msg_to_buf(&vfs_msg.fcall, buf, VFS_MAX_MSG_LEN);
+        if (len == 0)
+            return VFS_MQERR;
+
+        if (vnode_wrap(mount, buf, len) != VFS_OK)
+            return VFS_MQERR;
+
+        if (fcall_buf_to_msg(buf, &vfs_msg.fcall) == 0)
+            return VFS_MQERR;
+    } else {
+        if (!vfs_msg_send(&vfs_msg, (char *) buf, mount->mq_id, vfs_in))
+            return VFS_MQERR;
+    }
 
     if (vfs_msg.fcall.type != Rwalk)
         return VFS_MQERR;
@@ -46,6 +58,7 @@ static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned s
             child->children = NULL;
             child->children_no = 0;
             child->mount_node = mount;
+            child->channel_node = mount->channel_node;
             child->mq_id = vnode->mq_id;
         }
 
@@ -53,12 +66,14 @@ static enum vfs_error _expand(struct vnode *mount, pstring *elements, unsigned s
         vnode = child;
     }
 
+    vnode->qid.id = new_fid;
+
     return VFS_OK;
 }
 
 struct vnode* vnode_add_child(struct vnode *vnode) {
     /* Check if more space is needed */
-    unsigned n = 1;
+    unsigned short n = 1;
     while (n < vnode->children_no) n *= 2;
 
     if (vnode->children_no == 0) {
@@ -73,6 +88,41 @@ struct vnode* vnode_add_child(struct vnode *vnode) {
 
     vnode->children_no++;
     return &vnode->children[vnode->children_no - 1];
+}
+
+struct vnode* vnode_attach(const struct vnode *channel, struct vnode *mount) {
+    mount->channel_node = (struct vnode *) channel;
+
+    unsigned char buf[VFS_MAX_MSG_LEN];
+
+    fcall attach;
+    char uname_buf[16];
+    char aname_buf[16];
+    pstring *uname = pstrconv(uname_buf, "vfs/export", 16);
+    pstring *aname = pstrconv(aname_buf, "/", 16);
+    attach.type = Tattach;
+    attach.tag = tag_count++;
+    attach.fid = mount->qid.id;
+    attach.afid = NOFID;
+    attach.uname = uname;
+    attach.aname = aname;
+
+    unsigned attach_len = fcall_msg_to_buf(&attach, buf, VFS_MAX_MSG_LEN);
+    if (attach_len == 0)
+        return NULL;
+
+    if (vnode_wrap(mount, buf, attach_len) != VFS_OK)
+        return NULL;
+
+    if (fcall_buf_to_msg(buf, &attach) == 0)
+        return NULL;
+
+    if (attach.type != Rattach)
+        return NULL;
+
+    mount->mount_node = NULL;
+
+    return mount;
 }
 
 struct vnode* vnode_find_child(const struct vnode* vnode, const pstring *name) {
@@ -99,16 +149,23 @@ enum vfs_error vnode_forward(const struct vnode *vnode, char *buf) {
     msg_size = (unsigned) *(buf + FCALL_SIZE_OFF);
     mqd_t old_mq = *((mqd_t *) (buf + msg_size));
 
-    /* Replace tag, fid and mq_id */
+    /* Replace tag and fid */
     *(buf + FCALL_TAG_OFF) = tag_count++;
     *(buf + FCALL_FID_OFF) = vnode->qid.id;
-    *(buf + msg_size) = vfs_in;
 
-    if (mq_send(vnode->mq_id, buf, msg_size + sizeof(mqd_t), 0) == -1)
-        return VFS_MQERR;
+    if (vnode->channel_node) {
+        if (vnode_wrap(vnode, (unsigned char *) buf, msg_size) != VFS_OK)
+            return VFS_MQERR;
+    } else {
+        /* Replace mq_id */
+        *(buf + msg_size) = vfs_in;
 
-    if (mq_receive(vfs_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
-        return VFS_MQERR;
+        if (mq_send(vnode->mq_id, buf, msg_size + sizeof(mqd_t), 0) == -1)
+            return VFS_MQERR;
+
+        if (mq_receive(vfs_in, buf, VFS_MAX_MSG_LEN, 0) == -1)
+            return VFS_MQERR;
+    }
 
     /* Restore tag and mq_id */
     *(buf + FCALL_TAG_OFF) = old_tag;
@@ -193,5 +250,54 @@ unsigned short vnode_scan(pstring *elements, unsigned short n, struct qid *wqid,
 
     *node = vnode;
 
+    /* Establish fid if it doesn't have one */
+    if (vnode->qid.id == NOFID) {
+        _expand(mount, mount_element, n - mount_index);
+    }
+
     return n;
+}
+
+enum vfs_error vnode_wrap(const struct vnode *vnode, unsigned char *buf, size_t n) {
+    /* Replace fid */
+    *(buf + FCALL_FID_OFF) = vnode->qid.id;
+
+    char rw_buf[VFS_MAX_MSG_LEN];
+    struct vfs_msg vfs_msg;
+    vfs_msg.fcall.type = Twrite;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = vnode->channel_node->qid.id;
+    vfs_msg.fcall.offset = 0;
+    vfs_msg.fcall.count = n;
+    vfs_msg.fcall.data = buf;
+    vfs_msg.mq_id = vfs_in;
+
+    if (!vfs_msg_send(&vfs_msg, rw_buf, vnode->channel_node->mq_id, vfs_in))
+        return VFS_MQERR;
+
+    if (vfs_msg.fcall.type != Rwrite)
+        return VFS_MQERR;
+
+    unsigned char *pos = buf;
+
+    /* Retry until there is no more data to be read */
+    do {
+        vfs_msg.fcall.type = Tread;
+        vfs_msg.fcall.tag = tag_count++;
+        vfs_msg.fcall.fid = vnode->mount_node->qid.id;
+        vfs_msg.fcall.offset = 0;
+        vfs_msg.fcall.count = VFS_MAX_IOUNIT;
+        vfs_msg.mq_id = vfs_in;
+
+        if (vfs_msg_send(&vfs_msg, rw_buf, vnode->channel_node->mq_id, vfs_in) == 0)
+            return VFS_MQERR;
+
+        if (vfs_msg.fcall.type != Rread)
+            return VFS_MQERR;
+
+        memcpy(pos, vfs_msg.fcall.data, vfs_msg.fcall.count);
+        pos += vfs_msg.fcall.count;
+    } while (vfs_msg.fcall.count != 0);
+
+    return VFS_OK;
 }

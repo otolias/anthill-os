@@ -19,6 +19,7 @@
 #include <fcall.h>
 #include <mqueue.h>
 #include <pstring.h>
+#include <stddef.h>
 #include <sys/vfs.h>
 
 #include <vfs/client.h>
@@ -52,22 +53,28 @@ static unsigned short _attach(struct vfs_msg *vfs_msg, char *buf) {
     }
 
     /* Setup process I/O */
-    char pstr_buf[16];
     struct vnode *root = vnode_get_root();
-    const struct vnode *dev = vnode_find_child(root, pstrconv(pstr_buf, "dev", 16));
-    struct vnode *uart = vnode_find_child(dev, pstrconv(pstr_buf, "uart", 16));
-
-    if (!vfs_client_fid_add(client, vfs_msg->fcall.fid, root) ||
-        !vfs_client_fid_add(client, vfs_msg->fcall.fid + 1, uart)) {
+    if (!vfs_client_fid_add(client, vfs_msg->fcall.fid, root)) {
         vfs_msg->fcall.type = Rerror;
         vfs_msg->fcall.ename = &ENOCLIENT;
         return vfs_msg_put(vfs_msg, buf);
     }
 
+    /* Only happens on process initialisation */
+    if (vfs_msg->fcall.fid == 0) {
+        char pstr_buf[16];
+        const struct vnode *dev = vnode_find_child(root, pstrconv(pstr_buf, "dev", 16));
+        struct vnode *uart = vnode_find_child(dev, pstrconv(pstr_buf, "uart", 16));
+
+        if (!vfs_client_fid_add(client, vfs_msg->fcall.fid + 1, uart)) {
+            vfs_msg->fcall.type = Rerror;
+            vfs_msg->fcall.ename = &ENOCLIENT;
+            return vfs_msg_put(vfs_msg, buf);
+        }
+    }
+
     vfs_msg->fcall.type = Rattach;
-    vfs_msg->fcall.qid.type = 0;
-    vfs_msg->fcall.qid.version = 0;
-    vfs_msg->fcall.qid.id = 0;
+    vfs_msg->fcall.qid = root->qid;
 
     return vfs_msg_put(vfs_msg, buf);
 }
@@ -93,6 +100,93 @@ static unsigned short _clunk(struct vfs_msg *vfs_msg, char *buf) {
     }
 
     vfs_msg->fcall.type = Rclunk;
+
+    return vfs_msg_put(vfs_msg, buf);
+}
+
+static unsigned short _create(struct vfs_msg *vfs_msg, char *buf) {
+    struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOCLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    if (vfs_msg->fcall.fid == NOFID || !(vfs_msg->fcall.perm & DMDIR)) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &EINVALID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    struct vnode *parent = vfs_client_fid_get(client, vfs_msg->fcall.fid);
+    if (!parent) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOFID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    struct vnode *child = vnode_add_child(parent);
+    if (!child) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ESERVER;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    child->name = pstrdup(NULL, vfs_msg->fcall.name, 0);
+    if (!child->name) {
+        vnode_remove(child);
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ESERVER;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    child->qid.type = vfs_msg->fcall.perm;
+    child->qid.version = 0;
+    child->qid.id = id_count++;
+    child->children = NULL;
+    child->children_no = 0;
+    child->mount_node = NULL;
+    child->mq_id = -1;
+
+    vfs_client_fid_update(client, vfs_msg->fcall.fid, child);
+
+    vfs_msg->fcall.type = Rcreate;
+    vfs_msg->fcall.qid = child->qid;
+    vfs_msg->fcall.iounit = VFS_MAX_IOUNIT;
+
+    return vfs_msg_put(vfs_msg, buf);
+}
+
+static unsigned short _mount(struct vfs_msg *vfs_msg, char *buf) {
+    struct vfs_client *client = vfs_client_get(vfs_msg->mq_id);
+    if (!client) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOCLIENT;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    if (vfs_msg->fcall.fid == NOFID || vfs_msg->fcall.mfid == NOFID) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &EINVALID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    const struct vnode *channel = vfs_client_fid_get(client, vfs_msg->fcall.fid);
+    struct vnode *mount = vfs_client_fid_get(client, vfs_msg->fcall.mfid);
+    if (!channel || !mount) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ENOFID;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    if (!vnode_attach(channel, mount)) {
+        vfs_msg->fcall.type = Rerror;
+        vfs_msg->fcall.ename = &ESERVER;
+        return vfs_msg_put(vfs_msg, buf);
+    }
+
+    vfs_msg->fcall.type = Rmount;
+    vfs_msg->fcall.qid = mount->qid;
 
     return vfs_msg_put(vfs_msg, buf);
 }
@@ -140,7 +234,7 @@ static unsigned short _read(struct vfs_msg *vfs_msg, char *buf) {
         return vfs_msg_put(vfs_msg, buf);
     }
 
-    if (vnode->mq_id == -1) {
+    if (vnode->mq_id == -1 && !vnode->channel_node) {
         unsigned char read_buf[vfs_msg->fcall.count];
         unsigned count = vnode_read_dir(vnode, read_buf, vfs_msg->fcall.offset,
                                         vfs_msg->fcall.count);
@@ -272,6 +366,14 @@ static void _handle_message(char *buf) {
 
         case Tclunk:
             len = _clunk(&vfs_msg, buf);
+            break;
+
+        case Tcreate:
+            len = _create(&vfs_msg, buf);
+            break;
+
+        case Tmount:
+            len = _mount(&vfs_msg, buf);
             break;
 
         case Topen:
