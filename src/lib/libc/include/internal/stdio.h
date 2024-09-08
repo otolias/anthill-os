@@ -36,6 +36,14 @@ bool file_close(FILE *stream);
 void file_deinit(void);
 
 /*
+* Return open stream associated with _fid_.
+*
+* On success, returns a pointer to the stream.
+* On failure, returns a null pointer.
+*/
+FILE *file_find(unsigned fid);
+
+/*
 * Get _stat_ info for stream associated with fid. Returns 0 on success and -1 on failure.
 */
 int file_get_stat(unsigned fid, struct stat *stat);
@@ -44,6 +52,19 @@ int file_get_stat(unsigned fid, struct stat *stat);
 * Initialise VFS connections.
 */
 bool file_init(void);
+
+/*
+* Mount connection _stream_ to path.
+*
+* On success, returns 0.
+* On failure, returns -1 and sets errno to indicate the error.
+*
+* errno:
+* - EACCES
+* - EIO
+* - ENOMEM
+*/
+int file_mount(const FILE *stream, const char *restrict path);
 
 /*
 * Open file for whose path name is equal to the one pointed to by _pathname_ with mode
@@ -68,6 +89,17 @@ FILE* file_open(const char *pathname, int oflag);
 * - EIO
 */
 unsigned file_read(FILE *stream, unsigned n);
+
+/*
+* Send walk message for _fid_ with _wname_ number of elements pointed to by _wname_
+*
+* On success, returns 0.
+* On failure, returns -1 and sets errno to indicate the error.
+*
+* errno:
+* - EACCES
+*/
+int file_walk(unsigned fid, unsigned short nwname, pstring *wname);
 
 /*
 * Write _stream_ buffer to file.

@@ -8,7 +8,7 @@
 #include <mqueue.h>
 
 #define VFS_MAX_MSG_LEN 128
-#define VFS_MAX_IOUNIT 112
+#define VFS_MAX_IOUNIT 100
 
 struct vfs_msg {
     fcall fcall; /* Fcall struct */

@@ -77,6 +77,7 @@ libc_sources = files([
   'sys' / 'stat' / 'stat.c',
   'sys' / 'vfs' / 'vfs_msg.c',
   'unistd' / 'getpid.c',
+  'unistd' / 'mount.c',
 ])
 
 libc_includes = files([

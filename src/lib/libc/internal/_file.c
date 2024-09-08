@@ -89,6 +89,16 @@ void file_deinit(void) {
     if (mq_vfs != -1) { mq_close(mq_vfs); mq_vfs = 0; }
 }
 
+FILE* file_find(unsigned fid) {
+    FILE* f = open_files;
+    for (int i = 0; i < FOPEN_MAX; i++) {
+        if (f[i].fid == fid && f[i].flags & F_OPEN)
+            return &f[i];
+    }
+
+    return NULL;
+}
+
 int file_get_stat(unsigned fid, struct stat *stat) {
     char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
@@ -164,6 +174,55 @@ bool file_init(void) {
     return true;
 }
 
+int file_mount(const FILE *stream, const char *restrict path) {
+    unsigned mfid = fid_count++;
+    unsigned len;
+
+    unsigned short nwname;
+    pstring *wname;
+
+    nwname = fcall_path_split(&wname, path);
+    if (!nwname)
+        return NULL;
+
+    if (file_walk(mfid, nwname - 1, wname) != 0)
+        return -1;
+
+    char buf[VFS_MAX_MSG_LEN];
+    struct vfs_msg vfs_msg;
+
+    pstring *name = wname;
+    for (unsigned short i = 0; i < nwname - 1; i++)
+        name = pstriter(name);
+
+    vfs_msg.fcall.type = Tcreate;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = mfid;
+    vfs_msg.fcall.name = name;
+    vfs_msg.fcall.perm = DMDIR | DMTMP;
+    vfs_msg.fcall.mode = ORDWR | ORCLOSE;
+
+    len = vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in);
+    free(wname);
+    if (len == 0 || vfs_msg.fcall.type != Rcreate) {
+        errno = EIO;
+        return -1;
+    }
+
+    vfs_msg.fcall.type = Tmount;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = stream->fid;
+    vfs_msg.fcall.mfid = mfid;
+
+    len = vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in);
+    if (len == 0 || vfs_msg.fcall.type != Rmount) {
+        errno = EIO;
+        return -1;
+    }
+
+    return 0;
+}
+
 FILE *file_open(const char *restrict pathname, int oflag) {
     if (!_check_init())
         { errno = EACCES; return NULL; }
@@ -171,28 +230,14 @@ FILE *file_open(const char *restrict pathname, int oflag) {
     unsigned int fid = fid_count++;
     char buf[VFS_MAX_MSG_LEN];
     struct vfs_msg vfs_msg;
-    vfs_msg.fcall.type = Twalk;
-    vfs_msg.fcall.tag = tag_count++;
-    vfs_msg.fcall.fid = open_files[0].fid;
-    vfs_msg.fcall.newfid = fid;
-    vfs_msg.mq_id = mq_in;
 
     pstring *wname;
     int nwname = fcall_path_split(&wname, pathname);
     if (nwname == -1)
         { errno = EACCES; return NULL; }
 
-    vfs_msg.fcall.nwname = nwname;
-    vfs_msg.fcall.wname = wname;
-
-    /* TODO: Relative path handling */
-    if (vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in) == 0)
-        { errno = EACCES; free(wname); return NULL; }
-
-    if (vfs_msg.fcall.type != Rwalk)
-        { errno = EACCES; free(wname); return NULL; }
-
-    free(wname);
+    if (file_walk(fid, nwname, wname) != 0)
+        return NULL;
 
     int file_flags = 0;
     if (oflag & O_RDONLY) {
@@ -275,7 +320,7 @@ unsigned file_read(FILE *stream, unsigned n) {
         if (!vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in))
             { errno = EIO; return 0; }
 
-        if (vfs_msg.fcall.type != Rread) 
+        if (vfs_msg.fcall.type != Rread)
             { errno = EIO; return 0; }
 
         unsigned read = (vfs_msg.fcall.count < count) ? vfs_msg.fcall.count : count;
@@ -290,6 +335,27 @@ unsigned file_read(FILE *stream, unsigned n) {
     stream->r_pos = stream->buf;
     stream->r_end = stream->buf + current_buffer_size;
     return current_buffer_size;
+}
+
+int file_walk(unsigned fid, unsigned short nwname, pstring *wname) {
+    char buf[VFS_MAX_MSG_LEN];
+    struct vfs_msg vfs_msg;
+    vfs_msg.fcall.type = Twalk;
+    vfs_msg.fcall.tag = tag_count++;
+    vfs_msg.fcall.fid = open_files[0].fid;
+    vfs_msg.fcall.newfid = fid;
+    vfs_msg.fcall.nwname = nwname;
+    vfs_msg.fcall.wname = wname;
+    vfs_msg.mq_id = mq_in;
+
+    /* TODO: Relative path handling */
+    if (vfs_msg_send(&vfs_msg, buf, mq_vfs, mq_in) == 0)
+        { errno = EACCES; return -1; }
+
+    if (vfs_msg.fcall.type != Rwalk)
+        { errno = EACCES; return -1; }
+
+    return 0;
 }
 
 ssize_t file_write(FILE *stream) {
