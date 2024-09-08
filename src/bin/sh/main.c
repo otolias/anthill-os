@@ -48,18 +48,29 @@ static enum sh_error _loop(char **buf, size_t *buf_size) {
 }
 
 static enum sh_error _execute(char *buf) {
+    int argc = strcnt(buf, ' ') + 1;
+    char *argv[argc + 1];
     char *cmd = strtok(buf, " ");
-    char *arg = strtok(NULL, " ");
+    argv[0] = cmd;
+    int i;
 
-    if (strcmp(cmd, "ls") == 0)
+    for (i = 1; i < argc; i++) {
+        argv[i] = strtok(NULL, " ");
+    }
+
+    argv[i] = NULL;
+
+    if (strcmp(cmd, "cd") == 0)
+        return cmd_cd(argc, argv);
+    else if (strcmp(cmd, "importfs") == 0)
+        return cmd_importfs(argc, argv);
+    else if (strcmp(cmd, "ls") == 0)
         return cmd_ls();
-    else if (strcmp(cmd, "cd") == 0)
-        return cmd_cd(arg);
     else {
         errno = 0;
         pid_t pid;
 
-        if (posix_spawn(&pid, cmd, 0, 0, 0, 0) != 0) {
+        if (posix_spawn(&pid, cmd, 0, 0, argv, 0) != 0) {
             switch (errno) {
                 case EACCES:
                 case ENOEXEC:

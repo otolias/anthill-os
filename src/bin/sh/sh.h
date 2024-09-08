@@ -10,14 +10,27 @@ enum sh_error {
 };
 
 /*
-* Change current directory to _dir_.
+* Change current directory.
 *
-* _dir_ must be an absolute path
+* Usage: cd _path_
+*
+* _path_ must be absolute
 */
-enum sh_error cmd_cd(char *dir);
+enum sh_error cmd_cd(int argc, char *argv[]);
+
+/*
+* Import _channel_ on _path_
+*
+* Usage: importfs _channel_ _path_
+*
+* _path_ must be absolute.
+*/
+enum sh_error cmd_importfs(int argc, char *argv[]);
 
 /*
 * List current directory entries
+*
+* Usage: ls
 */
 enum sh_error cmd_ls(void);
 
