@@ -597,6 +597,60 @@ static void _test_Rstat(void) {
     free(stat);
 }
 
+static void _test_Tmount(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin = {
+        .type = Tmount,
+        .tag = NOTAG,
+        .fid = ~0,
+        .mfid = ~0,
+    };
+
+    res = fcall_msg_size(&fin);
+    if (res != 15)
+        puts("FCALL::ERROR::fcall_msg_size Tmount failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 15)
+        puts("FCALL::ERROR::fcall_msg_to_buf Tmount failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 15)
+        puts("FCALL::ERROR::fcall_buf_to_msg Tmount failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag || fin.fid != fout.fid ||
+        fin.mfid != fout.mfid)
+        puts("FCALL::ERROR::fcall Tmount failure");
+}
+
+static void _test_Rmount(void) {
+    unsigned char buf[256];
+    unsigned res;
+    fcall fout, fin;
+    fin.type = Rmount;
+    fin.tag = NOTAG;
+    fin.qid.type = ~0;
+    fin.qid.version = ~0;
+    fin.qid.id = ~0;
+
+    res = fcall_msg_size(&fin);
+    if (res != 23)
+        puts("FCALL::ERROR::fcall_msg_size Rmount failure");
+
+    res = fcall_msg_to_buf(&fin, buf, 256);
+    if (res != 23)
+        puts("FCALL::ERROR::fcall_msg_to_buf Rmount failure");
+
+    res = fcall_buf_to_msg(buf, &fout);
+    if (res != 23)
+        puts("FCALL::ERROR::fcall_buf_to_msg Rmount failure");
+
+    if (fin.type != fout.type || fin.tag != fout.tag ||
+        memcmp(&fin.qid, &fout.qid, sizeof(struct qid)) != 0)
+        puts("FCALL::ERROR::fcall Rmount failure");
+}
+
 void test_fcall(void) {
     _test_path_size();
     _test_path_split();
@@ -619,4 +673,6 @@ void test_fcall(void) {
     _test_Rclunk();
     _test_Tstat();
     _test_Rstat();
+    _test_Tmount();
+    _test_Rmount();
 }
