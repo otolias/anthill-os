@@ -74,6 +74,7 @@ unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned lengt
             break;
 
         case Rattach:
+        case Rmount:
             ptr += _put_qid(ptr, &fcall->qid);
             break;
 
@@ -151,6 +152,11 @@ unsigned fcall_msg_to_buf(const fcall *fcall, unsigned char *buf, unsigned lengt
             ptr += _put_ushort(ptr, fcall->nstat);
             memcpy(ptr, fcall->stat, fcall->nstat);
             ptr += fcall->nstat;
+            break;
+
+        case Tmount:
+            ptr += _put_uint(ptr, fcall->fid);
+            ptr += _put_uint(ptr, fcall->mfid);
             break;
 
         case Rclunk:

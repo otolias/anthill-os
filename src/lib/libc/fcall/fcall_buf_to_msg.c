@@ -56,6 +56,7 @@ unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall) {
             break;
 
         case Rattach:
+        case Rmount:
             fcall->qid.type = _get_uint(ptr);
             ptr += INT_SIZE;
             fcall->qid.version = _get_uint(ptr);
@@ -159,6 +160,13 @@ unsigned fcall_buf_to_msg(unsigned char *buf, fcall *fcall) {
             ptr += SHRT_SIZE;
             fcall->stat = (struct fcall_stat *) ptr;
             ptr += fcall->nstat;
+            break;
+
+        case Tmount:
+            fcall->fid = _get_uint(ptr);
+            ptr += INT_SIZE;
+            fcall->mfid = _get_uint(ptr);
+            ptr += INT_SIZE;
             break;
 
         default:

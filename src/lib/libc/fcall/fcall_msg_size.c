@@ -105,6 +105,15 @@ unsigned fcall_msg_size(const fcall *fcall) {
             size += fcall->nstat; /* stat */
             break;
 
+        case Tmount:
+            size += INT_SIZE; /* fid */
+            size += INT_SIZE; /* mfid */
+            break;
+
+        case Rmount:
+            size += sizeof(struct qid);
+            break;
+
         default:
             return 0;
     }

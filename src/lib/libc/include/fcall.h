@@ -76,6 +76,12 @@
 * - qid[16]   file qid
 * - length[8] file size in bytes
 * - name[s]   file name
+*
+* size[4] Tmount tag[2] fid[4] mfid[4]
+* size[4] Rmount tag[2] qid[16]
+*
+* Send Tattach message to file associated with _fid_ and establish file tree on
+* directory associated with _mfid_
 */
 
 #ifndef _FCALL_H
@@ -107,6 +113,7 @@
 
 /* File permissions */
 #define DMDIR 1 << 31 /* Directory */
+#define DMTMP 1 << 16 /* Temporary */
 
 struct qid {
     unsigned int  type;
@@ -145,7 +152,7 @@ typedef struct {
             pstring* uname; /* Associated user. Currently unused */
             pstring* aname; /* File tree to access */
         };
-        struct { /* Rattach, Rcreate, Ropen */
+        struct { /* Rattach, Rcreate, Ropen, Rmount */
             struct qid qid;    /* File information */
             unsigned   iounit; /* Maximum number of bytes guaranteed */
                                /* to be read or written. Currently unused */
@@ -173,6 +180,9 @@ typedef struct {
             unsigned short     nstat; /* Stat length */
             struct fcall_stat* stat;  /* File stat */
         };
+        struct { /* Tmount */
+            unsigned mfid; /* Mount directory */
+        };
     };
 } fcall;
 
@@ -197,6 +207,8 @@ enum fcall_types {
     Rclunk,
     Tstat,
     Rstat,
+    Tmount,
+    Rmount,
 };
 
 /*
