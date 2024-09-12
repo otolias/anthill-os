@@ -1,5 +1,5 @@
-#ifndef _TIMER_H
-#define _TIMER_H
+#ifndef _DRIVERS_TIMER_H
+#define _DRIVERS_TIMER_H
 
 #include <stdint.h>
 
@@ -27,4 +27,4 @@ void handle_timer_irq();
 */
 void timer_wait(int msec);
 
-#endif
+#endif /* _DRIVERS_TIMER_H */

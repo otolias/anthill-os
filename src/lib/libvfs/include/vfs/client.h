@@ -1,5 +1,5 @@
-#ifndef _LIBVFS_CLIENT_H
-#define _LIBVFS_CLIENT_H
+#ifndef _LIBVFS_VFS_CLIENT_H
+#define _LIBVFS_VFS_CLIENT_H
 
 #include <mqueue.h>
 
@@ -74,4 +74,4 @@ struct vfs_client* vfs_client_get(mqd_t mq_id);
 */
 [[nodiscard]] struct vfs_client* vfs_client_remove(struct vfs_client *client);
 
-#endif /* _LIBVFS_CLIENT_H */
+#endif /* _LIBVFS_VFS_CLIENT_H */

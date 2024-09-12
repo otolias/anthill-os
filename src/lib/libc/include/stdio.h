@@ -156,44 +156,6 @@ size_t fread(void *restrict ptr, size_t size, size_t nitems, FILE *restrict stre
 size_t fwrite(const void *restrict ptr, size_t size, size_t nitems,
               FILE *restrict stream);
 
-/*
-* Put bytes from _stream_ and a terminating character to _lineptr_ of size _n_,
-* until _delimiter_ is encountered.
-*
-* _delimiter_ is an int, but it must be representable by an unsigned char.
-* _lineptr_ must be a null pointer or a malloc'd buffer of size _n_.
-*
-* On success, returns the number of bytes writen to _lineptr_, excluding the
-* terminating character.
-* On failure, returns -1 and sets errno to indicate the error.
-*
-* errno:
-* - EBADF  The stream's underlying stream is not a valid file descriptor.
-* - EINVAL _lineptr_ or _n_ is a null pointer
-* - EIO    Physical I/O error, or data could not be retrieved.
-* - ENOMEM Not enough available space
-*/
-ssize_t getdelim(char **restrict lineptr, size_t *restrict n, int delimiter,
-                 FILE *restrict stream);
-
-/*
-* Put bytes from _stream_ and a terminating character to _lineptr_ of size _n_,
-* until a newline is encountered.
-*
-* _lineptr_ must be a null pointer or a malloc'd buffer of size _n_.
-*
-* On success, returns the number of bytes writen to _lineptr_, excluding the
-* terminating character.
-* On failure, returns -1 and sets errno to indicate the error.
-*
-* errno:
-* - EBADF  The stream's underlying stream is not a valid file descriptor.
-* - EINVAL _lineptr_ or _n_ is a null pointer
-* - EIO    Physical I/O error, or data could not be retrieved.
-* - ENOMEM Not enough available space
-*/
-ssize_t getline(char **restrict lineptr, size_t *restrict n, FILE *restrict stream);
-
 /* Format handling */
 
 /*

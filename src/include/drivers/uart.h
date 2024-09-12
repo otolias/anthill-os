@@ -1,5 +1,5 @@
-#ifndef _UART_H_
-#define _UART_H_
+#ifndef _DRIVERS_UART_H_
+#define _DRIVERS_UART_H_
 
 #include "gpio.h"
 
@@ -27,4 +27,4 @@ void uart_init();
 */
 void uart_send_char(char c);
 
-#endif
+#endif /* _DRIVERS_UART_H */

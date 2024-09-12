@@ -1,8 +1,8 @@
 /*
 * Small printf for kernel usage. Supports decimals, hexadecimals and strings
 */
-#ifndef _K_PRINTF
-#define _K_PRINTF
+#ifndef _KERNEL_PRINTF_H
+#define _KERNEL_PRINTF_H
 
 #ifdef DEBUG
 #define debug_log(...) kprintf(__VA_ARGS__)
@@ -20,4 +20,4 @@ int ksprintf(char *str, char *format, ...);
 */
 void kprintf(char *format, ...);
 
-#endif /* _K_PRINTF */
+#endif /* _KERNEL_PRINTF_H */

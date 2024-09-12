@@ -34,7 +34,11 @@ static void _load(const Elf64_Ehdr *ehdr, const void *address) {
         /* Zero bss segment */
         const unsigned long size_diff = phdr->p_memsz - phdr->p_filesz;
         if (size_diff)
-            memset((void *) (ELF_OFF(address, phdr->p_vaddr) + phdr->p_filesz), 0, size_diff);
+            memset(
+                (void *) (ELF_OFF(address, phdr->p_vaddr) + phdr->p_filesz),
+                0,
+                size_diff
+            );
     }
 }
 

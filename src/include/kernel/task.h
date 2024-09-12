@@ -1,5 +1,5 @@
-#ifndef _TASK_H
-#define _TASK_H
+#ifndef _KERNEL_TASK_H
+#define _KERNEL_TASK_H
 
 #define TOTAL_TASKS 64
 
@@ -68,4 +68,4 @@ void task_tick(void);
 */
 void task_unblock(pid_t pid);
 
-#endif /* _TASK_H */
+#endif /* _KERNEL_TASK_H */

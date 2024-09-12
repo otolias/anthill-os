@@ -7,7 +7,7 @@ struct vfs_client* vfs_client_remove(struct vfs_client *client) {
     struct fid_pair *pair = client->fids;
 
     while(pair) {
-        vfs_client_remove_fid(client, pair->fid);
+        vfs_client_fid_remove(client, pair->fid);
         pair = pair->next;
     }
 

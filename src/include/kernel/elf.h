@@ -1,5 +1,5 @@
-#ifndef _ELF_H
-#define _ELF_H
+#ifndef _KERNEL_ELF_H
+#define _KERNEL_ELF_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -120,4 +120,4 @@ short elf_validate(const Elf64_Ehdr *ehdr);
 */
 size_t elf_get_image_size(const Elf64_Ehdr *ehdr);
 
-#endif /* _ELF_H */
+#endif /* _KERNEL_ELF_H */

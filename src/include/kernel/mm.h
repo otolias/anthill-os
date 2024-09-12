@@ -1,5 +1,5 @@
-#ifndef _MM_H
-#define _MM_H
+#ifndef _KERNEL_MM_H
+#define _KERNEL_MM_H
 
 #include <stddef.h>
 
@@ -31,4 +31,4 @@ void* mm_get_pages(size_t size);
 */
 void mm_init(void);
 
-#endif
+#endif /* _KERNEL_MM_H */

@@ -1,5 +1,5 @@
-#ifndef KERNEL_CPU_CONTEXT_
-#define KERNEL_CPU_CONTEXT_
+#ifndef _KERNEL_CPU_CONTEXT_
+#define _KERNEL_CPU_CONTEXT_
 
 #include <stdint.h>
 
@@ -29,4 +29,4 @@ struct cpu_context {
 */
 void cpu_context_switch(void *previous, void *next);
 
-#endif /* KERNEL_CPU_CONTEXT_ */
+#endif /* _KERNEL_CPU_CONTEXT_ */
