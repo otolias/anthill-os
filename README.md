@@ -1,12 +1,14 @@
-arm-os
-------
+Anthill OS
+----------
+
+A distributed operating system for the aarch64 architecture.
 
 ## Prerequisites
 
 * A [GCC Cross compiler](https://wiki.osdev.org/GCC_Cross-Compiler) targeted for aarch64-elf.
 * [Meson](https://github.com/mesonbuild/meson)
 * [Ninja](https://github.com/ninja-build/ninja)
-* [QEMU](https://github.com/qemu/qemu) 2.12 or newer
+* [QEMU](https://github.com/qemu/qemu) (currently works only up version 8.2.1)
 * GDB for debugging (optional)
 
 ## Build Instructions
@@ -31,4 +33,4 @@ To run with QEMU and connect GDB:
 ```
 
 This will start and halt qemu, connect gdb and load the symbols. To continue, type
-```c```
+```c```.
