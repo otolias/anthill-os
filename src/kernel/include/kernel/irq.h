@@ -1,5 +1,5 @@
-#ifndef _DRIVERS_IRQ_H
-#define _DRIVERS_IRQ_H
+#ifndef _KERNEL_IRQ_H
+#define _KERNEL_IRQ_H
 
 
 #include <stdint.h>
@@ -41,4 +41,4 @@ void disable_irq();
 */
 void show_invalid_entry_message(int32_t type, uint64_t esr, uint64_t address);
 
-#endif /* _DRIVERS_IRQ_H */
+#endif /* _KERNEL_IRQ_H */

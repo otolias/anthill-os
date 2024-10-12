@@ -5,7 +5,7 @@ mod_pl011_sources = [
 
 mod_pl011 = executable('mod_pl011',
   sources : mod_pl011_sources,
-  include_directories : include_directories('..' / '..' / 'include'),
+  include_directories : include_directories('..' / '..' / 'kernel' / 'include'),
   link_args : exec_link_args,
   dependencies : [ libc_dep, libvfs_dep ],
   pie : true,

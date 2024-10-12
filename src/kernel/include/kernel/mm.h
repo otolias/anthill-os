@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include <drivers/gpio.h>
+#include <kernel/gpio.h>
 
 #define PAGE_SIZE     4096
 

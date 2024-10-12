@@ -1,11 +1,12 @@
 #include "kernel/mqueue.h"
 
-#include <kernel/errno.h>
-#include <kernel/sys/types.h>
-#include <kernel/string.h>
-#include <kernel/task.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+#include <kernel/errno.h>
+#include <kernel/string.h>
+#include <kernel/sys/types.h>
+#include <kernel/task.h>
 
 #define MQ_MAX_OPEN        32
 #define MQ_MAX_SUBSCRIBERS 8

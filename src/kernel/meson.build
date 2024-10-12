@@ -1,25 +1,17 @@
-kernel_sources += files([
+kernel_sources = files([
+  'boot.S',
   'cpu_context.S',
   'elf.c',
+  'entry.S',
+  'irq.c',
   'kprintf.c',
   'main.c',
   'mqueue.c',
   'mm.c',
   'ramdisk.c',
-  'syscalls.c',
   'string.c',
+  'syscalls.c',
   'task.c',
+  'timer.c',
+  'uart.c',
 ])
-
-kernel_includes += [
-  'src' / 'include' / 'kernel' / 'cpu_context.h',
-  'src' / 'include' / 'kernel' / 'elf.h',
-  'src' / 'include' / 'kernel' / 'kprintf.h',
-  'src' / 'include' / 'kernel' / 'mqueue.h',
-  'src' / 'include' / 'kernel' / 'mm.h',
-  'src' / 'include' / 'kernel' / 'ramdisk.h',
-  'src' / 'include' / 'kernel' / 'sys' / 'types.h',
-  'src' / 'include' / 'kernel' / 'syscalls.h',
-  'src' / 'include' / 'kernel' / 'string.h',
-  'src' / 'include' / 'kernel' / 'task.h',
-]

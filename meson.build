@@ -1,4 +1,4 @@
-project('arm_os', 'c',
+project('anthill_os', 'c',
   default_options : [
     'c_args=-g3',
     'optimization=0',
@@ -30,15 +30,6 @@ gcc = meson.get_compiler('c').cmd_array()
 objcopy = find_program('objcopy')
 tar = find_program('tar')
 
-kernel_sources = []
-kernel_includes = []
-
-subdir('src' / 'boot')
-subdir('src' / 'drivers')
-subdir('src' / 'kernel')
-
-subdir('src' / 'lib')
-
 exec_link_args = [
   '-nodefaultlibs',
   '-B' + meson.build_root(),
@@ -46,10 +37,12 @@ exec_link_args = [
   '-z' + 'noseparate-code',
 ]
 
+subdir('src' / 'kernel')
+subdir('src' / 'lib')
 subdir('src' / 'bin')
 subdir('src' / 'modules')
 
-kernel_inc_directories = include_directories('src' / 'include')
+kernel_inc_directories = include_directories('src' / 'kernel' / 'include')
 
 kernel_elf = executable('kernel8.elf',
   sources : kernel_sources,

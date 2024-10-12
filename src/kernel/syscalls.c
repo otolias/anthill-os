@@ -2,12 +2,12 @@
 
 #include <stddef.h>
 
-#include <drivers/uart.h>
 #include <kernel/errno.h>
 #include <kernel/mm.h>
 #include <kernel/mqueue.h>
 #include <kernel/task.h>
 #include <kernel/sys/types.h>
+#include <kernel/uart.h>
 
 void sys_exit(void) {
     task_exit();

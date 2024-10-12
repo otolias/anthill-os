@@ -1,6 +1,6 @@
 #include "uart.h"
 
-#include <drivers/uart.h>
+#include <kernel/uart.h>
 
 unsigned uart_read(unsigned char *data, unsigned n) {
     unsigned i = 0;

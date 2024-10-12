@@ -1,6 +1,5 @@
-#include "boot/entry.h"
-
-#include "boot/sysregs.h"
+#include "kernel/entry.h"
+#include "kernel/sysregs.h"
 
 .section ".text.boot"
 

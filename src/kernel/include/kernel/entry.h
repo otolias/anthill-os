@@ -1,5 +1,5 @@
-#ifndef _BOOT_ENTRY_H
-#define _BOOT_ENTRY_H
+#ifndef _KERNEL_ENTRY_H
+#define _KERNEL_ENTRY_H
 
 /* General and system register size, plus 0x20 that
  * gets added to the sp on svc */
@@ -39,4 +39,4 @@ void start_user();
 
 #endif /* __ASSEMBLER__ */
 
-#endif /* _BOOT_ENTRY_H_ */
+#endif /* _KERNEL_ENTRY_H_ */

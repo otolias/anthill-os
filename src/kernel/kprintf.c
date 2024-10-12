@@ -1,8 +1,8 @@
-#include <kernel/kprintf.h>
+#include "kernel/kprintf.h"
 
 #include <stdarg.h>
 
-#include <drivers/uart.h>
+#include <kernel/uart.h>
 
 #define KPRINTF_BUFFER_SIZE 512
 

@@ -1,10 +1,9 @@
-#include "drivers/irq.h"
+#include "kernel/irq.h"
 
 #include <stdint.h>
 
-#include "drivers/timer.h"
-
-#include "kernel/kprintf.h"
+#include <kernel/kprintf.h>
+#include <kernel/timer.h>
 
 const char *entry_error_messages[] = {
 	"SYNC_INVALID_EL1t",

@@ -1,5 +1,5 @@
-#ifndef _BOOT_SYSREGS_H
-#define _BOOT_SYSREGS_H
+#ifndef _KERNEL_SYSREGS_H
+#define _KERNEL_SYSREGS_H
 
 /* Set reserved bits to 1 */
 #define SCTLR_RES       (3 << 28) | (3 << 22) | (1 << 20) | (1 << 11)
@@ -37,4 +37,4 @@
 /* SVC Instruction */
 #define ESR_ELx_EC_SVC64  0x15
 
-#endif /* _BOOT_SYSREGS_H */
+#endif /* _KERNEL_SYSREGS_H */

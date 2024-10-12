@@ -1,7 +1,8 @@
 #include "pl011.h"
 
-#include <drivers/gpio.h>
 #include <stdint.h>
+
+#include <kernel/gpio.h>
 
 enum pl011_error pl011_init(void) {
     uint32_t reg;

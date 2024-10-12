@@ -1,4 +1,4 @@
-#include "drivers/uart.h"
+#include "kernel/uart.h"
 
 #include <stdint.h>
 

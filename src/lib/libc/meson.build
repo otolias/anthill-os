@@ -100,7 +100,7 @@ libc_includes = files([
 ])
 
 libc_inc_directories = include_directories(
-  ['include', '..' / '..' / 'include'],
+  ['include', '..' / '..' / 'kernel' / 'include'],
   is_system : true
 )
 

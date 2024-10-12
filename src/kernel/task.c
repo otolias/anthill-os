@@ -1,15 +1,15 @@
-#include <kernel/task.h>
+#include "kernel/task.h"
 
-#include <boot/entry.h>
-#include <drivers/irq.h>
 #include <kernel/cpu_context.h>
-#include <kernel/errno.h>
 #include <kernel/elf.h>
+#include <kernel/entry.h>
+#include <kernel/errno.h>
+#include <kernel/irq.h>
 #include <kernel/kprintf.h>
 #include <kernel/mm.h>
+#include <kernel/ramdisk.h>
 #include <kernel/string.h>
 #include <kernel/sys/types.h>
-#include <kernel/ramdisk.h>
 
 static struct task init_task = { .priority = 1 };
 struct task *current_task = &init_task;

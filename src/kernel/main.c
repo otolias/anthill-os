@@ -1,10 +1,10 @@
-#include <drivers/irq.h>
-#include <drivers/timer.h>
-#include <drivers/uart.h>
+#include <kernel/irq.h>
 #include <kernel/kprintf.h>
 #include <kernel/mm.h>
 #include <kernel/ramdisk.h>
 #include <kernel/task.h>
+#include <kernel/timer.h>
+#include <kernel/uart.h>
 
 void main(void) {
     mm_init();

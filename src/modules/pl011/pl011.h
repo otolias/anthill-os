@@ -1,7 +1,7 @@
 #ifndef _MOD_PL011
 #define _MOD_PL011
 
-#include <drivers/gpio.h>
+#include <kernel/gpio.h>
 
 #define DR    (volatile uint32_t *) (MMIO_BASE + 0x00201000)
 #define FR    (volatile uint32_t *) (MMIO_BASE + 0x00201018)

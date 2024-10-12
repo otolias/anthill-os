@@ -5,7 +5,7 @@ mod_uart_sources = [
 
 mod_uart = executable('mod_uart',
   sources : mod_uart_sources,
-  include_directories : include_directories('..' / '..' / 'include'),
+  include_directories : include_directories('..' / '..' / 'kernel' / 'include'),
   link_args : exec_link_args,
   dependencies : [ libc_dep, libvfs_dep ],
   pie : true,
