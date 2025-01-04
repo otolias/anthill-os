@@ -14,4 +14,6 @@ cpu        = 'aarch64'
 endian     = 'little'
 
 [built-in options]
-c_args = [ '-fPIC' ]
+c_args = [
+  '-mbranch-protection=standard',
+  '-fPIC' ]

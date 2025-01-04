@@ -1,9 +1,5 @@
 project('anthill_os', 'c',
   default_options : [
-    'c_args=-g3',
-    'optimization=0',
-    'c_std=c17',
-    'warning_level=2',
     'prefix=' + meson.project_build_root() / 'sysroot',
     'libdir=lib',
     'includedir=usr/include',
@@ -15,10 +11,13 @@ objcopy = find_program('objcopy')
 tar = find_program('tar')
 
 default_c_args = [
-  '-D_FORTIFY_SOURCE=1', '-ffunction-sections', '-fno-common',
-  '-fno-short-enums',
-  '-Wdouble-promotion', '-Wformat-security', '-Wmisleading-indentation',
-  '-Wnull-dereference', '-Wshadow', '-Wunused'
+  '-g3', '-Os', '-std=c17',
+  '-ffunction-sections', '-fno-common', '-fno-short-enums',
+  '-fstrict-flex-arrays=3', '-fPIC',
+  '-Wall', '-Wextra', '-Wformat', '-Wformat=2', '-Wconversion',
+  '-Wsign-conversion', '-Wimplicit-fallthrough', '-Wdouble-promotion',
+  '-Wformat-security', '-Wmisleading-indentation', '-Wnull-dereference',
+  '-Wshadow', '-Wunused', '-Wno-missing-braces',
 ]
 
 kernel_c_args = default_c_args + ['-ffreestanding']
