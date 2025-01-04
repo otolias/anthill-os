@@ -15,3 +15,12 @@ kernel_sources = files([
   'timer.c',
   'uart.c',
 ])
+
+kernel_inc_directories = include_directories('include')
+
+kernel_elf = executable('kernel8.elf',
+  sources : kernel_sources,
+  include_directories : kernel_inc_directories,
+  c_args : kernel_c_args,
+  link_args : kernel_link_args
+)

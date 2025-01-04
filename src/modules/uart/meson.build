@@ -8,7 +8,6 @@ mod_uart = executable('mod_uart',
   include_directories : include_directories('..' / '..' / 'kernel' / 'include'),
   link_args : exec_link_args,
   dependencies : [ libc_dep, libvfs_dep ],
-  pie : true,
   install : true,
   install_dir : 'modules',
 )

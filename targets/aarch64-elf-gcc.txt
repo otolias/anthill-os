@@ -1,3 +1,5 @@
+#/* vim: set filetype=meson : */#
+
 [binaries]
 c       = 'aarch64-elf-gcc'
 ld      = 'aarch64-elf-ld'
@@ -10,3 +12,6 @@ system     = 'none'
 cpu_family = 'aarch64'
 cpu        = 'aarch64'
 endian     = 'little'
+
+[built-in options]
+c_args = [ '-Wjump-misses-init', '-Wrestrict' ]

@@ -14,7 +14,7 @@ libvfs = static_library('vfs',
   sources : libvfs_sources,
   include_directories : libvfs_inc_directories,
   dependencies : [ libc_dep ],
-  pic: true,
+  link_args : lib_link_args,
   install : true,
 )
 
