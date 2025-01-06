@@ -5,16 +5,25 @@ A distributed operating system for the aarch64 architecture.
 
 ## Prerequisites
 
-* A [GCC Cross compiler](https://wiki.osdev.org/GCC_Cross-Compiler) targeted for aarch64-elf.
+* A cross compiler. Either:
+    - gcc [cross compiler for aarch64-elf](https://wiki.osdev.org/GCC_Cross-Compiler).
+    - clang
 * [Meson](https://github.com/mesonbuild/meson)
 * [Ninja](https://github.com/ninja-build/ninja)
 * [QEMU](https://github.com/qemu/qemu) (currently works only up to version 8.2.1)
 * GDB for debugging (optional)
 
-## Build Instructions
+## Building
+
+Using gcc:
 
 ```
-meson setup --cross-file aarch64-elf-txt build
+meson setup --cross-file cross/aarch64-elf.ini --cross-file cross/gcc.ini build
+meson install -C build
+```
+Using clang:
+```
+meson setup --cross-file cross/aarch64-elf.ini --cross-file cross/clang.ini build
 meson install -C build
 ```
 

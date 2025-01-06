@@ -45,7 +45,7 @@ else
 
     aarch64-elf-gdb \
         --quiet \
-        --symbols="$DEST_DIR/kernel8.elf" \
+        --symbols="$DEST_DIR/src/kernel/kernel8.elf" \
         -ex "target remote localhost:1234"
 
 fi

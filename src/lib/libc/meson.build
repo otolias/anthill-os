@@ -1,5 +1,4 @@
 libc_sources = files([
-  'crt' / 'crt0.S',
   'ctype' / 'isdigit.c',
   'ctype' / 'isspace.c',
   'dirent' / 'closedir.c',
@@ -112,22 +111,21 @@ ld_sources = [
 ld = shared_library('ld',
   sources : ld_sources,
   include_directories : libc_inc_directories,
-  link_args : ['-nostdlib'],
+  link_args : ['-nostdlib', '-Wl,-pie'],
   install : true,
   name_prefix : '',
 )
 
-crt0 = custom_target('crt0',
-  input : [ 'crt' / 'crt0.S' ],
-  output : [ 'crt0.o' ],
-  command : [cc, '-c', '@INPUT@', '-o', '@BUILD_ROOT@' / 'crt0.o'],
-  build_by_default : true,
+crt = static_library('crt',
+  sources : [ 'crt' / 'crt0.S' ],
+  link_args : [ '-nostdlib' ],
 )
+crt0 = crt.extract_objects('crt' / 'crt0.S')
 
 libc = static_library('c',
   sources : libc_sources,
   include_directories : libc_inc_directories,
-  link_depends : [ crt0 ],
+  objects: crt0,
   c_args : ['-nostdlib'],
   link_args : lib_link_args,
   install : true,

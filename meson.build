@@ -1,5 +1,8 @@
 project('anthill_os', 'c',
   default_options : [
+    'optimization=2',
+    'c_std=c17',
+    'warning_level=2',
     'prefix=' + meson.project_build_root() / 'sysroot',
     'libdir=lib',
     'includedir=usr/include',
@@ -10,17 +13,14 @@ cc = meson.get_compiler('c').cmd_array()
 objcopy = find_program('objcopy')
 tar = find_program('tar')
 
-default_c_args = [
-  '-g3', '-Os', '-std=c17',
-  '-ffunction-sections', '-fno-common', '-fno-short-enums',
+add_project_arguments(
+  '-g3',
+  '-fno-common', '-fno-short-enums',
   '-fstrict-flex-arrays=3', '-fPIC',
-  '-Wall', '-Wextra', '-Wformat', '-Wformat=2', '-Wconversion',
-  '-Wsign-conversion', '-Wimplicit-fallthrough', '-Wdouble-promotion',
-  '-Wformat-security', '-Wmisleading-indentation', '-Wnull-dereference',
-  '-Wshadow', '-Wunused', '-Wno-missing-braces',
-]
+  language: 'c',
+)
 
-kernel_c_args = default_c_args + ['-ffreestanding']
+kernel_c_args = ['-ffreestanding']
 kernel_link_args = [
   '-nostdlib',
   '-T', meson.project_source_root() / 'linker.ld'
@@ -28,7 +28,8 @@ kernel_link_args = [
 
 lib_link_args = [ '-Wl,-pic' ]
 
-exec_link_args = [ '-nodefaultlibs', '-Wl,-pie' ]
+exec_link_args = [ '-nodefaultlibs', '-Wl,-pie' ] + \
+  meson.get_external_property('exec_link_args')
 
 subdir('src' / 'kernel')
 subdir('src' / 'lib')
