@@ -7,7 +7,6 @@
 #include <kernel/mqueue.h>
 #include <kernel/task.h>
 #include <kernel/sys/types.h>
-#include <kernel/uart.h>
 
 void sys_exit(void) {
     task_exit();

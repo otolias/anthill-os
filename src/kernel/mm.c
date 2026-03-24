@@ -6,8 +6,6 @@
 #define PAGE_CONS   1
 #define PAGE_END    2
 
-extern volatile char kernel_end;
-
 static char memory_map[PAGING_PAGES] = {0,};
 
 void mm_free_pages(void *page) {
@@ -50,8 +48,4 @@ void* mm_get_pages(size_t size) {
     }
 
     return NULL;
-}
-
-void mm_init(void) {
-    mm_get_pages((size_t) &kernel_end);
 }

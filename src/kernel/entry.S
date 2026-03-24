@@ -13,7 +13,7 @@ kernel_entry \el
 mov     x0, #\type
 mrs     x1, esr_el1
 mrs     x2, elr_el1
-bl      show_invalid_entry_message
+bl      irq_invalid_message
 b       hang
 .endm
 
@@ -121,7 +121,7 @@ sync_invalid_el1h:
 
 el1_irq:
     kernel_entry 1
-    bl  handle_irq
+    bl  irq_handle
     kernel_exit 1
 
 fiq_invalid_el1h:
@@ -140,7 +140,7 @@ el0_sync:
 
 el0_irq:
     kernel_entry 0
-    bl  handle_irq
+    bl  irq_handle
     kernel_exit 0
 
 fiq_invalid_el0_64:
@@ -164,7 +164,7 @@ error_invalid_el0_32:
 el0_svc:
     adr     x25, system_call_table
     uxtw    x26, w8
-    bl      enable_irq
+    bl      irq_enable
     cmp     x26, #TOTAL_SYSCALLS
     b.hs    syscall_error
 
@@ -172,7 +172,7 @@ el0_svc:
     ldr     x16, [x25, x26, lsl#3]
     // Execute system call
     blr     x16
-    bl      disable_irq
+    bl      irq_disable
     str     x0, [sp]
     kernel_exit 0
 
@@ -181,7 +181,7 @@ syscall_error:
 
 .global start_user
 start_user:
-    bl disable_irq
+    bl irq_disable
     msr     elr_el1, x19
     msr     sp_el0, x20
     eret

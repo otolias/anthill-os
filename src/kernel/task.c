@@ -1,13 +1,13 @@
 #include "kernel/task.h"
 
+#include <kernel/arch/irq.h>
 #include <kernel/cpu_context.h>
 #include <kernel/elf.h>
 #include <kernel/entry.h>
 #include <kernel/errno.h>
-#include <kernel/irq.h>
-#include <kernel/kprintf.h>
+#include <kernel/io.h>
 #include <kernel/mm.h>
-#include <kernel/ramdisk.h>
+#include <kernel/rd.h>
 #include <kernel/string.h>
 #include <kernel/sys/types.h>
 
@@ -57,12 +57,12 @@ ssize_t task_exec(const void *file, char *const args[restrict]) {
 
     /* Load linker if not already loaded */
     if (!linker_page) {
-        const Elf64_Ehdr *ehdr = (Elf64_Ehdr *) ramdisk_lookup("./lib/ld.so");
+        const Elf64_Ehdr *ehdr = (Elf64_Ehdr *) rd_lookup("./lib/ld.so");
 
         /* Get pages */
         linker_page = mm_get_pages(elf_get_image_size(ehdr));
         if (!linker_page) {
-            kprintf("Error loading linker\n");
+            io_fmt("Error loading linker\n");
             return -EINVAL;
         };
 
@@ -215,9 +215,9 @@ void task_tick(void) {
     if (current_task->counter > 0 || current_task->preempt_count > 0)
         return;
 
-    enable_irq();
+    irq_enable();
     task_schedule();
-    disable_irq();
+    irq_disable();
 }
 
 void task_unblock(pid_t pid) {

@@ -32,9 +32,9 @@ exec_link_args = [ '-nodefaultlibs', '-Wl,-pie' ] + \
   meson.get_external_property('exec_link_args')
 
 subdir('src' / 'kernel')
-subdir('src' / 'lib')
-subdir('src' / 'bin')
-subdir('src' / 'modules')
+# subdir('src' / 'lib')
+# subdir('src' / 'bin')
+# subdir('src' / 'modules')
 
 kernel_bin = custom_target('kernel8.bin',
   input : [ kernel_elf ],

@@ -1,12 +1,15 @@
 SECTIONS {
     . = 0x80000;
-    .text : { KEEP(*(.text.boot)) *(.text .text.*) }
+    .text : { *(.text.boot) *(.text .text.*) }
+    . = ALIGN(0x1000);
+    _data_start = .;
     .rodata : { *(.rodata .rodata.*) }
-    . = ALIGN(0x8);
-    bss_start = .;
-    .bss : { *(.bss*) }
-    bss_end = .;
+    .data : { *(.data .data.*) }
+    _bss_start = .;
+    .bss : { *(.bss .bss.*) }
+    _bss_end = .;
+    . = ALIGN(0x1000);
+    _data_end = .;
 }
-kernel_end = .;
 
-bss_size = (bss_end - bss_start)>>3;
+_bss_size = (_bss_end - _bss_start)>>3;
