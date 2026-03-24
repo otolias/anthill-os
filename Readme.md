@@ -1,7 +1,10 @@
 Anthill OS
 ----------
 
-A distributed operating system for the aarch64 architecture.
+A distributed operating system (currently) for the Raspberry Pi 3.
+
+Developer documentation is provided via Readme files in each project
+subdirectory. To start browsing, go to the [src directory](src/).
 
 ## Prerequisites
 
@@ -10,7 +13,7 @@ A distributed operating system for the aarch64 architecture.
     - clang
 * [Meson](https://github.com/mesonbuild/meson)
 * [Ninja](https://github.com/ninja-build/ninja)
-* [QEMU](https://github.com/qemu/qemu) (currently works only up to version 8.2.1)
+* [QEMU](https://github.com/qemu/qemu)
 * GDB for debugging (optional)
 
 ## Building
@@ -21,7 +24,9 @@ Using gcc:
 meson setup --cross-file cross/aarch64-elf.ini --cross-file cross/gcc.ini build
 meson install -C build
 ```
+
 Using clang:
+
 ```
 meson setup --cross-file cross/aarch64-elf.ini --cross-file cross/clang.ini build
 meson install -C build
