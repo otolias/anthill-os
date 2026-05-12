@@ -9,7 +9,7 @@
 #include <kernel/sys/types.h>
 
 void sys_exit(void) {
-    task_exit();
+    // task_exit();
 }
 
 ssize_t sys_mmap(__attribute__((unused)) void *addr, size_t len,
@@ -48,14 +48,14 @@ ssize_t sys_mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len, unsigned *msg
 }
 
 pid_t sys_getpid(void) {
-    return task_current_pid();
+    return task_current()->pid;
 }
 
 int sys_spawn(pid_t *pid, void *file, char *const argv[restrict]) {
-    ssize_t res = task_exec(file, argv);
-    *pid = ((struct task *) res)->pid;
-    task_current_block();
-    return res;
+    // ssize_t res = task_exec(file, argv);
+    // *pid = ((struct task *) res)->pid;
+    // task_block(task_current()->pid);
+    // return res;
 }
 
 const void *system_call_table[] = {

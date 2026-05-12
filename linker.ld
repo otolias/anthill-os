@@ -1,15 +1,15 @@
 SECTIONS {
-    . = 0x80000;
-    .text : { *(.text.boot) *(.text .text.*) }
+    . = 0xffff000000080000;
+    .text : AT(0x80000) { *(.text.boot) *(.text .text.*) }
     . = ALIGN(0x1000);
-    _data_start = .;
     .rodata : { *(.rodata .rodata.*) }
     .data : { *(.data .data.*) }
-    _bss_start = .;
     .bss : { *(.bss .bss.*) }
-    _bss_end = .;
     . = ALIGN(0x1000);
     _data_end = .;
 }
 
-_bss_size = (_bss_end - _bss_start)>>3;
+_data_start = LOADADDR(.rodata);
+_bss_start = LOADADDR(.bss);
+_bss_end = _bss_start + SIZEOF(.bss);
+_data_end = _bss_end + 0x1000 - 1 & ~(0x1000 - 1);

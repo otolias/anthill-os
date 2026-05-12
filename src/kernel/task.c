@@ -1,180 +1,128 @@
 #include "kernel/task.h"
 
+#include <kernel/arch/cpu.h>
 #include <kernel/arch/irq.h>
-#include <kernel/cpu_context.h>
+#include <kernel/arch/mem.h>
 #include <kernel/elf.h>
-#include <kernel/entry.h>
-#include <kernel/errno.h>
 #include <kernel/io.h>
-#include <kernel/mm.h>
-#include <kernel/rd.h>
 #include <kernel/string.h>
 #include <kernel/sys/types.h>
+#include <stddef.h>
+#include <stdint.h>
 
-static struct task init_task = { .priority = 1 };
-struct task *current_task = &init_task;
-struct task *tasks[TOTAL_TASKS] = {&init_task, };
-long task_count = 0;
+#define TASK_TOTAL 64
 
-Elf64_Ehdr *linker_page;
+static struct task init_task = {
+    .priority = 1,
+    .kernel_stack = (void *) MEM_VA_KERNEL_STACK,
+};
+static struct task *current_task = &init_task;
+static struct task *tasks[TASK_TOTAL] = { &init_task, };
+static pid_t task_count = 1;
 
-/* Load _ehdr_ in _address_ */
-static void _load(const Elf64_Ehdr *ehdr, const void *address) {
-    const Elf64_Phdr *phdr = (Elf64_Phdr *) ELF_OFF(ehdr, ehdr->e_phoff);
-    size_t phdr_count;
-
-    for (phdr_count = ehdr->e_phnum; phdr_count--; phdr++) {
-        if (phdr->p_type != PT_LOAD && phdr->p_type != PT_DYNAMIC)
-            continue;
-
-        memcpy((void *) ELF_OFF(address, phdr->p_vaddr),
-               (void *) ELF_OFF(ehdr, phdr->p_offset),
-               phdr->p_filesz);
-
-        /* Zero bss segment */
-        const unsigned long size_diff = phdr->p_memsz - phdr->p_filesz;
-        if (size_diff)
-            memset(
-                (void *) (ELF_OFF(address, phdr->p_vaddr) + phdr->p_filesz),
-                0,
-                size_diff
-            );
+void task_add(struct task *task) {
+    for (size_t i = 0; i < TASK_TOTAL; i++) {
+        if (!tasks[i]) {
+            tasks[i] = task;
+            break;
+        }
     }
 }
 
-void task_current_block(void) {
-    current_task->state = TASK_BLOCKED;
-    current_task->preempt_count--;
+void task_block(pid_t pid) {
+    for (size_t i = 0; i < TASK_TOTAL; i++) {
+        if (tasks[i]->pid == pid) {
+            tasks[i]->state = TASK_BLOCKED;
+            tasks[i]->preempt_count--;
+            break;
+        }
+    }
+
     task_schedule();
 }
 
-pid_t task_current_pid(void) {
-    return current_task->pid;
+void task_unblock(pid_t pid) {
+    for (size_t i = 0; i < TASK_TOTAL; i++) {
+        if (tasks[i]->pid == pid) {
+            tasks[i]->state = TASK_RUNNING;
+            break;
+        }
+    }
 }
 
-ssize_t task_exec(const void *file, char *const args[restrict]) {
+struct task* task_current(void) {
+    return current_task;
+}
+
+struct task_r_pid task_fork(void) {
     current_task->preempt_count++;
 
-    /* Load linker if not already loaded */
-    if (!linker_page) {
-        const Elf64_Ehdr *ehdr = (Elf64_Ehdr *) rd_lookup("./lib/ld.so");
+    struct mem_r_addr task_r = mem_get_kernel_page(MEM_RW);
+    if (task_r.err != MEM_OK)
+        return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
 
-        /* Get pages */
-        linker_page = mm_get_pages(elf_get_image_size(ehdr));
-        if (!linker_page) {
-            io_fmt("Error loading linker\n");
-            return -EINVAL;
-        };
-
-        _load(ehdr, linker_page);
+    struct mem_r_addr tran_table_r = mem_get_kernel_page(MEM_RW);
+    if (tran_table_r.err != MEM_OK) {
+        // TODO: Free task_r
+        return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
     }
 
-    const Elf64_Ehdr *ehdr = (Elf64_Ehdr *) file;
-    if (elf_validate(ehdr) != 0)
-        return -ENOEXEC;
-
-    const unsigned long elf_memory_size = elf_get_image_size(ehdr);
-    const unsigned long process_size = elf_memory_size + sizeof(struct task);
-
-    void *process_addr = mm_get_pages(process_size);
-    if (process_addr == 0) {
-        return -ENOMEM;
+    struct mem_r_addr kernel_stack_r = mem_get_kernel_page(MEM_RW);
+    if (kernel_stack_r.err != MEM_OK) {
+        // TODO: Free task_r
+        // TODO: Free tran_table_r
+        return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
     }
 
-    _load(ehdr, process_addr);
+    // Copy kernel stack
+    void *kernel_stack = kernel_stack_r.addr;
+    memcpy(kernel_stack, current_task->kernel_stack, PAGESIZE);
 
-    void *user_stack = mm_get_pages(0);
-    if (user_stack == NULL)
-        { mm_free_pages(process_addr); return -ENOMEM; }
+    struct task *child = task_r.addr;
 
-    void *kernel_stack = mm_get_pages(0);
-    if (kernel_stack == NULL)
-        { mm_free_pages(process_addr); mm_free_pages(user_stack); return -ENOMEM; }
+    child->pid = ++task_count;
+    child->address = current_task->address;
+    child->user_stack = current_task->user_stack;
+    child->kernel_stack = kernel_stack;
+    child->parent = current_task;
+    child->tran_table = MEM_VIRT_TO_PHYS(tran_table_r.addr);
+    child->state = current_task->state;
+    child->preempt_count = current_task->preempt_count;
+    child->priority = current_task->priority;
+    child->counter = child->priority;
 
-    char *sp = (char *) user_stack + PAGE_SIZE;
+    task_add(child);
 
-    if (args != NULL) {
-        /* Calculate argument size */
-        int argc = 0;
-        size_t arg_size = 0;
-        while (1) {
-            if (!args[argc]) break;
-            arg_size += strlen(args[argc]) + 1;
-            argc++;
-        }
-
-        /* Align arg_size */
-        if (arg_size % 8)
-            arg_size += (8 - arg_size % 8);
-
-        /* Add arguments to stack */
-        sp -= arg_size;
-        char *arg_pos = sp;
-
-        sp -= sizeof(char *) * (argc + 1);
-        char **argv = (char **) sp;
-        sp -= sizeof(size_t);
-        *((size_t *) sp) = (size_t) argc;
-
-        for (int i = 0; i < argc; i++) {
-            size_t len = strlen(args[i]) + 1;
-            memcpy(arg_pos, args[i], len);
-            argv[i] = arg_pos;
-            arg_pos += len;
-        }
-
-        argv[argc] = NULL;
+    // Copy top level table
+    if (current_task->tran_table) {
+        memcpy(
+            MEM_PHYS_TO_VIRT(child->tran_table),
+            MEM_PHYS_TO_VIRT(current_task->tran_table),
+            PAGESIZE
+              );
     }
 
-    /* Add process pages to stack */
-    sp -= sizeof(size_t);
-    *((size_t *) sp) = (size_t) process_addr;
-    sp -= sizeof(size_t);
-    *((size_t *) sp) = (size_t) file;
+    // Store current context
+    cpu_switch(current_task, current_task);
 
-    /* Create task struct */
-    struct task *new_task = (struct task*) ELF_OFF(process_addr, elf_memory_size);
-
-    new_task->pid = ++task_count;
-    new_task->process_address = process_addr;
-    new_task->user_stack = user_stack;
-    new_task->kernel_stack = kernel_stack;
-    new_task->state = TASK_RUNNING;
-    new_task->priority = current_task->priority;
-    new_task->counter = new_task->priority;
-    new_task->preempt_count = 1;
-    new_task->parent = current_task;
-
-    new_task->cpu_context.x19 = (size_t) ELF_OFF(linker_page, linker_page->e_entry);
-    new_task->cpu_context.x20 = (size_t) sp;
-    new_task->cpu_context.pc = (size_t) start_user;
-    new_task->cpu_context.ksp = (size_t) kernel_stack + PAGE_SIZE;
-
-    /* Add task */
-    for (size_t i = 0; i < TOTAL_TASKS; i++) {
-        if (!tasks[i]) {
-            tasks[i] = new_task;
-            break;
-        }
+    // If child, return
+    if (current_task == child) {
+        current_task->preempt_count--;
+        return (struct task_r_pid) { .pid = 0, .err = TASK_OK };
     }
+
+    // If parent, copy stored context to new task
+    memcpy(&child->context, &current_task->context, sizeof(current_task->context));
+    // Setup child's kernel stack
+    const uintptr_t ksp_offset = current_task->context.ksp - (uintptr_t) current_task->kernel_stack;
+    child->context.ksp = (uintptr_t) child->kernel_stack + ksp_offset;
+
+    // Mark task page tables as read only
+    if (current_task->tran_table)
+        mem_mark_copied(MEM_PHYS_TO_VIRT(current_task->tran_table));
 
     current_task->preempt_count--;
-    return (ssize_t) new_task;
-}
-
-void task_exit(void) {
-    for (size_t i = 0; i < TOTAL_TASKS; i++) {
-        if (tasks[i] == current_task) {
-            tasks[i] = NULL;
-            break;
-        }
-    }
-
-    task_unblock(current_task->parent->pid);
-    mm_free_pages((void *) current_task->process_address);
-    mm_free_pages((void *) current_task->user_stack);
-    mm_free_pages((void *) current_task->kernel_stack);
-    cpu_context_switch(current_task, &init_task);
+    return (struct task_r_pid) { .pid = child->pid, .err = TASK_OK };
 }
 
 void task_schedule(void) {
@@ -185,9 +133,10 @@ void task_schedule(void) {
     current_task->counter = 0;
     current_task->preempt_count++;
 
-    for (size_t i = 0; i < TOTAL_TASKS; i++) {
+    for (size_t i = 0; i < TASK_TOTAL; i++) {
         t = tasks[i];
-        if (!t) continue;
+        if (!t)
+            continue;
 
         t->counter += t->priority;
 
@@ -204,7 +153,7 @@ void task_schedule(void) {
     if (current_task != t) {
         struct task *previous_task = current_task;
         current_task = t;
-        cpu_context_switch(previous_task, current_task);
+        cpu_switch(previous_task, current_task);
     }
 
     current_task->preempt_count--;
@@ -218,13 +167,4 @@ void task_tick(void) {
     irq_enable();
     task_schedule();
     irq_disable();
-}
-
-void task_unblock(pid_t pid) {
-    for (size_t i = 0; i < TOTAL_TASKS; i++) {
-        if (tasks[i]->pid == pid) {
-            tasks[i]->state = TASK_RUNNING;
-            break;
-        }
-    }
 }

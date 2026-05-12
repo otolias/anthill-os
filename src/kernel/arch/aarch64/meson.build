@@ -1,8 +1,9 @@
 kernel_sources += files([
-  'cpu.c',
+  'cpu.S',
   'io.c',
   'irq.c',
   'irq.S',
+  'mem_map.c',
   'mem.c',
   'mmu.c',
   'mmu.S',

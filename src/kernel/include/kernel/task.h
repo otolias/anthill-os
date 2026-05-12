@@ -1,10 +1,11 @@
 #ifndef _KERNEL_TASK_H
 #define _KERNEL_TASK_H
 
-#define TOTAL_TASKS 64
+#include <stddef.h>
 
-#include <kernel/cpu_context.h>
+#include <kernel/arch/cpu.h>
 #include <kernel/sys/types.h>
+#include <stdint.h>
 
 /*
 * Task states
@@ -18,40 +19,59 @@ enum task_state {
 * Task descriptor
 */
 struct task {
-    struct cpu_context cpu_context;     /* Stored CPU Context. DO NOT change position */
-    pid_t              pid;             /* Process ID */
-    void*              process_address; /* Page start address */
-    void*              user_stack;      /* User stack address */
-    void*              kernel_stack;    /* Kernel stack address */
-    struct task*       parent;          /* Parent task */
-    enum task_state    state;           /* Current task state */
-    int                preempt_count;   /* If non-zero, task must not be interrupted */
-    long               priority;        /* Execution clock ticks given */
-    long               counter;         /* Execution clock ticks left */
+    struct cpu_context context; /* Stored CPU Context. DO NOT change position */
+    uintptr_t* tran_table;      /* Top level translation table. DO NOT change position */
+    pid_t pid;                  /* Process ID */
+    void* address;              /* Page start address */
+    void* user_stack;           /* Virtual address of user stack */
+    void* kernel_stack;         /* Virtual address of kernel stack */
+    struct task* parent;        /* Parent task */
+    enum task_state state;      /* Current task state */
+    int preempt_count;          /* If non-zero, task must not be interrupted */
+    long priority;              /* Execution clock ticks given */
+    long counter;               /* Execution clock ticks left */
+};
+
+enum task_err {
+    TASK_OK,
+    TASK_ERR_INVALID, // Invalid ELF file
+    TASK_ERR_MEM,     // Out of memory
+};
+
+struct task_r_ptr {
+    struct task *ptr;
+    enum task_err err;
+};
+
+struct task_r_pid {
+    pid_t pid;
+    enum task_err err;
 };
 
 /*
-* Block current task
+* Add _task_ to currently executing tasks
 */
-void task_current_block(void);
+void task_add(struct task *task);
 
 /*
-* Returns the process ID of the current task
+* Block task with _pid_
 */
-pid_t task_current_pid(void);
+void task_block(pid_t pid);
 
 /*
-* Load _file_ dependencies and execute with _argv_ arguments.
-*
-* On success, returns a pointer to the task.
-* On failure, returns -errno.
+* Unblock task with _pid_
 */
-ssize_t task_exec(const void *file, char *const args[restrict]);
+void task_unblock(pid_t pid);
 
 /*
-* Terminate process
+* Get current running task
 */
-void task_exit(void);
+struct task* task_current(void);
+
+/*
+* Fork currently executing task
+*/
+struct task_r_pid task_fork(void);
 
 /*
 * Initiate Round Robin scheduler
@@ -62,10 +82,5 @@ void task_schedule(void);
 * De-increment task counter and call scheduler
 */
 void task_tick(void);
-
-/*
-* Unblock task with _pid_
-*/
-void task_unblock(pid_t pid);
 
 #endif /* _KERNEL_TASK_H */

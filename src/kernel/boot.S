@@ -34,7 +34,7 @@ el1:
 
 stack:
     // Set stack just before _start
-    ldr x0, =_start
+    adr x0, _start
     mov sp, x0
 
     // Clear bss
@@ -47,8 +47,19 @@ bss:
     b.gt bss
 
 master:
+    // Initialise MMU
+    bl mmu_setup
+    // Initialise timer
+    bl timer_init
+    // Initialise uart
+    bl uart_init
+
     // Jump to kernel
-    bl main
+    ldr x0, =_start
+    mov sp, x0
+
+    ldr x0, =main
+    blr x0
 
     // If it returns, hang
 hang:

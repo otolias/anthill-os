@@ -1,12 +1,14 @@
 #ifndef _KERNEL_ARCH_AARCH64_MMU_H
 #define _KERNEL_ARCH_AARCH64_MMU_H
 
+/* === System registers === */
+
 // 48-bit maximum output address size
 #define TCR_IPS   (5 << 32)
 // 4 KiB granule size
 #define TCR_TGx   (2 << 30 | 0 << 14)
-// 32 bits for kernel address space
-#define TCR_T1SZ  (32 << 16)
+// 48 bits for kernel address space
+#define TCR_T1SZ  (16 << 16)
 // 48 bits for user address space
 #define TCR_T0SZ  (16 << 0)
 
@@ -39,8 +41,50 @@
 
 #define SCTLR_VALUE (SCTLR_RES | SCTLR_EE | SCTLR_I | SCTLR_SA | SCTLR_C | SCTLR_A | SCTLR_M)
 
+/* === Translation table entry attributes === */
+
+// Valid Descriptor
+#define ATT_VALID_OFF (0)
+#define ATT_VALID     (1 << ATT_VALID_OFF)
+// Descriptor type
+#define ATT_BLOCK_OFF (1)
+#define ATT_BLOCK     (0 << ATT_BLOCK_OFF)
+#define ATT_PAGE_OFF  (1)
+#define ATT_PAGE      (1 << ATT_PAGE_OFF)
+
+// Device Memory
+#define ATT_DEVICE (MAIR_DEVICE_IDX << 2)
+// Normal Memory
+#define ATT_NORMAL (MAIR_NORMAL_IDX << 2)
+
+// No access in EL0 and read/write in EL1
+#define ATT_AP_NA_RW (0 << 6)
+// Read/write in both EL0 and EL1
+#define ATT_AP_RW_RW (1 << 6)
+// No access in EL0 and read-only in EL1
+#define ATT_AP_NA_RO (2 << 6)
+// Read-only in both EL0 and EL1
+#define ATT_AP_RO_RO (3 << 6)
+
+// Set or unset page access flag
+#define ATT_AF_SET   (1 << 10)
+#define ATT_AF_UNSET (0 << 10)
+
+// Whether page is executable in EL1
+#define ATT_PXN_EXEC   (0L << 53)
+#define ATT_PXN_NOEXEC (1L << 53)
+// Whether page is executable in EL0
+#define ATT_UXN_EXEC   (0L << 54)
+#define ATT_UXN_NOEXEC (1L << 54)
+
+// Reference counter shift position
+#define ATT_REF_OFF  55 // - 59
+// Reference counter limit
+#define ATT_REF_LIMIT 0xf
+
 #ifndef __ASSEMBLER__
 
+#include <stddef.h>
 #include <stdint.h>
 
 /*
@@ -52,26 +96,23 @@
 void mmu_init(uintptr_t *kernel_table, uintptr_t *user_table);
 
 /*
-* Map _vaddr_ to _paddr_.
+* Map virtual address _vaddr_ to physical address _paddr_ with access attributes
+* specified by _attr_.
 *
 * On success, returns _vaddr_.
 * On failure, returns NULL.
 */
-uintptr_t mmu_map(uintptr_t vaddr, uintptr_t paddr, int flags);
+[[nodiscard]] void* mmu_map(uintptr_t vaddr, uintptr_t paddr, uint64_t attr);
 
-/**
-* Setup kernel translation tables
-*
-* Returns the address of the top level translation table
+/*
+* Set read-only permissions table entry _entry_ and increment reference counter.
 */
-uintptr_t* mmu_setup_kernel();
+void mmu_mark_copied(uintptr_t *entry);
 
-/**
-* Setup user translation tables
-*
-* Returns the address of the top level translation table
+/*
+* Setup translation tables and initialise the MMU.
 */
-uintptr_t* mmu_setup_user();
+void mmu_setup(void);
 
 #endif /* __ASSEMBLER__ */
 

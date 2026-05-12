@@ -2,10 +2,6 @@
 
 #include "uart.h"
 
-void io_init() {
-    uart_init();
-}
-
 int io_write(const unsigned char *data, int n) {
     int i = 0;
 

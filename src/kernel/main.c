@@ -1,20 +1,22 @@
-#include <kernel/arch/cpu.h>
 #include <kernel/arch/io.h>
 #include <kernel/arch/irq.h>
-#include <kernel/arch/mem.h>
 #include <kernel/io.h>
-#include <kernel/mm.h>
-#include <kernel/rd.h>
 #include <kernel/task.h>
 
-void main(void) {
-    mem_init();
-    cpu_init();
-    io_init();
+#include <stdint.h>
 
+void main(void) {
     irq_enable();
 
     io_fmt("Kernel booted successfully...\n");
 
-    while (1) {}
+    struct task_r_pid forked_r = task_fork();
+    if (forked_r.pid != 0) {
+        io_fmt("Hello from parent\n");
+    } else {
+        io_fmt("Hello from child\n");
+    }
+
+    while (1)
+        task_schedule();
 }

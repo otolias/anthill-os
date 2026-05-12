@@ -233,7 +233,7 @@ int mqueue_open(const char *name, int oflag, __attribute__((unused)) mode_t mode
     if (!mqueue || !mqueue->open)
         return -ENOENT;
 
-    if(!_subscribe(mqueue, task_current_pid(), oflag))
+    if(!_subscribe(mqueue, task_current()->pid, oflag))
         return -EACCES;
 
     return mqueue->id;
@@ -245,7 +245,7 @@ int mqueue_close(mqd_t mqdes) {
     if (!mqueue)
         return -EBADF;
 
-    _unsubscribe(mqueue, task_current_pid());
+    _unsubscribe(mqueue, task_current()->pid);
 
     if (!mqueue->open) {
         /* Check if this is the last pending connection */
@@ -277,7 +277,7 @@ int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
     if ((long) msg_len > mqueue->attr.mq_msgsize)
         return -EMSGSIZE;
 
-    struct mq_task *mq_task = _find_subscriber(mqueue, task_current_pid());
+    struct mq_task *mq_task = _find_subscriber(mqueue, task_current()->pid);
 
     if (!mq_task || mq_task->flags & O_RDONLY)
         return -EACCES;
@@ -291,7 +291,7 @@ int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
         }
 
         mq_task->flags |= BLCK_SEND;
-        task_current_block();
+        task_block(task_current()->pid);
     }
 
     return 0;
@@ -304,7 +304,7 @@ ssize_t mqueue_receive(mqd_t id, char *msg_ptr, size_t msg_len,
     if (!mqueue)
         return -EBADF;
 
-    struct mq_task *mq_task = _find_subscriber(mqueue, task_current_pid());
+    struct mq_task *mq_task = _find_subscriber(mqueue, task_current()->pid);
 
     if (!mq_task || mq_task->flags & O_WRONLY)
         return -EACCES;
@@ -321,7 +321,7 @@ ssize_t mqueue_receive(mqd_t id, char *msg_ptr, size_t msg_len,
         }
 
         mq_task->flags |= BLCK_RECV;
-        task_current_block();
+        task_block(task_current()->pid);
     }
 
     return result;
