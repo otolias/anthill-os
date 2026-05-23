@@ -7,26 +7,27 @@
 #define MEM_LOW  0x80000
 #define MEM_HIGH 0x3e000000
 
-#define MEM_RO (1)
-#define MEM_RW (MEM_RO | 1 << 1)
-#define MEM_EX (MEM_RO | 1 << 2)
-
 #define MEM_VA_KERNEL_START 0xffff000000000000
-#define MEM_VA_KERNEL_STACK MEM_VA_KERNEL_START + MEM_LOW - PAGESIZE
+#define MEM_VA_KERNEL_STACK (MEM_VA_KERNEL_START + MEM_LOW - PAGESIZE)
 
-#define MEM_VIRT_TO_PHYS(x) ((void *) (x)) - MEM_VA_KERNEL_START
-#define MEM_PHYS_TO_VIRT(x) ((void *) (x)) + MEM_VA_KERNEL_START
+#define MEM_VIRT_TO_PHYS(x) ((void *) (((uintptr_t) (x)) - MEM_VA_KERNEL_START))
+#define MEM_PHYS_TO_VIRT(x) ((void *) (((uintptr_t) (x)) + MEM_VA_KERNEL_START))
 
-#define MEM_RD   MEM_VA_KERNEL_START + 0x3e000000
-#define MEM_MMIO MEM_VA_KERNEL_START + 0x3f000000
+#define MEM_RD   (MEM_VA_KERNEL_START + 0x3e000000)
+#define MEM_MMIO (MEM_VA_KERNEL_START + 0x3f000000)
 
 #define PAGESIZE 0x1000
+
+enum mem_flags {
+    MEM_RO = 1, /* Read only permissions */
+    MEM_RW = 3, /* Read/write permissions */
+    MEM_EX = 5, /* Read and execute permissions */
+};
 
 enum mem_error {
     MEM_OK,
     MEM_ERR_OOM, /* Out of memory */
-    MEM_ERR_INV, /* Invalid permission flags */
-    MEM_ERR_UNK, /* Unknown/unimplemented data abort */
+    MEM_ERR_FLG, /* Invalid permission flags */
 };
 
 struct mem_r_addr {
@@ -35,11 +36,12 @@ struct mem_r_addr {
 };
 
 /*
-* Allocate and return kernel page with permissions specified by _flags_.
+* Allocate kernel page with permissions specified by _flags_.
 *
-* Returns struct mem_r_page:
-*   On success, _addr_ is the virtual address of the page and _err_ is MEM_OK.
-*   On failure, _addr_ is NULL and _err_ is set to indicate the error.
+* Returns struct mem_r_addr:
+* - On success, _addr_ is the virtual address of the page and _err_ is set to
+*   MEM_OK.
+* - On failure, _addr_ is NULL and _err_ is set to indicate the error.
 *
 * Available flags:
 *
@@ -48,12 +50,37 @@ struct mem_r_addr {
 * - MEM_RW Read/write permissions
 * - MEM_EX Read and execute permissions
 */
-struct mem_r_addr mem_get_kernel_page(int flags);
+struct mem_r_addr mem_alloc_kernel_page(enum mem_flags flags);
 
 /*
-* Mark all page and block table entries as copied starting from top level table
-* _table_.
+* Map virtual address _vaddr_ to physical address _paddr_ for the translation
+* table at virtual address _tran_table_ with permissions specified by _flags_.
+*
+* Note: _paddr_ must already be allocated
+*
+* Returns enum mem_error
+*
+* Available flags:
+*
+* Mutually exclusive:
+* - MEM_RO Read only permissions
+* - MEM_RW Read/write permissions
+* - MEM_EX Read and execute permissions
 */
-void mem_mark_copied(const uintptr_t *table);
+[[nodiscard]] enum mem_error mem_map_user(void *tran_table, void *vaddr, void *paddr,
+    enum mem_flags flags);
+
+/*
+* Mark all subsequent page and block table entries as copied starting from top
+* level table at virtual address pointed to by _table_.
+*/
+void mem_table_soft_copy(void *table);
+
+/*
+* Traverse translation level table at virtual address pointed to by _table_ and
+* and unmark them as copied. If the task is the sole owner, it frees their
+* pages.
+*/
+void mem_table_teardown(void *table);
 
 #endif /* _KERNEL_ARCH_AARCH64_MEM_H */

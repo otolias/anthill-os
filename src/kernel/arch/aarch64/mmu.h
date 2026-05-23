@@ -90,10 +90,10 @@
 /*
 * Initialise the MMU
 *
-* _kernel_table_ and _user_table_ are the top level translation tables of
-* kernel and user space
+* _kernel_table_ and _user_table_ are the physical addresses of the top level
+* translation tables of kernel and user space respectively.
 */
-void mmu_init(uintptr_t *kernel_table, uintptr_t *user_table);
+void mmu_init(void *kernel_table, void *user_table);
 
 /*
 * Map virtual address _vaddr_ to physical address _paddr_ with access attributes
@@ -102,17 +102,42 @@ void mmu_init(uintptr_t *kernel_table, uintptr_t *user_table);
 * On success, returns _vaddr_.
 * On failure, returns NULL.
 */
-[[nodiscard]] void* mmu_map(uintptr_t vaddr, uintptr_t paddr, uint64_t attr);
+[[nodiscard]] void* mmu_kernel_map(void *vaddr, const void *paddr, uint64_t attr);
 
 /*
-* Set read-only permissions table entry _entry_ and increment reference counter.
+* Unmap virtual address pointed to by _vaddr_ from kernel space and
+* deallocate the corresponding physical memory
+*/
+void mmu_kernel_unmap(void *vaddr);
+
+/*
+* Set read-only permissions to table entry at physical address pointed to by
+* _entry_ and increment reference counter.
 */
 void mmu_mark_copied(uintptr_t *entry);
+
+/*
+* De-increment reference counter of table entry at physical address pointed to
+* by _entry_.
+*
+* Returns the reference counter.
+*/
+uint8_t mmu_mark_freed(uintptr_t *entry);
 
 /*
 * Setup translation tables and initialise the MMU.
 */
 void mmu_setup(void);
+
+/*
+* Map virtual address _vaddr_ to physical address _paddr_ for the translation
+* table at virtual address _tran_table_ with access attributes specified by
+* _attr_.
+*
+* On success, returns _vaddr_.
+* On failure, returns NULL.
+*/
+[[nodiscard]] void* mmu_user_map(void *tran_table, void *vaddr, const void *paddr, uint64_t attr);
 
 #endif /* __ASSEMBLER__ */
 

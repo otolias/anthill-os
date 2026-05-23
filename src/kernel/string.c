@@ -2,6 +2,18 @@
 
 #include <stddef.h>
 
+int memcmp(const void* s1, const void *s2, size_t n) {
+    const unsigned char *l = s1, *r = s2;
+
+    while (*l == *r && n) {
+        l++;
+        r++;
+        n--;
+    }
+
+    return n ? *l - *r : 0;
+}
+
 void* memcpy(void *dest, const void *src, size_t n) {
     const unsigned char *s = src;
     unsigned char *d = dest;

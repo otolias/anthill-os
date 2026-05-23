@@ -179,12 +179,5 @@ el0_svc:
 syscall_error:
     handle_invalid_entry    0, SYSCALL_ERROR
 
-.global start_user
-start_user:
-    bl irq_disable
-    msr     elr_el1, x19
-    msr     sp_el0, x20
-    eret
-
 hang:
     b hang

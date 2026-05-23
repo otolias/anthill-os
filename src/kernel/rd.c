@@ -48,8 +48,8 @@ static long _get_size(tar_header *header) {
 void* rd_lookup(const char *filename) {
     tar_header *header = (tar_header *) ramdisk;
 
-    while(!strncmp(header->magic, "ustar", sizeof(header->magic))) {
-        if (!strncmp(header->name, filename, sizeof(header->name)))
+    while(memcmp(header->magic, "ustar", sizeof(header->magic)) == 0) {
+        if (strncmp(header->name, filename, sizeof(header->name)) == 0)
             return ++header;
 
         long blocks = ((_get_size(header) + 511) / 512) + 1;

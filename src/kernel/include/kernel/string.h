@@ -4,6 +4,15 @@
 #include <stddef.h>
 
 /*
+* Compare _n_ bytes of _s1_ and _s2_.
+*
+* Returns an integer greater than, equal to, or less than 0 if the object
+* pointed to by _s1_ is greater than, equal to, or less than the object pointed
+* to by _s2_.
+*/
+int memcmp(const void* s1, const void *s2, size_t n);
+
+/*
 * Copies _n_ bytes from _src_ to _dest_.
 *
 * _src_ and _dest_ may not overlap

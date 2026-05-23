@@ -29,6 +29,15 @@ void task_add(struct task *task) {
     }
 }
 
+void task_remove(struct task *task) {
+    for (size_t i = 0; i < TASK_TOTAL; i++) {
+        if (tasks[i] == task) {
+            tasks[i] = NULL;
+            break;
+        }
+    }
+}
+
 void task_block(pid_t pid) {
     for (size_t i = 0; i < TASK_TOTAL; i++) {
         if (tasks[i]->pid == pid) {
@@ -54,20 +63,124 @@ struct task* task_current(void) {
     return current_task;
 }
 
+enum task_err task_exec(const void *file, char *const args[restrict]) {
+    current_task->preempt_count++;
+
+    const struct elf64_ehdr *ehdr = file;
+
+    if (elf_validate(ehdr) != ELF_OK)
+        return TASK_ERR_INV;
+
+    void *tran_table = MEM_PHYS_TO_VIRT(current_task->tran_table);
+
+    const struct elf_r_addr stack_r = elf_create_proc_image(file, tran_table);
+    switch (stack_r.err) {
+        case ELF_ERR_INV:
+        case ELF_ERR_UNS:
+        case ELF_ERR_MAC:
+            return TASK_ERR_INV;
+
+        case ELF_ERR_OOM:
+            return TASK_ERR_MEM;
+
+        case ELF_OK:
+            break;
+    }
+
+    // Allocate stack
+    const struct mem_r_addr user_stack_r = mem_alloc_kernel_page(MEM_RW);
+    if (user_stack_r.err != MEM_OK) {
+        // TODO: Free process image
+        return TASK_ERR_MEM;
+    }
+
+    // Map stack to userspace
+    if (mem_map_user(
+            tran_table, stack_r.addr, MEM_VIRT_TO_PHYS(user_stack_r.addr), MEM_RW)
+        != MEM_OK) {
+        // TODO: Free page_r
+        // TODO: Free process image
+        return TASK_ERR_MEM;
+    }
+
+    // TODO: Unmap previous pages
+
+    // Setup process arguments
+    char *sp = (char *) stack_r.addr + PAGESIZE;
+
+    if (args != NULL) {
+        // Calculate argument size
+        int argc = 0;
+        size_t arg_size = 0;
+        while (1) {
+            if (!args[argc])
+                break;
+            arg_size += strlen(args[argc]) + 1;
+            argc++;
+        }
+
+        // Align arg_size
+        if (arg_size % 8)
+            arg_size += (8 - arg_size % 8);
+
+        // Add arguments to stack
+        sp -= arg_size;
+        char *arg_pos = sp;
+
+        sp -= sizeof(char *) * (argc + 1);
+        char **argv = (char **) sp;
+        sp -= sizeof(size_t);
+        *((size_t *) sp) = (size_t) argc;
+
+        for (int i = 0; i < argc; i++) {
+            size_t len = strlen(args[i]) + 1;
+            memcpy(arg_pos, args[i], len);
+            argv[i] = arg_pos;
+            arg_pos += len;
+        }
+
+        argv[argc] = NULL;
+    }
+
+    current_task->preempt_count--;
+
+    cpu_start_user(ehdr->e_entry, (uintptr_t) sp, current_task->tran_table);
+
+    return TASK_OK;
+}
+
+void task_exit(void) {
+    current_task->preempt_count++;
+
+    // Unblock parent
+    task_unblock(current_task->parent->pid);
+
+    // Traverse translation tables and free all memory
+    mem_table_teardown(MEM_PHYS_TO_VIRT(current_task->tran_table));
+
+    current_task->preempt_count--;
+
+    // Remove from task array
+    task_remove(current_task);
+
+    // Switch context to init_task
+    cpu_switch(current_task, &init_task);
+}
+
 struct task_r_pid task_fork(void) {
     current_task->preempt_count++;
 
-    struct mem_r_addr task_r = mem_get_kernel_page(MEM_RW);
+    struct mem_r_addr task_r = mem_alloc_kernel_page(MEM_RW);
     if (task_r.err != MEM_OK)
         return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
 
-    struct mem_r_addr tran_table_r = mem_get_kernel_page(MEM_RW);
+    struct mem_r_addr tran_table_r = mem_alloc_kernel_page(MEM_RW);
     if (tran_table_r.err != MEM_OK) {
         // TODO: Free task_r
         return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
     }
 
-    struct mem_r_addr kernel_stack_r = mem_get_kernel_page(MEM_RW);
+    struct mem_r_addr kernel_stack_r = mem_alloc_kernel_page(MEM_RW);
     if (kernel_stack_r.err != MEM_OK) {
         // TODO: Free task_r
         // TODO: Free tran_table_r
@@ -75,15 +188,12 @@ struct task_r_pid task_fork(void) {
     }
 
     // Copy kernel stack
-    void *kernel_stack = kernel_stack_r.addr;
-    memcpy(kernel_stack, current_task->kernel_stack, PAGESIZE);
+    memcpy(kernel_stack_r.addr, current_task->kernel_stack, PAGESIZE);
 
-    struct task *child = task_r.addr;
+    struct task *child = (struct task *) task_r.addr;
 
     child->pid = ++task_count;
-    child->address = current_task->address;
-    child->user_stack = current_task->user_stack;
-    child->kernel_stack = kernel_stack;
+    child->kernel_stack = kernel_stack_r.addr;
     child->parent = current_task;
     child->tran_table = MEM_VIRT_TO_PHYS(tran_table_r.addr);
     child->state = current_task->state;
@@ -99,7 +209,7 @@ struct task_r_pid task_fork(void) {
             MEM_PHYS_TO_VIRT(child->tran_table),
             MEM_PHYS_TO_VIRT(current_task->tran_table),
             PAGESIZE
-              );
+        );
     }
 
     // Store current context
@@ -113,13 +223,14 @@ struct task_r_pid task_fork(void) {
 
     // If parent, copy stored context to new task
     memcpy(&child->context, &current_task->context, sizeof(current_task->context));
+
     // Setup child's kernel stack
     const uintptr_t ksp_offset = current_task->context.ksp - (uintptr_t) current_task->kernel_stack;
     child->context.ksp = (uintptr_t) child->kernel_stack + ksp_offset;
 
     // Mark task page tables as read only
     if (current_task->tran_table)
-        mem_mark_copied(MEM_PHYS_TO_VIRT(current_task->tran_table));
+        mem_table_soft_copy(MEM_PHYS_TO_VIRT(current_task->tran_table));
 
     current_task->preempt_count--;
     return (struct task_r_pid) { .pid = child->pid, .err = TASK_OK };

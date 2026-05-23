@@ -28,15 +28,4 @@
 #define SYNC_ERROR            16
 #define SYSCALL_ERROR         17
 
-#ifndef __ASSEMBLER__
-
-/*
-* Starts a function in user_mode
-* Function is stored in x19
-* Stack is stored in x20
-*/
-void start_user();
-
-#endif /* __ASSEMBLER__ */
-
 #endif /* _KERNEL_ENTRY_H_ */

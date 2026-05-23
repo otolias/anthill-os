@@ -1,6 +1,7 @@
 #include <kernel/arch/io.h>
 #include <kernel/arch/irq.h>
 #include <kernel/io.h>
+#include <kernel/rd.h>
 #include <kernel/task.h>
 
 #include <stdint.h>
@@ -11,10 +12,23 @@ void main(void) {
     io_fmt("Kernel booted successfully...\n");
 
     struct task_r_pid forked_r = task_fork();
-    if (forked_r.pid != 0) {
-        io_fmt("Hello from parent\n");
-    } else {
-        io_fmt("Hello from child\n");
+    if (forked_r.err != TASK_OK) {
+        io_fmt("KERNEL::Fork failed. Error %d\n", forked_r.err);
+        return;
+    }
+
+    if (forked_r.pid == 0) {
+        void *file = rd_lookup("./bin/hello");
+        if (!file) {
+            io_fmt("KERNEL::bin/hello not found\n");
+            return;
+        }
+
+        enum task_err err = task_exec(file, NULL);
+        if (err != TASK_OK) {
+            io_fmt("KERNEL::modules/rd failed to load. Error %d\n", err);
+            return;
+        }
     }
 
     while (1)

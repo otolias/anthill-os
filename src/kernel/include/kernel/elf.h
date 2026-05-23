@@ -4,120 +4,77 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define Elf64_Addr   uint64_t
-#define Elf64_Off    uint64_t
-#define Elf64_Half   uint16_t
-#define Elf64_Word   uint32_t
-#define Elf64_Sword  int32_t
-#define Elf64_Xword  uint64_t
-#define Elf64_Sxword int64_t
-
-#define ELF_OFF(base, offset) (((unsigned long) base) + (offset))
-
 /* Elf header */
-typedef struct {
+struct elf64_ehdr {
     unsigned char e_ident[16]; /* ELF Identification */
-    Elf64_Half    e_type;      /* Object File Type */
-    Elf64_Half    e_machine;   /* Machine type */
-    Elf64_Word    e_version;   /* ELF Version */
-    Elf64_Addr    e_entry;     /* Program entry point */
-    Elf64_Off     e_phoff;     /* Program header offset */
-    Elf64_Off     e_shoff;     /* Section header offset */
-    Elf64_Word    e_flags;     /* Processor-specific flags */
-    Elf64_Half    e_ehsize;    /* Header size */
-    Elf64_Half    e_phentsize; /* Program header size */
-    Elf64_Half    e_phnum;     /* Number of entries in program header */
-    Elf64_Half    e_shentsize; /* Size of a section header table */
-    Elf64_Half    e_shnum;     /* Number of entries in section header */
-    Elf64_Half    e_shstrndx;  /* Index of section names. */
-} Elf64_Ehdr;
+    uint16_t e_type;           /* Object File Type */
+    uint16_t e_machine;        /* Machine type */
+    uint32_t e_version;        /* ELF Version */
+    uint64_t e_entry;          /* Program entry point */
+    uint64_t e_phoff;          /* Program header offset */
+    uint64_t e_shoff;          /* Section header offset */
+    uint32_t e_flags;          /* Processor-specific flags */
+    uint16_t e_ehsize;         /* Header size */
+    uint16_t e_phentsize;      /* Program header size */
+    uint16_t e_phnum;          /* Number of entries in program header */
+    uint16_t e_shentsize;      /* Size of a section header table */
+    uint16_t e_shnum;          /* Number of entries in section header */
+    uint16_t e_shstrndx;       /* Index of section names. */
+};
 
-/* ELF header identification offsets */
-#define EI_CLASS  4  /* File class */
+/* Object File Types (e_type) */
+#define ET_EXEC 2
 
-typedef struct {
-    Elf64_Word  p_type;   /* Type of segment */
-    Elf64_Word  p_flags;  /* Segment attributes */
-    Elf64_Off   p_offset; /* Offset in file */
-    Elf64_Addr  p_vaddr;  /* Virtual address in memory */
-    Elf64_Addr  p_paddr;  /* Reserved */
-    Elf64_Xword p_filesz; /* Size of segment in file */
-    Elf64_Xword p_memsz;  /* Size of segment in memory */
-    Elf64_Xword p_align;  /* Alignment of segment */
-} Elf64_Phdr;
+struct elf64_phdr {
+    uint32_t p_type;   /* Type of segment */
+    uint32_t p_flags;  /* Segment attributes */
+    uint64_t p_offset; /* Offset in file */
+    uint64_t p_vaddr;  /* Virtual address in memory */
+    uint64_t p_paddr;  /* Reserved */
+    uint64_t p_filesz; /* Size of segment in file */
+    uint64_t p_memsz;  /* Size of segment in memory */
+    uint64_t p_align;  /* Alignment of segment */
+};
 
-/* Program header type values */
-#define PT_LOAD    1
-#define PT_DYNAMIC 2
+/* Segment Types (p_type) */
+#define PT_LOAD 1
 
-/* Dynamic table entry */
-typedef struct {
-    Elf64_Sxword d_tag;
-    union {
-        Elf64_Xword d_val;
-        Elf64_Addr d_ptr;
-    };
-} Elf64_Dyn;
+/* Segment Attributes (p_flags) */
+#define PF_X 1 // Execute permission
+#define PF_W 2 // Write permission
+#define PF_R 4 // Read permission
 
-/* Dynamic table entry tag values */
-#define DT_NULL          0  /* End of array */
-#define DT_NEEDED        1  /* Needed library */
-#define DT_PLTRELSZ      2  /* PLT relocation entries total size */
-#define DT_PLTGOT        3  /* PLT and GOT table address */
-#define DT_STRTAB        5  /* String table address */
-#define DT_SYMTAB        6  /* Symbol table address */
-#define DT_RELA          7  /* Relocation table address (with addend) */
-#define DT_RELASZ        8  /* Relocation table total size */
-#define DT_RELAENT       9  /* Relocation table entry size */
-#define DT_REL           17 /* Relocation table address (without addend) */
-#define DT_PLTREL        20 /* PLT relocation entries type */
-#define DT_JMPREL        23 /* PLT relocation entries address */
-#define DT_INIT_ARRAY    25 /* Initialisation functions array pointer */
-#define DT_FINI_ARRAY    26 /* Deinitialisation functions array pointer */
-#define DT_INIT_ARRAY_SZ 27 /* Initialisation functions array size (in bytes) */
-#define DT_FINI_ARRAY_SZ 28 /* Deinitialisation functions array size (in bytes) */
+struct task;
 
-/* Symbol table entry */
-typedef struct {
-    Elf64_Word st_name;     /* Symbol name index */
-    unsigned char st_info;  /* Type and binding attributes */
-    unsigned char st_other; /* Reserved */
-    Elf64_Half st_shndx;    /* Section table index */
-    Elf64_Addr st_value;    /* Symbol value */
-    Elf64_Xword st_size;    /* Size of object */
-} Elf64_Sym;
+enum elf_err {
+    ELF_OK,
+    ELF_ERR_INV, /* Invalid ELF file */
+    ELF_ERR_UNS, /* Unsupported ELF file type */
+    ELF_ERR_MAC, /* ELF file is for a different architecture */
+    ELF_ERR_OOM, /* Out of memory */
+};
 
-/* Relocation entry (with addend) */
-typedef struct {
-    Elf64_Addr r_offset;   /* Address of reference */
-    Elf64_Xword r_info;    /* Symbol index and type of relocation */
-    Elf64_Sxword r_addend; /* Constant addend */
-} Elf64_Rela;
-
-/* Relocation entry (without addend) */
-typedef struct {
-    Elf64_Addr r_offset; /* Address of reference */
-    Elf64_Xword r_info;  /* Symbol index and type of relocation */
-} Elf64_Rel;
-
-#define ELF64_R_SYM(i) ((i) >> 32)
-#define ELF64_R_TYPE(i) ((i) & 0xffffffffL)
-
-/* Dynamic relocations */
-#define R_AARCH64_GLOB_DAT   1025
-#define R_AARCH64_JUMP_SLOT  1026
-#define R_AARCH64_RELATIVE   1027
+struct elf_r_addr {
+    void *addr;
+    enum elf_err err;
+};
 
 /*
-* Validate elf header
+* Parse _file_ header and create process image using the translation table at
+* the virtual address pointed to by _tran_table_.
 *
-* Returns 0 if valid header, -1 if not
+* Returns struct elf_r_addr:
+* - On success, _addr_ is a pointer to the virtual address of the start of the
+*   process image and _err_ is set to ELF_OK.
+* - On failure, _addr_ is NULL and _err_ is set to indicate the error.
 */
-short elf_validate(const Elf64_Ehdr *ehdr);
+struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tran_table);
 
 /*
-* Calculate elf image size
+* Validate ELF header.
+*
+* Returns enum elf_err.
 */
-size_t elf_get_image_size(const Elf64_Ehdr *ehdr);
+enum elf_err elf_validate(const struct elf64_ehdr *ehdr);
 
 #endif /* _KERNEL_ELF_H */

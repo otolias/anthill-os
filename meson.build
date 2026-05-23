@@ -20,7 +20,7 @@ add_project_arguments(
   language: 'c',
 )
 
-kernel_c_args = ['-ffreestanding']
+kernel_c_args = ['-mno-unaligned-access', '-ffreestanding']
 kernel_link_args = [
   '-nostdlib',
   '-T', meson.project_source_root() / 'linker.ld'
@@ -28,12 +28,12 @@ kernel_link_args = [
 
 lib_link_args = [ '-Wl,-pic' ]
 
-exec_link_args = [ '-nodefaultlibs', '-Wl,-pie' ] + \
+exec_link_args = [ '-nodefaultlibs' ] + \
   meson.get_external_property('exec_link_args')
 
 subdir('src' / 'kernel')
-# subdir('src' / 'lib')
-# subdir('src' / 'bin')
+subdir('src' / 'lib')
+subdir('src' / 'bin')
 # subdir('src' / 'modules')
 
 kernel_bin = custom_target('kernel8.bin',

@@ -28,6 +28,12 @@ struct cpu_context {
 };
 
 /*
+ * Switches execution to user mode at address _entry_, sets stack pointer to
+ * address _sp_ and changes translation table to tran_table.
+*/
+[[noreturn]] void cpu_start_user(uintptr_t entry, uintptr_t sp, void *tran_table);
+
+/*
 * Switch cpu context from previous task to next
 */
 void cpu_switch(struct task *previous, struct task *next);

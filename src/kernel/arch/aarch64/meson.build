@@ -3,10 +3,10 @@ kernel_sources += files([
   'io.c',
   'irq.c',
   'irq.S',
-  'mem_map.c',
   'mem.c',
   'mmu.c',
   'mmu.S',
+  'pmm.c',
   'timer.c',
   'uart.c',
 ])

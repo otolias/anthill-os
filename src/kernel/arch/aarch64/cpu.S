@@ -1,3 +1,10 @@
+.global cpu_start_user
+cpu_start_user:
+    msr elr_el1, x0
+    msr sp_el0, x1
+
+    eret
+
 .global cpu_switch
 cpu_switch:
     // Store previous process registers

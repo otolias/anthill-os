@@ -9,7 +9,7 @@
 #include <kernel/sys/types.h>
 
 void sys_exit(void) {
-    // task_exit();
+    task_exit();
 }
 
 ssize_t sys_mmap(__attribute__((unused)) void *addr, size_t len,

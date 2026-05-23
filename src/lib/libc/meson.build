@@ -104,17 +104,17 @@ libc_inc_directories = include_directories(
   is_system : true
 )
 
-ld_sources = [
-  'ld.c',
-]
+# ld_sources = [
+#   'ld.c',
+# ]
 
-ld = shared_library('ld',
-  sources : ld_sources,
-  include_directories : libc_inc_directories,
-  link_args : ['-nostdlib', '-Wl,-pie'],
-  install : true,
-  name_prefix : '',
-)
+# ld = shared_library('ld',
+#   sources : ld_sources,
+#   include_directories : libc_inc_directories,
+#   link_args : ['-nostdlib', '-Wl,-pie'],
+#   install : true,
+#   name_prefix : '',
+# )
 
 crt = static_library('crt',
   sources : [ 'crt' / 'crt0.S' ],

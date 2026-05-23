@@ -1,7 +1,7 @@
 #include "kernel/arch/mem.h"
 
-#include "mem_map.h"
 #include "mmu.h"
+#include "pmm.h"
 
 #include <kernel/string.h>
 #include <kernel/sysregs.h>
@@ -9,49 +9,78 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define TOTAL_PAGES ((MEM_HIGH - MEM_LOW) / PAGESIZE)
-
-struct mem_r_addr mem_get_kernel_page(int flags) {
+struct mem_r_addr mem_alloc_kernel_page(enum mem_flags flags) {
     // Find empty page
-    const void *page = mem_map_get();
+    void *page = pmm_get();
     if (!page)
         return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_OOM };
 
-    const uintptr_t paddr = (uintptr_t) page;
-    const uintptr_t vaddr = (uintptr_t) MEM_PHYS_TO_VIRT(paddr);
+    void *vaddr = MEM_PHYS_TO_VIRT(page);
 
     uint64_t attr = 0;
     switch (flags) {
         case MEM_RO:
             attr = ATT_AP_NA_RO | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
             break;
+
         case MEM_RW:
             attr = ATT_AP_NA_RW | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
             break;
+
         case MEM_EX:
             attr = ATT_AP_NA_RO | ATT_PXN_EXEC | ATT_UXN_NOEXEC;
             break;
+
         default:
-            mem_map_free(page);
-            return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_INV };
+            pmm_free(page);
+            return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_FLG };
     }
 
-    if (mmu_map(vaddr, paddr, attr) != (void *) vaddr)
+    if (mmu_kernel_map(vaddr, page, attr) != vaddr)
         return (struct mem_r_addr) { .addr = NULL, MEM_ERR_OOM };
 
-    return (struct mem_r_addr) { .addr = (void *) vaddr, .err = MEM_OK };
+    return (struct mem_r_addr) { .addr = vaddr, .err = MEM_OK };
 }
 
-void mem_mark_copied(const uintptr_t *table) {
+enum mem_error mem_map_user(void *tran_table, void *vaddr, void *paddr, enum mem_flags flags) {
+    uint64_t attr = 0;
+    switch (flags) {
+        case MEM_RO:
+            attr = ATT_AP_RO_RO | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
+            break;
+
+        case MEM_RW:
+            attr = ATT_AP_RW_RW | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
+            break;
+
+        case MEM_EX:
+            attr = ATT_AP_RO_RO | ATT_PXN_NOEXEC | ATT_UXN_EXEC;
+            break;
+
+        default:
+            return MEM_ERR_FLG;
+    }
+
+    if (mmu_user_map(tran_table, vaddr, paddr, attr) != vaddr)
+        return MEM_ERR_OOM;
+
+    return MEM_OK;
+}
+
+void mem_table_soft_copy(void *table) {
+    uintptr_t *level_0 = table;
+
     for (size_t i_0 = 0; i_0 < 512; i_0++) {
-        if ((table[i_0] & (1 << ATT_VALID_OFF)) == 0)
+        if ((level_0[i_0] & (1 << ATT_VALID_OFF)) == 0)
             continue;
 
-        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(table[i_0] & ~(0xfff));
+        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(level_0[i_0] & ~(0xfff));
 
         for (size_t i_1 = 0; i_1 < 512; i_1++) {
+            if ((level_1[i_1] & (1 << ATT_VALID_OFF)) == 0)
+                continue;
+
             if ((level_1[i_1] & (1 << ATT_BLOCK_OFF)) == 0) {
-                // Mark as read-only
                 mmu_mark_copied(&level_1[i_1]);
                 continue;
             }
@@ -78,4 +107,56 @@ void mem_mark_copied(const uintptr_t *table) {
             }
         }
     }
+}
+
+void mem_table_teardown(void *table) {
+    uintptr_t *level_0 = table;
+
+    for (size_t i_0 = 0; i_0 < 512; i_0++) {
+        if ((level_0[i_0] & (1 << ATT_VALID_OFF)) == 0)
+            continue;
+
+        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(level_0[i_0] & ~(0xfff));
+
+        for (size_t i_1 = 0; i_1 < 512; i_1++) {
+            if ((level_1[i_1] & (1 << ATT_VALID_OFF)) == 0)
+                continue;
+
+            uintptr_t *level_2 = MEM_PHYS_TO_VIRT(level_1[i_1] & ~(0xfff));
+
+            for (size_t i_2 = 0; i_2 < 512; i_2++) {
+                if ((level_2[i_2] & (1 << ATT_VALID_OFF)) == 0)
+                    continue;
+
+                uintptr_t *level_3 = MEM_PHYS_TO_VIRT(level_2[i_2] & ~(0xfff));
+
+                for (size_t i_3 = 0; i_3 < 512; i_3++) {
+                    if ((level_3[i_3] & (1 << ATT_VALID_OFF)) == 0)
+                        continue;
+
+                    uint16_t ref = mmu_mark_freed(&level_3[i_3]);
+                    // If no more references, unmap from kernel space and free
+                    // physical memory
+                    if (ref == 0)
+                        mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_3[i_3] & ~(0xfff0000000000fff)));
+
+                    level_3[i_3] = 0;
+                }
+
+                uint16_t ref = mmu_mark_freed(&level_2[i_2]);
+                if (ref == 0)
+                    mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_2[i_2] & ~(0xfff0000000000fff)));
+            }
+
+            uint16_t ref = mmu_mark_freed(&level_1[i_1]);
+            if (ref == 0)
+                mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_1[i_1] & ~(0xfff0000000000fff)));
+        }
+
+        uint16_t ref = mmu_mark_freed(&level_0[i_0]);
+        if (ref == 0)
+            mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_0[i_0] & ~(0xfff0000000000fff)));
+    }
+
+    mmu_kernel_unmap(table);
 }

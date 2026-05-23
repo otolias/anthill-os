@@ -1,4 +1,4 @@
-subdir('exportfs')
+# subdir('exportfs')
 subdir('hello')
-subdir('test_suite')
-subdir('sh')
+# subdir('test_suite')
+# subdir('sh')

@@ -20,10 +20,8 @@ enum task_state {
 */
 struct task {
     struct cpu_context context; /* Stored CPU Context. DO NOT change position */
-    uintptr_t* tran_table;      /* Top level translation table. DO NOT change position */
+    void* tran_table;           /* Top level translation table. DO NOT change position */
     pid_t pid;                  /* Process ID */
-    void* address;              /* Page start address */
-    void* user_stack;           /* Virtual address of user stack */
     void* kernel_stack;         /* Virtual address of kernel stack */
     struct task* parent;        /* Parent task */
     enum task_state state;      /* Current task state */
@@ -34,8 +32,8 @@ struct task {
 
 enum task_err {
     TASK_OK,
-    TASK_ERR_INVALID, // Invalid ELF file
-    TASK_ERR_MEM,     // Out of memory
+    TASK_ERR_INV, // Invalid ELF file
+    TASK_ERR_MEM, // Out of memory
 };
 
 struct task_r_ptr {
@@ -49,9 +47,14 @@ struct task_r_pid {
 };
 
 /*
-* Add _task_ to currently executing tasks
+* Add _task_ to task array
 */
 void task_add(struct task *task);
+
+/*
+* Remove _task_ from task array
+*/
+void task_remove(struct task *task);
 
 /*
 * Block task with _pid_
@@ -69,12 +72,30 @@ void task_unblock(pid_t pid);
 struct task* task_current(void);
 
 /*
+* Load ELF file pointed to by _file_ to memory and execute with _argc_
+* arguments.
+*
+* Returns enum task_err.
+*/
+enum task_err task_exec(const void *file, char *const args[restrict]);
+
+/*
+* Terminate current running process
+*/
+void task_exit(void);
+
+/*
 * Fork currently executing task
+*
+* Returns struct task_r_pid:
+* - On success, _pid_ is either the process ID of the child process (in the case
+*   the caller) or 0 (in the case of the callee), and _err_ is set to TASK_OK.
+* - On failure, _pid_ is -1 and _err_ is set to indicate the error.
 */
 struct task_r_pid task_fork(void);
 
 /*
-* Initiate Round Robin scheduler
+* Run scheduler
 */
 void task_schedule(void);
 
