@@ -19,7 +19,6 @@ subdir('arch' / arch)
 kernel_elf = executable('kernel8.elf',
   sources : kernel_sources,
   include_directories : include_directories(
-    'arch' / arch / 'include',
     'include'
   ),
   c_args : kernel_c_args,
