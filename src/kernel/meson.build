@@ -19,7 +19,7 @@ subdir('arch' / arch)
 kernel_elf = executable('kernel8.elf',
   sources : kernel_sources,
   include_directories : include_directories('include'),
-  c_args : [ '-mno-unaligned-access', '-ffreestanding' ],
+  c_args : [ '-ffreestanding', '-mgeneral-regs-only' ],
   link_args : [
     '-nostdlib',
     '-T', meson.current_source_dir() / 'arch' / arch / 'link.ld'

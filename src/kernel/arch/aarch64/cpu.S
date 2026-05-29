@@ -6,6 +6,7 @@ cpu_start_user:
     eret
 
 .global cpu_switch
+.arch_extension fp
 cpu_switch:
     // Store previous process registers
     mov x8, x0

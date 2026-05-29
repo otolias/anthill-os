@@ -30,16 +30,12 @@
 #define SCTLR_EE    (0 << 25 | 0 << 24)
 // Allow caching
 #define SCTLR_I     (1 << 12)
-// Enable alignment checks in EL1 and EL0
-#define SCTLR_SA    (3 << 3)
 // Allow data access caching
 #define SCTLR_C     (1 << 2)
-// Enable execution alignment check
-#define SCTLR_A     (1 << 1)
 // Enable MMU
 #define SCTLR_M     (1 << 0)
 
-#define SCTLR_VALUE (SCTLR_RES | SCTLR_EE | SCTLR_I | SCTLR_SA | SCTLR_C | SCTLR_A | SCTLR_M)
+#define SCTLR_VALUE (SCTLR_RES | SCTLR_EE | SCTLR_I | SCTLR_C | SCTLR_M)
 
 /* === Translation table entry attributes === */
 
