@@ -20,12 +20,6 @@ add_project_arguments(
   language: 'c',
 )
 
-kernel_c_args = ['-mno-unaligned-access', '-ffreestanding']
-kernel_link_args = [
-  '-nostdlib',
-  '-T', meson.project_source_root() / 'linker.ld'
-]
-
 lib_link_args = [ '-Wl,-pic' ]
 
 exec_link_args = [ '-nodefaultlibs' ] + \
