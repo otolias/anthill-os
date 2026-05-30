@@ -1,9 +1,7 @@
 arch = host_machine.cpu_family()
 
 kernel_sources = files([
-  'boot.S',
   'elf.c',
-  'entry.S',
   'io.c',
   'main.c',
   'mqueue.c',

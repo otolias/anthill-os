@@ -1,5 +1,7 @@
 kernel_sources += files([
+  'boot.S',
   'cpu.S',
+  'entry.S',
   'io.c',
   'irq.c',
   'irq.S',

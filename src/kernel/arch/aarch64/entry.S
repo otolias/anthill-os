@@ -1,7 +1,8 @@
-#include "kernel/entry.h"
+#include "entry.h"
+
+#include "sysregs.h"
 
 #include <kernel/syscalls.h>
-#include <kernel/sysregs.h>
 
 .macro vector_entry label
 .align 7

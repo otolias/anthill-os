@@ -4,7 +4,6 @@
 #include "pmm.h"
 
 #include <kernel/string.h>
-#include <kernel/sysregs.h>
 #include <kernel/task.h>
 #include <stddef.h>
 #include <stdint.h>

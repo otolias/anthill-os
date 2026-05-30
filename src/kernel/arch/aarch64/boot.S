@@ -1,5 +1,5 @@
-#include "kernel/entry.h"
-#include "kernel/sysregs.h"
+#include "entry.h"
+#include "sysregs.h"
 
 .section ".text.boot"
 
@@ -12,16 +12,16 @@ _start:
     b hang
 
 el1:
-    ldr x0, =SCTLR_VALUE
+    ldr x0, =SCTLR_NOMMU_VAL
     msr sctlr_el1, x0
 
-    ldr x0, =HCR_VALUE
+    ldr x0, =HCR_VAL
     msr hcr_el2, x0
 
-    ldr x0, =SPSR_VALUE
+    ldr x0, =SPSR_VAL
     msr spsr_el2, x0
 
-    ldr x0, =CPACR_VALUE
+    ldr x0, =CPACR_VAL
     msr cpacr_el1, x0
 
     ldr x0, =vectors
@@ -30,7 +30,7 @@ el1:
     adr x0, stack
     msr elr_el2, x0
 
-    eret 
+    eret
 
 stack:
     // Set stack just before _start

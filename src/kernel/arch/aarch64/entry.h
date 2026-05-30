@@ -1,5 +1,5 @@
-#ifndef _KERNEL_ENTRY_H
-#define _KERNEL_ENTRY_H
+#ifndef _KERNEL_ARCH_AARCH64_ENTRY_H
+#define _KERNEL_ARCH_AARCH64_ENTRY_H
 
 /* General and system register size, plus 0x20 that
  * gets added to the sp on svc */
@@ -28,4 +28,4 @@
 #define SYNC_ERROR            16
 #define SYSCALL_ERROR         17
 
-#endif /* _KERNEL_ENTRY_H_ */
+#endif /* _KERNEL_ARCH_AARCH64_ENTRY_H */
