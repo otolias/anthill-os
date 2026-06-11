@@ -8,8 +8,22 @@
 #include <kernel/task.h>
 #include <kernel/sys/types.h>
 
-void sys_exit(void) {
-    task_exit();
+static void sys_exit(int status) {
+    task_exit(status);
+}
+
+static pid_t sys_fork(void) {
+    struct task_r_pid res = task_fork();
+    switch (res.err) {
+        case TASK_OK:
+            return res.pid;
+
+        case TASK_ERR_MEM:
+            return -ENOMEM;
+
+        default:
+            return -EUNKNOWN;
+    }
 }
 
 ssize_t sys_mmap(__attribute__((unused)) void *addr, size_t len,
@@ -58,7 +72,8 @@ int sys_spawn(pid_t *pid, void *file, char *const argv[restrict]) {
     // return res;
 }
 
-const void *system_call_table[] = {
+// Order must be the same as <kernel/syscalls.h>
+const void *system_call_table[TOTAL_SYSCALLS] = {
     (void *) sys_exit,
     (void *) sys_mmap,
     (void *) sys_munmap,
@@ -69,4 +84,5 @@ const void *system_call_table[] = {
     (void *) sys_mq_receive,
     (void *) sys_getpid,
     (void *) sys_spawn,
+    (void *) sys_fork,
 };

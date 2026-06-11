@@ -11,7 +11,8 @@
 #define SYS_MQ_RECV    7
 #define SYS_GETPID     8
 #define SYS_SPAWN      9
-#define TOTAL_SYSCALLS 10
+#define SYS_FORK       10
+#define TOTAL_SYSCALLS 11
 
 #ifndef __ASSEMBLER__
 

@@ -55,11 +55,12 @@ master:
     bl uart_init
 
     // Jump to kernel
-    ldr x0, =_start
-    mov sp, x0
+    // x0 is the address of the top level user translation table
+    ldr x1, =_start
+    mov sp, x1
 
-    ldr x0, =main
-    blr x0
+    ldr x1, =main
+    blr x1
 
     // If it returns, hang
 hang:

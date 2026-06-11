@@ -133,10 +133,15 @@ error_invalid_el1h:
 
 el0_sync:
     kernel_entry 0
-    mrs     x25, esr_el1
-    lsr     x24, x25, #ESR_ELx_EC
-    cmp     x24, #ESR_ELx_EC_SVC64
-    b.eq    el0_svc
+    mrs x25, esr_el1
+    lsr x24, x25, #ESR_ELx_EC_OFF
+
+    cmp  x24, #ESR_ELx_EC_SVC64
+    b.eq el0_svc
+
+    cmp x24, #ESR_ELx_EC_DT_ABRT
+    b.eq el0_data_abort
+
     handle_invalid_entry 0, SYNC_ERROR
 
 el0_irq:
@@ -161,6 +166,20 @@ fiq_invalid_el0_32:
 
 error_invalid_el0_32:
     handle_invalid_entry    0, ERROR_INVALID_EL0_32
+
+el0_data_abort:
+    mrs x0, ttbr0_el1
+    mrs x1, far_el1
+    bl  mmu_handle_data_abort
+    // Returns the processed virtual address or 0
+    cbz x0, el0_data_abort_err
+
+    bl mmu_invalidate
+
+    kernel_exit 0
+
+el0_data_abort_err:
+    handle_invalid_entry 0, DATA_ABORT_ERROR
 
 el0_svc:
     adr     x25, system_call_table

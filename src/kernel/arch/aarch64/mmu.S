@@ -18,3 +18,11 @@ mmu_init:
     isb
 
     ret
+
+.global mmu_invalidate
+mmu_invalidate:
+    dc   cvac, x0
+    tlbi vaae1is, x0
+    dsb  ish
+
+    ret

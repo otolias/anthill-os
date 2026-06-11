@@ -24,6 +24,7 @@ struct task {
     pid_t pid;                  /* Process ID */
     void* kernel_stack;         /* Virtual address of kernel stack */
     struct task* parent;        /* Parent task */
+    size_t children_no;         /* Number of running children */
     enum task_state state;      /* Current task state */
     int preempt_count;          /* If non-zero, task must not be interrupted */
     long priority;              /* Execution clock ticks given */
@@ -80,9 +81,11 @@ struct task* task_current(void);
 enum task_err task_exec(const void *file, char *const args[restrict]);
 
 /*
-* Terminate current running process
+* Terminate current running process.
+*
+* _status_ is not yet implemented.
 */
-void task_exit(void);
+void task_exit(int status);
 
 /*
 * Fork currently executing task

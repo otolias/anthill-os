@@ -7,10 +7,12 @@
 
 #define CPACR_VAL  (CPACR_FPEN | CPACR_ZEN)
 
-// Exception class field offset
-#define ESR_ELx_EC       26
+// Exception Class offset
+#define ESR_ELx_EC_OFF     26
 // SVC Instruction
-#define ESR_ELx_EC_SVC64 0x15
+#define ESR_ELx_EC_SVC64   0x15
+// Data Abort
+#define ESR_ELx_EC_DT_ABRT 0x24
 
 // Set execution state to AARCH64
 #define HCR_VAL (1 << 31)

@@ -36,9 +36,13 @@ struct mem_r_addr mem_alloc_kernel_page(enum mem_flags flags) {
     }
 
     if (mmu_kernel_map(vaddr, page, attr) != vaddr)
-        return (struct mem_r_addr) { .addr = NULL, MEM_ERR_OOM };
+        return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_OOM };
 
     return (struct mem_r_addr) { .addr = vaddr, .err = MEM_OK };
+}
+
+void mem_free_kernel_page(void *vaddr) {
+    mmu_kernel_unmap(vaddr);
 }
 
 enum mem_error mem_map_user(void *tran_table, void *vaddr, void *paddr, enum mem_flags flags) {
@@ -73,29 +77,31 @@ void mem_table_soft_copy(void *table) {
         if ((level_0[i_0] & (1 << ATT_VALID_OFF)) == 0)
             continue;
 
-        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(level_0[i_0] & ~(0xfff));
+        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(level_0[i_0] & VADDR_MASK);
 
         for (size_t i_1 = 0; i_1 < 512; i_1++) {
             if ((level_1[i_1] & (1 << ATT_VALID_OFF)) == 0)
                 continue;
 
-            if ((level_1[i_1] & (1 << ATT_BLOCK_OFF)) == 0) {
-                mmu_mark_copied(&level_1[i_1]);
-                continue;
-            }
+            mmu_mark_copied(&level_1[i_1]);
 
-            uintptr_t *level_2 = MEM_PHYS_TO_VIRT(level_1[i_1] & ~(0xfff));
+            // If block descriptor, continue
+            if ((level_1[i_1] & (1 << ATT_BLOCK_OFF)) == 0)
+                continue;
+
+            uintptr_t *level_2 = MEM_PHYS_TO_VIRT(level_1[i_1] & VADDR_MASK);
 
             for (size_t i_2 = 0; i_2 < 512; i_2++) {
                 if ((level_2[i_2] & (1 << ATT_VALID_OFF)) == 0)
                     continue;
 
-                if ((level_2[i_2] & (1 << ATT_BLOCK_OFF)) == 0) {
-                    mmu_mark_copied(&level_2[i_2]);
-                    continue;
-                }
+                mmu_mark_copied(&level_2[i_2]);
 
-                uintptr_t *level_3 = MEM_PHYS_TO_VIRT(level_2[i_2] & ~(0xfff));
+                // If block descriptor, continue
+                if ((level_2[i_2] & (1 << ATT_BLOCK_OFF)) == 0)
+                    continue;
+
+                uintptr_t *level_3 = MEM_PHYS_TO_VIRT(level_2[i_2] & VADDR_MASK);
 
                 for (size_t i_3 = 0; i_3 < 512; i_3++) {
                     if ((level_3[i_3] & (1 << ATT_VALID_OFF)) == 0)
@@ -115,47 +121,74 @@ void mem_table_teardown(void *table) {
         if ((level_0[i_0] & (1 << ATT_VALID_OFF)) == 0)
             continue;
 
-        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(level_0[i_0] & ~(0xfff));
+        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(level_0[i_0] & VADDR_MASK);
 
         for (size_t i_1 = 0; i_1 < 512; i_1++) {
             if ((level_1[i_1] & (1 << ATT_VALID_OFF)) == 0)
                 continue;
 
-            uintptr_t *level_2 = MEM_PHYS_TO_VIRT(level_1[i_1] & ~(0xfff));
+            if ((level_1[i_1] & (1 << ATT_BLOCK_OFF)) == 0) {
+                // Block descriptor, mark freed and continue
+                uint8_t ref = mmu_mark_freed(&level_1[i_1]);
+                if (ref == 0) {
+                    mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_1[i_1] & VADDR_MASK));
+                    level_1[i_1] = 0;
+                }
+
+                continue;
+            }
+
+            uintptr_t *level_2 = MEM_PHYS_TO_VIRT(level_1[i_1] & VADDR_MASK);
 
             for (size_t i_2 = 0; i_2 < 512; i_2++) {
                 if ((level_2[i_2] & (1 << ATT_VALID_OFF)) == 0)
                     continue;
 
-                uintptr_t *level_3 = MEM_PHYS_TO_VIRT(level_2[i_2] & ~(0xfff));
+                if ((level_2[i_2] & (1 << ATT_BLOCK_OFF)) == 0) {
+                    // Block descriptor, mark freed and continue
+                    uint8_t ref = mmu_mark_freed(&level_2[i_2]);
+                    if (ref == 0) {
+                        mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_2[i_2] & VADDR_MASK));
+                        level_2[i_2] = 0;
+                    }
+
+                    continue;
+                }
+
+                uintptr_t *level_3 = MEM_PHYS_TO_VIRT(level_2[i_2] & VADDR_MASK);
 
                 for (size_t i_3 = 0; i_3 < 512; i_3++) {
                     if ((level_3[i_3] & (1 << ATT_VALID_OFF)) == 0)
                         continue;
 
-                    uint16_t ref = mmu_mark_freed(&level_3[i_3]);
+                    // Page descriptor, mark freed
+                    uint8_t ref = mmu_mark_freed(&level_3[i_3]);
                     // If no more references, unmap from kernel space and free
                     // physical memory
-                    if (ref == 0)
-                        mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_3[i_3] & ~(0xfff0000000000fff)));
-
-                    level_3[i_3] = 0;
+                    if (ref == 0) {
+                        mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_3[i_3] & VADDR_MASK));
+                        level_3[i_3] = 0;
+                    }
                 }
 
-                uint16_t ref = mmu_mark_freed(&level_2[i_2]);
-                if (ref == 0)
-                    mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_2[i_2] & ~(0xfff0000000000fff)));
+                uint8_t ref = mmu_mark_freed(&level_2[i_2]);
+                if (ref == 0) {
+                    mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_2[i_2] & VADDR_MASK));
+                    level_2[i_2] = 0;
+                }
             }
 
-            uint16_t ref = mmu_mark_freed(&level_1[i_1]);
-            if (ref == 0)
-                mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_1[i_1] & ~(0xfff0000000000fff)));
+            uint8_t ref = mmu_mark_freed(&level_1[i_1]);
+            if (ref == 0) {
+                mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_1[i_1] & VADDR_MASK));
+                level_1[i_1] = 0;
+            }
         }
 
-        uint16_t ref = mmu_mark_freed(&level_0[i_0]);
-        if (ref == 0)
-            mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_0[i_0] & ~(0xfff0000000000fff)));
+        uint8_t ref = mmu_mark_freed(&level_0[i_0]);
+        if (ref == 0) {
+            mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_0[i_0] & VADDR_MASK));
+            level_0[i_0] = 0;
+        }
     }
-
-    mmu_kernel_unmap(table);
 }

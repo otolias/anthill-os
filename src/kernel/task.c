@@ -73,6 +73,9 @@ enum task_err task_exec(const void *file, char *const args[restrict]) {
 
     void *tran_table = MEM_PHYS_TO_VIRT(current_task->tran_table);
 
+    // Unmark previous table entries
+    mem_table_teardown(tran_table);
+
     const struct elf_r_addr stack_r = elf_create_proc_image(file, tran_table);
     switch (stack_r.err) {
         case ELF_ERR_INV:
@@ -149,22 +152,35 @@ enum task_err task_exec(const void *file, char *const args[restrict]) {
     return TASK_OK;
 }
 
-void task_exit(void) {
+void task_exit(__attribute__((unused)) int status) {
+    // TODO: Pass status to parent
     current_task->preempt_count++;
 
+    while (current_task->children_no > 0)
+        task_block(current_task->pid);
+
     // Unblock parent
+    current_task->parent->children_no--;
     task_unblock(current_task->parent->pid);
 
     // Traverse translation tables and free all memory
     mem_table_teardown(MEM_PHYS_TO_VIRT(current_task->tran_table));
 
-    current_task->preempt_count--;
+    // Free translation table
+    mem_free_kernel_page(MEM_PHYS_TO_VIRT(current_task->tran_table));
+
+    // Free kernel stack
+    mem_free_kernel_page(current_task->kernel_stack);
 
     // Remove from task array
     task_remove(current_task);
 
+    // Free task struct
+    mem_free_kernel_page(current_task);
+
     // Switch context to init_task
-    cpu_switch(current_task, &init_task);
+    current_task = &init_task;
+    cpu_switch(NULL, &init_task);
 }
 
 struct task_r_pid task_fork(void) {
@@ -195,25 +211,25 @@ struct task_r_pid task_fork(void) {
     child->pid = ++task_count;
     child->kernel_stack = kernel_stack_r.addr;
     child->parent = current_task;
+    child->children_no = 0;
     child->tran_table = MEM_VIRT_TO_PHYS(tran_table_r.addr);
     child->state = current_task->state;
     child->preempt_count = current_task->preempt_count;
     child->priority = current_task->priority;
     child->counter = child->priority;
 
+    current_task->children_no++;
+
     task_add(child);
 
+    // Mark task page tables as read only
+    mem_table_soft_copy(MEM_PHYS_TO_VIRT(current_task->tran_table));
+
     // Copy top level table
-    if (current_task->tran_table) {
-        memcpy(
-            MEM_PHYS_TO_VIRT(child->tran_table),
-            MEM_PHYS_TO_VIRT(current_task->tran_table),
-            PAGESIZE
-        );
-    }
+    memcpy(tran_table_r.addr, MEM_PHYS_TO_VIRT(current_task->tran_table), PAGESIZE);
 
     // Store current context
-    cpu_switch(current_task, current_task);
+    cpu_switch(current_task, NULL);
 
     // If child, return
     if (current_task == child) {
@@ -227,10 +243,6 @@ struct task_r_pid task_fork(void) {
     // Setup child's kernel stack
     const uintptr_t ksp_offset = current_task->context.ksp - (uintptr_t) current_task->kernel_stack;
     child->context.ksp = (uintptr_t) child->kernel_stack + ksp_offset;
-
-    // Mark task page tables as read only
-    if (current_task->tran_table)
-        mem_table_soft_copy(MEM_PHYS_TO_VIRT(current_task->tran_table));
 
     current_task->preempt_count--;
     return (struct task_r_pid) { .pid = child->pid, .err = TASK_OK };

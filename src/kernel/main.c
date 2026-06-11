@@ -6,7 +6,10 @@
 
 #include <stdint.h>
 
-void main(void) {
+void main(uintptr_t *tran_table) {
+    // TODO: Unmap kernel segments from user space
+    task_current()->tran_table = tran_table;
+
     irq_enable();
 
     io_fmt("Kernel booted successfully...\n");
@@ -26,7 +29,7 @@ void main(void) {
 
         enum task_err err = task_exec(file, NULL);
         if (err != TASK_OK) {
-            io_fmt("KERNEL::modules/rd failed to load. Error %d\n", err);
+            io_fmt("KERNEL::bin/hello failed to load. Error %d\n", err);
             return;
         }
     }

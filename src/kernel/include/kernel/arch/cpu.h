@@ -34,8 +34,10 @@ struct cpu_context {
 [[noreturn]] void cpu_start_user(uintptr_t entry, uintptr_t sp, void *tran_table);
 
 /*
-* Switch cpu context from previous task to next
+* Store current cpu context to task pointed to by _prev_ and restore cpu context
+* from task pointed to by _next_. If _prev_ is NULL, only restores _next_ and
+* if _next_ is NULL, only stores _prev_.
 */
-void cpu_switch(struct task *previous, struct task *next);
+void cpu_switch(struct task *prev, struct task *next);
 
 #endif /* _KERNEL_ARCH_AARCH64_CPU_H */

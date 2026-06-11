@@ -53,6 +53,12 @@ struct mem_r_addr {
 struct mem_r_addr mem_alloc_kernel_page(enum mem_flags flags);
 
 /*
+* De-allocate kernel page starting at virtual address pointed to by _vaddr_ and
+* its corresponding physical memory.
+*/
+void mem_free_kernel_page(void *vaddr);
+
+/*
 * Map virtual address _vaddr_ to physical address _paddr_ for the translation
 * table at virtual address _tran_table_ with permissions specified by _flags_.
 *
@@ -77,9 +83,8 @@ struct mem_r_addr mem_alloc_kernel_page(enum mem_flags flags);
 void mem_table_soft_copy(void *table);
 
 /*
-* Traverse translation level table at virtual address pointed to by _table_ and
-* and unmark them as copied. If the task is the sole owner, it frees their
-* pages.
+* Walk translation level table at virtual address pointed to by _table_ and
+* unmark them as copied. Frees their pages if the task task is the sole owner.
 */
 void mem_table_teardown(void *table);
 

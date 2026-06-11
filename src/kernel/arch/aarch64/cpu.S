@@ -8,6 +8,8 @@ cpu_start_user:
 .global cpu_switch
 .arch_extension fp
 cpu_switch:
+    cbz x0, restore
+
     // Store previous process registers
     mov x8, x0
     mrs x9, sp_el0
@@ -35,6 +37,9 @@ cpu_switch:
     stp q30, q31, [x8], #32
     stp x29, x9, [x8], #16
     stp x30, x10, [x8]
+
+restore:
+    cbz x1, return
 
     // Restore next process registers
     mov x8, x1
@@ -73,4 +78,5 @@ cpu_switch:
     dsb  ish
     isb
 
+return:
     ret

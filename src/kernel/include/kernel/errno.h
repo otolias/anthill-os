@@ -16,5 +16,6 @@
 #define EIO       13
 #define ENOEXEC   14
 #define EOVERFLOW 15
+#define EUNKNOWN  16
 
 #endif /* _KERNEL_ERRNO_H */

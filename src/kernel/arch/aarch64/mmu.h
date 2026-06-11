@@ -17,14 +17,16 @@
 // Normal Memory
 #define ATT_NORMAL (MAIR_NORMAL_IDX << 2)
 
+// Access permissions offset
+#define ATT_AP_OFF   (6)
 // No access in EL0 and read/write in EL1
-#define ATT_AP_NA_RW (0 << 6)
+#define ATT_AP_NA_RW (0 << ATT_AP_OFF)
 // Read/write in both EL0 and EL1
-#define ATT_AP_RW_RW (1 << 6)
+#define ATT_AP_RW_RW (1 << ATT_AP_OFF)
 // No access in EL0 and read-only in EL1
-#define ATT_AP_NA_RO (2 << 6)
+#define ATT_AP_NA_RO (2 << ATT_AP_OFF)
 // Read-only in both EL0 and EL1
-#define ATT_AP_RO_RO (3 << 6)
+#define ATT_AP_RO_RO (3 << ATT_AP_OFF)
 
 // Set or unset page access flag
 #define ATT_AF_SET   (1 << 10)
@@ -42,10 +44,21 @@
 // Reference counter limit
 #define ATT_REF_LIMIT 0xf
 
+#define VADDR_MASK 0x0000fffffffff000
+
 #ifndef __ASSEMBLER__
 
 #include <stddef.h>
 #include <stdint.h>
+
+/*
+* Handle data abort translation fault for translation table at physical address
+* _table_ and virtual address _vaddr_. Doesn't handle invalidation.
+*
+* On success, returns the start of the virtual address page.
+* On failure, returns NULL.
+*/
+void* mmu_handle_data_abort(uintptr_t table, uintptr_t vaddr);
 
 /*
 * Initialise the MMU
@@ -54,6 +67,11 @@
 * translation tables of kernel and user space respectively.
 */
 void mmu_init(void *kernel_table, void *user_table);
+
+/*
+* Invalidate translation table cache for virtual address _vaddr_
+*/
+void mmu_invalidate(uintptr_t vaddr);
 
 /*
 * Map virtual address _vaddr_ to physical address _paddr_ with access attributes
@@ -71,23 +89,25 @@ void mmu_init(void *kernel_table, void *user_table);
 void mmu_kernel_unmap(void *vaddr);
 
 /*
-* Set read-only permissions to table entry at physical address pointed to by
-* _entry_ and increment reference counter.
+* Increment reference counter at physical address pointed to by _entry_. If
+* it has read/write access in user space, invalidate entry.
 */
 void mmu_mark_copied(uintptr_t *entry);
 
 /*
-* De-increment reference counter of table entry at physical address pointed to
-* by _entry_.
+* De-increment reference counter at physical address pointed to by _entry_.
 *
-* Returns the reference counter.
+* Returns the old value of the reference counter if de-incremented.
 */
 uint8_t mmu_mark_freed(uintptr_t *entry);
 
 /*
 * Setup translation tables and initialise the MMU.
+*
+* Returns a pointer to the physical address of the top level user translation
+* table.
 */
-void mmu_setup(void);
+uintptr_t* mmu_setup(void);
 
 /*
 * Map virtual address _vaddr_ to physical address _paddr_ for the translation
