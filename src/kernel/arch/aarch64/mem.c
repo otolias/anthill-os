@@ -5,6 +5,7 @@
 
 #include <kernel/string.h>
 #include <kernel/task.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -191,4 +192,84 @@ void mem_table_teardown(void *table) {
             level_0[i_0] = 0;
         }
     }
+}
+
+void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt) {
+    while (1) {
+        bool empty = true;
+        size_t p = 0;
+
+        for (p = 0; p < page_cnt; p++) {
+            size_t idx[4];
+            mmu_get_indices(addr + (p * PAGESIZE), idx);
+
+            uintptr_t *level_0 = tran_table;
+            if (!mmu_is_valid(level_0[idx[0]]))
+                continue;
+
+            uintptr_t *level_1 = mmu_get_next_level(level_0[idx[0]]);
+            if (!mmu_is_valid(level_1[idx[1]]))
+                continue;
+
+            if (mmu_is_block(level_1[idx[1]])) {
+                empty = false;
+                break;
+            }
+
+            uintptr_t *level_2 = mmu_get_next_level(level_1[idx[1]]);
+            if (!mmu_is_valid(level_2[idx[2]]))
+                continue;
+
+            if (mmu_is_block(level_2[idx[2]])) {
+                empty = false;
+                break;
+            }
+
+            uintptr_t *level_3 = mmu_get_next_level(level_2[idx[2]]);
+            if (mmu_is_valid(level_3[idx[3]])) {
+                empty = false;
+                break;
+            }
+        }
+
+        if (empty)
+            break;
+
+        addr += (p + 1) * PAGESIZE;
+    }
+
+    return addr;
+}
+
+enum mem_error mem_user_unmap_page(void *tran_table, void *vaddr) {
+    size_t idx[4];
+    mmu_get_indices(vaddr, idx);
+    uintptr_t *level_0 = tran_table;
+
+    if (!mmu_is_valid(level_0[idx[0]]))
+        return MEM_ERR_UNM;
+
+    uintptr_t *level_1 = mmu_get_next_level(level_0[idx[0]]);
+    if (!mmu_is_valid(level_1[idx[1]]))
+        return MEM_ERR_UNM;
+
+    // TODO: Handle block
+
+    uintptr_t *level_2 = mmu_get_next_level(level_1[idx[1]]);
+    if (!mmu_is_valid(level_2[idx[2]]))
+        return MEM_ERR_UNM;
+
+    // TODO: Handle block
+
+    uintptr_t *level_3 = mmu_get_next_level(level_2[idx[2]]);
+    if (!mmu_is_valid(level_3[idx[3]]))
+        return MEM_ERR_UNM;
+
+    uint8_t ref = mmu_mark_freed(&level_3[idx[3]]);
+    if (ref == 0) {
+        mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_3[idx[3]] & VADDR_MASK));
+        level_3[idx[3]] = 0;
+    }
+
+    return MEM_OK;
 }

@@ -5,12 +5,13 @@ kernel_sources = files([
   'io.c',
   'main.c',
   'mqueue.c',
-  'mm.c',
   'rd.c',
   'string.c',
   'syscalls.c',
   'syscalls' / 'sys_exit.c',
   'syscalls' / 'sys_fork.c',
+  'syscalls' / 'sys_mmap.c',
+  'syscalls' / 'sys_munmap.c',
   'task.c',
 ])
 

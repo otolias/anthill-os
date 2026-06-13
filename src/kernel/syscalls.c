@@ -1,27 +1,9 @@
 #include "kernel/syscalls.h"
 
-#include <stddef.h>
-
-#include <kernel/errno.h>
-#include <kernel/mm.h>
 #include <kernel/mqueue.h>
-#include <kernel/task.h>
 #include <kernel/sys/types.h>
-
-ssize_t sys_mmap(__attribute__((unused)) void *addr, size_t len,
-                 __attribute__((unused)) int prot, __attribute__((unused)) int flags,
-                 __attribute__((unused)) int fildes, __attribute__((unused)) off_t off) {
-    const void *address = mm_get_pages(len);
-    if (!address)
-        return -ENOMEM;
-
-    return (ssize_t) address;
-}
-
-int sys_munmap(void *addr, __attribute__((unused))size_t len) {
-    mm_free_pages(addr);
-    return 0;
-}
+#include <kernel/task.h>
+#include <stddef.h>
 
 mqd_t sys_mq_open(const char *name, int oflag, mode_t mode, void *attr) {
     return mqueue_open(name, oflag, mode, (struct mq_attr *) attr);

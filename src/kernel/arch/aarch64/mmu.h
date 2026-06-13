@@ -48,8 +48,23 @@
 
 #ifndef __ASSEMBLER__
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+/*
+* Get translation table indices for virtual address pointed to by _vaddr_ and
+* write them to _idx_.
+*/
+void mmu_get_indices(void *vaddr, size_t idx[4]);
+
+/*
+* Get the kernel space virtual address of the physical address in table entry
+* _entry_.
+*
+* Returns a pointer to the virtual address.
+*/
+uintptr_t* mmu_get_next_level(uintptr_t entry);
 
 /*
 * Handle data abort translation fault for translation table at physical address
@@ -72,6 +87,20 @@ void mmu_init(void *kernel_table, void *user_table);
 * Invalidate translation table cache for virtual address _vaddr_
 */
 void mmu_invalidate(uintptr_t vaddr);
+
+/*
+* Check if _entry_ is block
+*
+* Returns true if block, false if not.
+*/
+bool mmu_is_block(uintptr_t entry);
+
+/*
+* Check if _entry_ is valid.
+*
+* Returns true if valid, false if not.
+*/
+bool mmu_is_valid(uintptr_t entry);
 
 /*
 * Map virtual address _vaddr_ to physical address _paddr_ with access attributes

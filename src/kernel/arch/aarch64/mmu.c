@@ -11,6 +11,18 @@
 extern volatile char _data_start;
 extern volatile char _data_end;
 
+// TODO: Use and test in other functions
+void mmu_get_indices(void *vaddr, size_t idx[4]) {
+    idx[0] = ((uintptr_t) vaddr >> 39) & 0x1ff;
+    idx[1] = ((uintptr_t) vaddr >> 30) & 0x1ff;
+    idx[2] = ((uintptr_t) vaddr >> 21) & 0x1ff;
+    idx[3] = ((uintptr_t) vaddr >> 12) & 0x1ff;
+}
+
+uintptr_t* mmu_get_next_level(uintptr_t entry) {
+    return MEM_PHYS_TO_VIRT(entry & VADDR_MASK);
+}
+
 void* mmu_handle_data_abort(uintptr_t table, uintptr_t vaddr) {
     const size_t idx[4] = {
         (vaddr >> 39) & 0x1ff,
@@ -95,6 +107,14 @@ void* mmu_handle_data_abort(uintptr_t table, uintptr_t vaddr) {
     level_3[idx[3]] |= (uintptr_t) MEM_VIRT_TO_PHYS(page_r.addr) | ATT_AP_RW_RW;
 
     return (void *) (vaddr & VADDR_MASK);
+}
+
+bool mmu_is_block(uintptr_t entry) {
+    return (entry & (1 << ATT_BLOCK_OFF)) == 0;
+}
+
+bool mmu_is_valid(uintptr_t entry) {
+    return (entry & (1 << ATT_VALID_OFF)) != 0;
 }
 
 void* mmu_kernel_map(void *vaddr, const void *paddr, const uint64_t attr) {

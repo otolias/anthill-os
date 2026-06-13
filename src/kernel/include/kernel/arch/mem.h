@@ -28,6 +28,7 @@ enum mem_error {
     MEM_OK,
     MEM_ERR_OOM, /* Out of memory */
     MEM_ERR_FLG, /* Invalid permission flags */
+    MEM_ERR_UNM, /* Tried to unmap already unmapped page */
 };
 
 struct mem_r_addr {
@@ -62,7 +63,7 @@ void mem_free_kernel_page(void *vaddr);
 * Map virtual address _vaddr_ to physical address _paddr_ for the translation
 * table at virtual address _tran_table_ with permissions specified by _flags_.
 *
-* Note: _paddr_ must already be allocated
+* Note: _paddr_ must already be allocated by the kernel
 *
 * Returns enum mem_error
 *
@@ -87,5 +88,23 @@ void mem_table_soft_copy(void *table);
 * unmark them as copied. Frees their pages if the task task is the sole owner.
 */
 void mem_table_teardown(void *table);
+
+/*
+* Find unallocated virtual memory to hold _cnt_ pages starting from virtual
+* address _addr_ for the translation table at virtual address pointed to by
+* _tran_table_.
+*
+* On success, returns a pointer to the start of the virtual memory found.
+* On failure, returns NULL.
+*/
+void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt);
+
+/*
+* Unmap user page starting at virtual address pointed to by _vaddr_ for the
+* translation table at the virtual address pointed to by _tran_table_.
+*
+* Returns enum mem_error.
+*/
+enum mem_error mem_user_unmap_page(void *tran_table, void *vaddr);
 
 #endif /* _KERNEL_ARCH_AARCH64_MEM_H */

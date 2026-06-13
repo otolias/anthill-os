@@ -20,10 +20,22 @@
 
 extern const void *syscall_table[TOTAL_SYSCALLS];
 
+// Types needed by sys/mman.h
+#define __PROT_NONE  0
+#define __PROT_READ  1
+#define __PROT_WRITE 2
+#define __PROT_EXEC  4
+
+#define __MAP_ANONYMOUS 1
+
+#define __MAP_FAILED ((void *) -1)
+
 /* === System calls === */
 
 void sys_exit(int status);
 pid_t sys_fork(void);
+void* sys_mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
+int sys_munmap(void *addr, size_t len);
 
 #endif /* __ASSEMBLER__ */
 #endif /* _KERNEL_SYSCALLS_H */
