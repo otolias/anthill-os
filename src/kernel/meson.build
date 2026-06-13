@@ -9,6 +9,8 @@ kernel_sources = files([
   'rd.c',
   'string.c',
   'syscalls.c',
+  'syscalls' / 'sys_exit.c',
+  'syscalls' / 'sys_fork.c',
   'task.c',
 ])
 

@@ -182,7 +182,7 @@ el0_data_abort_err:
     handle_invalid_entry 0, DATA_ABORT_ERROR
 
 el0_svc:
-    adr     x25, system_call_table
+    adr     x25, syscall_table
     uxtw    x26, w8
     bl      irq_enable
     cmp     x26, #TOTAL_SYSCALLS

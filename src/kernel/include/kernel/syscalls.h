@@ -16,7 +16,14 @@
 
 #ifndef __ASSEMBLER__
 
-extern const void *system_call_table[];
+#include <kernel/sys/types.h>
+
+extern const void *syscall_table[TOTAL_SYSCALLS];
+
+/* === System calls === */
+
+void sys_exit(int status);
+pid_t sys_fork(void);
 
 #endif /* __ASSEMBLER__ */
 #endif /* _KERNEL_SYSCALLS_H */
