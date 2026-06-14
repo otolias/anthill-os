@@ -56,7 +56,12 @@
 * Get translation table indices for virtual address pointed to by _vaddr_ and
 * write them to _idx_.
 */
-void mmu_get_indices(void *vaddr, size_t idx[4]);
+void mmu_get_table_idx(void *vaddr, size_t idx[4]);
+
+/*
+* Get the virtual address of the next level entry of _table_ at _idx_.
+*/
+uintptr_t* mmu_get_next_kernel_level(const uintptr_t *table, size_t idx);
 
 /*
 * Get the kernel space virtual address of the physical address in table entry
@@ -64,7 +69,7 @@ void mmu_get_indices(void *vaddr, size_t idx[4]);
 *
 * Returns a pointer to the virtual address.
 */
-uintptr_t* mmu_get_next_level(uintptr_t entry);
+uintptr_t* mmu_get_vaddr(uintptr_t entry);
 
 /*
 * Handle data abort translation fault for translation table at physical address
@@ -103,21 +108,6 @@ bool mmu_is_block(uintptr_t entry);
 bool mmu_is_valid(uintptr_t entry);
 
 /*
-* Map virtual address _vaddr_ to physical address _paddr_ with access attributes
-* specified by _attr_.
-*
-* On success, returns _vaddr_.
-* On failure, returns NULL.
-*/
-[[nodiscard]] void* mmu_kernel_map(void *vaddr, const void *paddr, uint64_t attr);
-
-/*
-* Unmap virtual address pointed to by _vaddr_ from kernel space and
-* deallocate the corresponding physical memory
-*/
-void mmu_kernel_unmap(void *vaddr);
-
-/*
 * Increment reference counter at physical address pointed to by _entry_. If
 * it has read/write access in user space, invalidate entry.
 */
@@ -138,16 +128,5 @@ uint8_t mmu_mark_freed(uintptr_t *entry);
 */
 uintptr_t* mmu_setup(void);
 
-/*
-* Map virtual address _vaddr_ to physical address _paddr_ for the translation
-* table at virtual address _tran_table_ with access attributes specified by
-* _attr_.
-*
-* On success, returns _vaddr_.
-* On failure, returns NULL.
-*/
-[[nodiscard]] void* mmu_user_map(void *tran_table, void *vaddr, const void *paddr, uint64_t attr);
-
 #endif /* __ASSEMBLER__ */
-
 #endif /* _KERNEL_ARCH_AARCH64_MMU_H */

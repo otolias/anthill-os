@@ -5,6 +5,7 @@
 #include <kernel/arch/mem.h>
 #include <kernel/elf.h>
 #include <kernel/io.h>
+#include <kernel/panic.h>
 #include <kernel/string.h>
 #include <kernel/sys/types.h>
 #include <stddef.h>
@@ -74,7 +75,8 @@ enum task_err task_exec(const void *file, char *const args[restrict]) {
     void *tran_table = MEM_PHYS_TO_VIRT(current_task->tran_table);
 
     // Unmark previous table entries
-    mem_table_teardown(tran_table);
+    if (mem_table_teardown(tran_table) != MEM_OK)
+        panic("Failed to teardown table entries");
 
     const struct elf_r_addr stack_r = elf_create_proc_image(file, tran_table);
     switch (stack_r.err) {
@@ -91,14 +93,14 @@ enum task_err task_exec(const void *file, char *const args[restrict]) {
     }
 
     // Allocate stack
-    const struct mem_r_addr user_stack_r = mem_alloc_kernel_page(MEM_RW);
+    const struct mem_r_addr user_stack_r = mem_kernel_alloc_page(MEM_RW);
     if (user_stack_r.err != MEM_OK) {
         // TODO: Free process image
         return TASK_ERR_MEM;
     }
 
     // Map stack to userspace
-    if (mem_map_user(
+    if (mem_user_map_page(
             tran_table, stack_r.addr, MEM_VIRT_TO_PHYS(user_stack_r.addr), MEM_RW)
         != MEM_OK) {
         // TODO: Free page_r
@@ -164,19 +166,23 @@ void task_exit(__attribute__((unused)) int status) {
     task_unblock(current_task->parent->pid);
 
     // Traverse translation tables and free all memory
-    mem_table_teardown(MEM_PHYS_TO_VIRT(current_task->tran_table));
+    if (mem_table_teardown(MEM_PHYS_TO_VIRT(current_task->tran_table)) != MEM_OK)
+        panic("Failed to teardown table entries");
 
     // Free translation table
-    mem_free_kernel_page(MEM_PHYS_TO_VIRT(current_task->tran_table));
+    if (mem_kernel_free_page(MEM_PHYS_TO_VIRT(current_task->tran_table)) != MEM_OK)
+        panic("Failed to free translation table");
 
     // Free kernel stack
-    mem_free_kernel_page(current_task->kernel_stack);
+    if (mem_kernel_free_page(current_task->kernel_stack) != MEM_OK)
+        panic("Failed to free kernel stack");
 
     // Remove from task array
     task_remove(current_task);
 
     // Free task struct
-    mem_free_kernel_page(current_task);
+    if (mem_kernel_free_page(current_task) != MEM_OK)
+        panic("Failed to free task struct");
 
     // Switch context to init_task
     current_task = &init_task;
@@ -186,17 +192,17 @@ void task_exit(__attribute__((unused)) int status) {
 struct task_r_pid task_fork(void) {
     current_task->preempt_count++;
 
-    struct mem_r_addr task_r = mem_alloc_kernel_page(MEM_RW);
+    struct mem_r_addr task_r = mem_kernel_alloc_page(MEM_RW);
     if (task_r.err != MEM_OK)
         return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
 
-    struct mem_r_addr tran_table_r = mem_alloc_kernel_page(MEM_RW);
+    struct mem_r_addr tran_table_r = mem_kernel_alloc_page(MEM_RW);
     if (tran_table_r.err != MEM_OK) {
         // TODO: Free task_r
         return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
     }
 
-    struct mem_r_addr kernel_stack_r = mem_alloc_kernel_page(MEM_RW);
+    struct mem_r_addr kernel_stack_r = mem_kernel_alloc_page(MEM_RW);
     if (kernel_stack_r.err != MEM_OK) {
         // TODO: Free task_r
         // TODO: Free tran_table_r

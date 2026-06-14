@@ -1,22 +1,17 @@
 #include "kernel/arch/mem.h"
 
-#include "mmu.h"
-#include "pmm.h"
-
+#include <kernel/assert.h>
 #include <kernel/string.h>
 #include <kernel/task.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-struct mem_r_addr mem_alloc_kernel_page(enum mem_flags flags) {
-    // Find empty page
-    void *page = pmm_get();
-    if (!page)
-        return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_OOM };
+#include "mmu.h"
+#include "pmm.h"
 
-    void *vaddr = MEM_PHYS_TO_VIRT(page);
-
+struct mem_r_addr mem_kernel_alloc_page(enum mem_flags flags) {
+    // Parse flags
     uint64_t attr = 0;
     switch (flags) {
         case MEM_RO:
@@ -32,21 +27,282 @@ struct mem_r_addr mem_alloc_kernel_page(enum mem_flags flags) {
             break;
 
         default:
-            pmm_free(page);
             return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_FLG };
     }
 
-    if (mmu_kernel_map(vaddr, page, attr) != vaddr)
+    // Find empty page
+    void *phys_pages[4] = {0};
+    phys_pages[3] = pmm_get();
+    if (!phys_pages[3])
         return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_OOM };
+
+    void *vaddr = MEM_PHYS_TO_VIRT(phys_pages[3]);
+    size_t idx[4];
+    mmu_get_table_idx(vaddr, idx);
+
+    uintptr_t *levels[4];
+    levels[0] = (uintptr_t *) 0xfffffffffffff000;
+    levels[1] = mmu_get_next_kernel_level(levels[0], idx[0]);
+    levels[2] = mmu_get_next_kernel_level(levels[1], idx[1]);
+    levels[3] = mmu_get_next_kernel_level(levels[2], idx[2]);
+
+    // Handle levels 0, 1 and 2
+    for (size_t i = 0; i < 3; i++) {
+        if (!mmu_is_valid(levels[i][idx[i]])) {
+            phys_pages[i] = pmm_get();
+            if (!phys_pages[i]) {
+                for (size_t p = 0; p < 4; p++) {
+                    if (phys_pages[p])
+                        pmm_free(phys_pages[p]);
+                }
+
+                return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_OOM };
+            }
+
+            levels[i][idx[i]] = (uintptr_t) phys_pages[i] | ATT_VALID | ATT_PAGE | ATT_AF_SET;
+            memset(levels[i + 1], 0, PAGESIZE);
+        }
+    }
+
+    // Level 3
+    if (mmu_is_valid(levels[3][idx[3]])) {
+        for (size_t i = 0; i < 4; i++) {
+            if (phys_pages[i])
+                pmm_free(phys_pages[i]);
+
+            return (struct mem_r_addr) { .addr = NULL, .err = MEM_ERR_EXS };
+        }
+    }
+
+    levels[3][idx[3]] = 0;
+    levels[3][idx[3]] = ((uintptr_t) phys_pages[3]) | attr | ATT_VALID | ATT_PAGE | ATT_NORMAL |
+        ATT_AF_SET;
 
     return (struct mem_r_addr) { .addr = vaddr, .err = MEM_OK };
 }
 
-void mem_free_kernel_page(void *vaddr) {
-    mmu_kernel_unmap(vaddr);
+enum mem_error mem_kernel_free_page(void *vaddr) {
+    size_t idx[4];
+    mmu_get_table_idx(vaddr, idx);
+
+    uintptr_t *levels[4];
+    levels[0] = (uintptr_t *) 0xfffffffffffff000;
+    levels[1] = mmu_get_next_kernel_level(levels[0], idx[0]);
+    levels[2] = mmu_get_next_kernel_level(levels[1], idx[1]);
+    levels[3] = mmu_get_next_kernel_level(levels[2], idx[2]);
+
+    for (size_t i = 0; i < 4; i++) {
+        if (!mmu_is_valid(levels[i][idx[i]]))
+            return MEM_ERR_UNM;
+
+        if (i == 3 || mmu_is_block(levels[i][idx[i]])) {
+            assert(i != 0);
+
+            levels[i][idx[i]] = 0;
+            void *paddr = MEM_VIRT_TO_PHYS(vaddr);
+            size_t shift = PAGESIZE;
+            if (i == 1) {
+                shift <<= 18;
+            } else if (i == 2) {
+                shift <<= 9;
+            }
+            void *paddr_end = paddr + shift;
+
+            for (; paddr < paddr_end; paddr += PAGESIZE)
+                pmm_free(paddr);
+
+            break;
+        }
+    }
+
+    return MEM_OK;
 }
 
-enum mem_error mem_map_user(void *tran_table, void *vaddr, void *paddr, enum mem_flags flags) {
+void mem_table_soft_copy(void *table) {
+    uintptr_t *levels[4] = { table, 0, };
+
+    for (size_t i_0 = 0; i_0 < 512; i_0++) {
+        if (!mmu_is_valid(levels[0][i_0]))
+            continue;
+
+        levels[1] = mmu_get_vaddr(levels[0][i_0]);
+
+        for (size_t i_1 = 0; i_1 < 512; i_1++) {
+            if (!mmu_is_valid(levels[0][i_0]))
+                continue;
+
+            mmu_mark_copied(&levels[1][i_1]);
+
+            if (mmu_is_block(levels[1][i_1]))
+                continue;
+
+            levels[2] = mmu_get_vaddr(levels[1][i_1]);
+
+            for (size_t i_2 = 0; i_2 < 512; i_2++) {
+                if (!mmu_is_valid(levels[2][i_2]))
+                    continue;
+
+                mmu_mark_copied(&levels[2][i_2]);
+
+                if (mmu_is_block(levels[2][i_2]))
+                    continue;
+
+                levels[3] = mmu_get_vaddr(levels[2][i_2]);
+
+                for (size_t i_3 = 0; i_3 < 512; i_3++) {
+                    if (!mmu_is_valid(levels[3][i_3]))
+                        continue;
+
+                    mmu_mark_copied(&levels[3][i_3]);
+                }
+            }
+        }
+    }
+}
+
+enum mem_error mem_table_teardown(void *table) {
+    uintptr_t *levels[4] = { table, 0, };
+    levels[0] = table;
+
+    for (size_t i_0 = 0; i_0 < 512; i_0++) {
+        if (!mmu_is_valid(levels[0][i_0]))
+            continue;
+
+        levels[1] = mmu_get_vaddr(levels[0][i_0]);
+
+        for (size_t i_1 = 0; i_1 < 512; i_1++) {
+            if (!mmu_is_valid(levels[1][i_1]))
+                continue;
+
+            if (mmu_is_block(levels[1][i_1])) {
+                uint8_t ref = mmu_mark_freed(&levels[1][i_1]);
+                if (ref == 0) {
+                    enum mem_error err = mem_kernel_free_page(mmu_get_vaddr(levels[1][i_1]));
+                    if (err != MEM_OK)
+                        return err;
+
+                    levels[1][i_1] = 0;
+                }
+
+                continue;
+            }
+
+            levels[2] = mmu_get_vaddr(levels[1][i_1]);
+
+            for (size_t i_2 = 0; i_2 < 512; i_2++) {
+                if (!mmu_is_valid(levels[2][i_2]))
+                    continue;
+
+                if (mmu_is_block(levels[2][i_2])) {
+                    uint8_t ref = mmu_mark_freed(&levels[2][i_2]);
+                    if (ref == 0) {
+                        enum mem_error err = mem_kernel_free_page(mmu_get_vaddr(levels[2][i_2]));
+                        if (err != MEM_OK)
+                            return err;
+
+                        levels[2][i_2] = 0;
+                    }
+
+                    continue;
+                }
+
+                levels[3] = mmu_get_vaddr(levels[2][i_2]);
+
+                for (size_t i_3 = 0; i_3 < 512; i_3++) {
+                    if (!mmu_is_valid(levels[3][i_3]))
+                        continue;
+
+                    uint8_t ref = mmu_mark_freed(&levels[3][i_3]);
+                    if (ref == 0) {
+                        enum mem_error err = mem_kernel_free_page(mmu_get_vaddr(levels[3][i_3]));
+                        if (err != MEM_OK)
+                            return err;
+
+                        levels[3][i_3] = 0;
+                    }
+                }
+
+                uint8_t ref = mmu_mark_freed(&levels[2][i_2]);
+                if (ref == 0) {
+                    enum mem_error err = mem_kernel_free_page(mmu_get_vaddr(levels[2][i_2]));
+                    if (err != MEM_OK)
+                        return err;
+
+                    levels[2][i_2] = 0;
+                }
+            }
+
+            uint8_t ref = mmu_mark_freed(&levels[1][i_1]);
+            if (ref == 0) {
+                enum mem_error err = mem_kernel_free_page(mmu_get_vaddr(levels[1][i_1]));
+                if (err != MEM_OK)
+                    return err;
+
+                levels[1][i_1] = 0;
+            }
+        }
+
+        uint8_t ref = mmu_mark_freed(&levels[0][i_0]);
+        if (ref == 0) {
+            enum mem_error err = mem_kernel_free_page(mmu_get_vaddr(levels[0][i_0]));
+            if (err != MEM_OK)
+                return err;
+
+            levels[0][i_0] = 0;
+        }
+    }
+
+    return MEM_OK;
+}
+
+void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt) {
+    while (1) {
+        bool empty = true;
+        size_t p = 0;
+
+        for (p = 0; p < page_cnt; p++) {
+            size_t idx[4];
+            mmu_get_table_idx(addr + (p * PAGESIZE), idx);
+
+            uintptr_t *level_0 = tran_table;
+            if (!mmu_is_valid(level_0[idx[0]]))
+                continue;
+
+            uintptr_t *level_1 = mmu_get_vaddr(level_0[idx[0]]);
+            if (!mmu_is_valid(level_1[idx[1]]))
+                continue;
+
+            if (mmu_is_block(level_1[idx[1]])) {
+                empty = false;
+                break;
+            }
+
+            uintptr_t *level_2 = mmu_get_vaddr(level_1[idx[1]]);
+            if (!mmu_is_valid(level_2[idx[2]]))
+                continue;
+
+            if (mmu_is_block(level_2[idx[2]])) {
+                empty = false;
+                break;
+            }
+
+            uintptr_t *level_3 = mmu_get_vaddr(level_2[idx[2]]);
+            if (mmu_is_valid(level_3[idx[3]])) {
+                empty = false;
+                break;
+            }
+        }
+
+        if (empty)
+            break;
+
+        addr += (p + 1) * PAGESIZE;
+    }
+
+    return addr;
+}
+
+enum mem_error mem_user_map_page(void *tran_table, void *vaddr, void *paddr, enum mem_flags flags) {
     uint64_t attr = 0;
     switch (flags) {
         case MEM_RO:
@@ -65,211 +321,108 @@ enum mem_error mem_map_user(void *tran_table, void *vaddr, void *paddr, enum mem
             return MEM_ERR_FLG;
     }
 
-    if (mmu_user_map(tran_table, vaddr, paddr, attr) != vaddr)
-        return MEM_ERR_OOM;
+    size_t idx[4];
+    mmu_get_table_idx(vaddr, idx);
+
+    // Allocated kernel pages
+    void *kernel_pages[4] = {0, };
+
+    uintptr_t *levels[4] = { tran_table, 0, };
+
+    // Levels 0, 1 and 2
+    for (size_t i = 0; i < 3; i++) {
+        if (!mmu_is_valid(levels[i][idx[i]])) {
+            struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
+            if (page_r.err != MEM_OK) {
+                for (size_t p = 0; p < 4; p++) {
+                    if (kernel_pages[p]) {
+                        if (mem_kernel_free_page(kernel_pages[p]) != MEM_OK)
+                            panic("Tried to de-allocate unmapped kernel page");
+                    }
+                }
+
+                return page_r.err;
+            }
+
+            memset(page_r.addr, 0, PAGESIZE);
+            levels[i][idx[i]] = (uintptr_t) MEM_VIRT_TO_PHYS(page_r.addr) |
+                ATT_VALID | ATT_PAGE | ATT_AF_SET;
+            kernel_pages[i] = page_r.addr;
+        }
+
+        levels[i + 1] = mmu_get_vaddr(levels[i][idx[i]]);
+    }
+
+    if (mmu_is_valid(levels[3][idx[3]])) {
+        for (size_t p = 0; p < 4; p++) {
+            if (kernel_pages[p]) {
+                if (mem_kernel_free_page(kernel_pages[p]) != MEM_OK)
+                    panic("Tried to de-allocate unmapped kernel page");
+            }
+        }
+
+        return MEM_ERR_EXS;
+    }
+
+    levels[3][idx[3]] = (uintptr_t) paddr | attr | ATT_VALID | ATT_PAGE | ATT_NORMAL | ATT_AF_SET;
 
     return MEM_OK;
 }
 
-void mem_table_soft_copy(void *table) {
-    uintptr_t *level_0 = table;
-
-    for (size_t i_0 = 0; i_0 < 512; i_0++) {
-        if ((level_0[i_0] & (1 << ATT_VALID_OFF)) == 0)
-            continue;
-
-        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(level_0[i_0] & VADDR_MASK);
-
-        for (size_t i_1 = 0; i_1 < 512; i_1++) {
-            if ((level_1[i_1] & (1 << ATT_VALID_OFF)) == 0)
-                continue;
-
-            mmu_mark_copied(&level_1[i_1]);
-
-            // If block descriptor, continue
-            if ((level_1[i_1] & (1 << ATT_BLOCK_OFF)) == 0)
-                continue;
-
-            uintptr_t *level_2 = MEM_PHYS_TO_VIRT(level_1[i_1] & VADDR_MASK);
-
-            for (size_t i_2 = 0; i_2 < 512; i_2++) {
-                if ((level_2[i_2] & (1 << ATT_VALID_OFF)) == 0)
-                    continue;
-
-                mmu_mark_copied(&level_2[i_2]);
-
-                // If block descriptor, continue
-                if ((level_2[i_2] & (1 << ATT_BLOCK_OFF)) == 0)
-                    continue;
-
-                uintptr_t *level_3 = MEM_PHYS_TO_VIRT(level_2[i_2] & VADDR_MASK);
-
-                for (size_t i_3 = 0; i_3 < 512; i_3++) {
-                    if ((level_3[i_3] & (1 << ATT_VALID_OFF)) == 0)
-                        continue;
-
-                    mmu_mark_copied(&level_3[i_3]);
-                }
-            }
-        }
-    }
-}
-
-void mem_table_teardown(void *table) {
-    uintptr_t *level_0 = table;
-
-    for (size_t i_0 = 0; i_0 < 512; i_0++) {
-        if ((level_0[i_0] & (1 << ATT_VALID_OFF)) == 0)
-            continue;
-
-        uintptr_t *level_1 = MEM_PHYS_TO_VIRT(level_0[i_0] & VADDR_MASK);
-
-        for (size_t i_1 = 0; i_1 < 512; i_1++) {
-            if ((level_1[i_1] & (1 << ATT_VALID_OFF)) == 0)
-                continue;
-
-            if ((level_1[i_1] & (1 << ATT_BLOCK_OFF)) == 0) {
-                // Block descriptor, mark freed and continue
-                uint8_t ref = mmu_mark_freed(&level_1[i_1]);
-                if (ref == 0) {
-                    mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_1[i_1] & VADDR_MASK));
-                    level_1[i_1] = 0;
-                }
-
-                continue;
-            }
-
-            uintptr_t *level_2 = MEM_PHYS_TO_VIRT(level_1[i_1] & VADDR_MASK);
-
-            for (size_t i_2 = 0; i_2 < 512; i_2++) {
-                if ((level_2[i_2] & (1 << ATT_VALID_OFF)) == 0)
-                    continue;
-
-                if ((level_2[i_2] & (1 << ATT_BLOCK_OFF)) == 0) {
-                    // Block descriptor, mark freed and continue
-                    uint8_t ref = mmu_mark_freed(&level_2[i_2]);
-                    if (ref == 0) {
-                        mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_2[i_2] & VADDR_MASK));
-                        level_2[i_2] = 0;
-                    }
-
-                    continue;
-                }
-
-                uintptr_t *level_3 = MEM_PHYS_TO_VIRT(level_2[i_2] & VADDR_MASK);
-
-                for (size_t i_3 = 0; i_3 < 512; i_3++) {
-                    if ((level_3[i_3] & (1 << ATT_VALID_OFF)) == 0)
-                        continue;
-
-                    // Page descriptor, mark freed
-                    uint8_t ref = mmu_mark_freed(&level_3[i_3]);
-                    // If no more references, unmap from kernel space and free
-                    // physical memory
-                    if (ref == 0) {
-                        mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_3[i_3] & VADDR_MASK));
-                        level_3[i_3] = 0;
-                    }
-                }
-
-                uint8_t ref = mmu_mark_freed(&level_2[i_2]);
-                if (ref == 0) {
-                    mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_2[i_2] & VADDR_MASK));
-                    level_2[i_2] = 0;
-                }
-            }
-
-            uint8_t ref = mmu_mark_freed(&level_1[i_1]);
-            if (ref == 0) {
-                mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_1[i_1] & VADDR_MASK));
-                level_1[i_1] = 0;
-            }
-        }
-
-        uint8_t ref = mmu_mark_freed(&level_0[i_0]);
-        if (ref == 0) {
-            mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_0[i_0] & VADDR_MASK));
-            level_0[i_0] = 0;
-        }
-    }
-}
-
-void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt) {
-    while (1) {
-        bool empty = true;
-        size_t p = 0;
-
-        for (p = 0; p < page_cnt; p++) {
-            size_t idx[4];
-            mmu_get_indices(addr + (p * PAGESIZE), idx);
-
-            uintptr_t *level_0 = tran_table;
-            if (!mmu_is_valid(level_0[idx[0]]))
-                continue;
-
-            uintptr_t *level_1 = mmu_get_next_level(level_0[idx[0]]);
-            if (!mmu_is_valid(level_1[idx[1]]))
-                continue;
-
-            if (mmu_is_block(level_1[idx[1]])) {
-                empty = false;
-                break;
-            }
-
-            uintptr_t *level_2 = mmu_get_next_level(level_1[idx[1]]);
-            if (!mmu_is_valid(level_2[idx[2]]))
-                continue;
-
-            if (mmu_is_block(level_2[idx[2]])) {
-                empty = false;
-                break;
-            }
-
-            uintptr_t *level_3 = mmu_get_next_level(level_2[idx[2]]);
-            if (mmu_is_valid(level_3[idx[3]])) {
-                empty = false;
-                break;
-            }
-        }
-
-        if (empty)
-            break;
-
-        addr += (p + 1) * PAGESIZE;
-    }
-
-    return addr;
-}
-
-enum mem_error mem_user_unmap_page(void *tran_table, void *vaddr) {
+enum mem_error mem_user_free_page(void *tran_table, void *vaddr) {
     size_t idx[4];
-    mmu_get_indices(vaddr, idx);
-    uintptr_t *level_0 = tran_table;
+    mmu_get_table_idx(vaddr, idx);
+    uintptr_t *levels[4] = { tran_table, 0, };
 
-    if (!mmu_is_valid(level_0[idx[0]]))
+    if (!mmu_is_valid(levels[0][idx[0]]))
         return MEM_ERR_UNM;
 
-    uintptr_t *level_1 = mmu_get_next_level(level_0[idx[0]]);
-    if (!mmu_is_valid(level_1[idx[1]]))
+    levels[1] = mmu_get_vaddr(levels[0][idx[0]]);
+    if (!mmu_is_valid(levels[1][idx[1]]))
         return MEM_ERR_UNM;
 
-    // TODO: Handle block
+    if (mmu_is_block(levels[1][idx[1]])) {
+        uint8_t ref = mmu_mark_freed(&levels[1][idx[1]]);
+        if (ref == 0) {
+            void *kaddr = mmu_get_vaddr(levels[1][idx[1]]);
+            enum mem_error err = mem_kernel_free_page(kaddr);
+            if (err != MEM_OK)
+                return err;
+        }
 
-    uintptr_t *level_2 = mmu_get_next_level(level_1[idx[1]]);
-    if (!mmu_is_valid(level_2[idx[2]]))
-        return MEM_ERR_UNM;
-
-    // TODO: Handle block
-
-    uintptr_t *level_3 = mmu_get_next_level(level_2[idx[2]]);
-    if (!mmu_is_valid(level_3[idx[3]]))
-        return MEM_ERR_UNM;
-
-    uint8_t ref = mmu_mark_freed(&level_3[idx[3]]);
-    if (ref == 0) {
-        mmu_kernel_unmap(MEM_PHYS_TO_VIRT(level_3[idx[3]] & VADDR_MASK));
-        level_3[idx[3]] = 0;
+        levels[1][idx[1]] = 0;
+        return MEM_OK;
     }
 
+    levels[2] = mmu_get_vaddr(levels[1][idx[1]]);
+    if (!mmu_is_valid(levels[2][idx[2]]))
+        return MEM_ERR_UNM;
+
+    if (mmu_is_block(levels[2][idx[2]])) {
+        uint8_t ref = mmu_mark_freed(&levels[2][idx[2]]);
+        if (ref == 0) {
+            void *kaddr = mmu_get_vaddr(levels[2][idx[2]]);
+            enum mem_error err = mem_kernel_free_page(kaddr);
+            if (err != MEM_OK)
+                return err;
+        }
+
+        levels[2][idx[2]] = 0;
+        return MEM_OK;
+    }
+
+    levels[3] = mmu_get_vaddr(levels[2][idx[2]]);
+    if (!mmu_is_valid(levels[3][idx[3]]))
+        return MEM_ERR_UNM;
+
+    uint8_t ref = mmu_mark_freed(&levels[3][idx[3]]);
+    if (ref == 0) {
+        void *kaddr = mmu_get_vaddr(levels[3][idx[3]]);
+        enum mem_error err = mem_kernel_free_page(kaddr);
+        if (err != MEM_OK)
+            return err;
+    }
+
+    levels[3][idx[3]] = 0;
     return MEM_OK;
 }

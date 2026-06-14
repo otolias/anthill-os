@@ -43,7 +43,7 @@ void* sys_mmap(void *addr, size_t len, int prot, int flags,
 
     for (size_t i = 0; i < page_cnt; i++) {
         // TODO: De-allocate previous if it fails
-        struct mem_r_addr page_r = mem_alloc_kernel_page(MEM_RW);
+        struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
         switch (page_r.err) {
             case MEM_OK:
                 break;
@@ -55,7 +55,7 @@ void* sys_mmap(void *addr, size_t len, int prot, int flags,
                 return (void *) EUNKNOWN;
         }
 
-        if (mem_map_user(
+        if (mem_user_map_page(
                 tran_table,
                 vaddr + (i * PAGESIZE),
                 MEM_VIRT_TO_PHYS(page_r.addr),

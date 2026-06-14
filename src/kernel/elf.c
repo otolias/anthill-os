@@ -41,14 +41,14 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
 
         while (vaddr < vaddr_end) {
             // Allocate page
-            const struct mem_r_addr page_r = mem_alloc_kernel_page(MEM_RW);
+            const struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
             if (page_r.err != MEM_OK) {
                 // TODO: Free previous pages
                 return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_OOM };
             }
 
             // Map page to user space
-            if (mem_map_user(tran_table, (void *) vaddr, MEM_VIRT_TO_PHYS(page_r.addr), flags)
+            if (mem_user_map_page(tran_table, (void *) vaddr, MEM_VIRT_TO_PHYS(page_r.addr), flags)
                 != MEM_OK) {
                 // TODO: Free page_r
                 return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_OOM };
