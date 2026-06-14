@@ -14,6 +14,8 @@ kernel_sources = files([
   'syscalls' / 'sys_mmap.c',
   'syscalls' / 'sys_munmap.c',
   'task.c',
+  'test' / 'all.c',
+  'test' / 'mem.c',
 ])
 
 subdir('arch' / arch)
