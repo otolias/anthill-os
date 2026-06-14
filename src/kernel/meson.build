@@ -5,6 +5,7 @@ kernel_sources = files([
   'io.c',
   'main.c',
   'mqueue.c',
+  'panic.c',
   'rd.c',
   'string.c',
   'syscalls.c',
