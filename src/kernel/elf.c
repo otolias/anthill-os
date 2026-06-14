@@ -5,11 +5,17 @@
 #include <kernel/sys/types.h>
 #include <stdint.h>
 
-#define ELF_OFF(base, offset) ((void *) (((size_t) (base)) + (offset)))
-
 struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tran_table) {
     const struct elf64_phdr *phdr = (struct elf64_phdr *) ((char *) ehdr + ehdr->e_phoff);
-    void *base_address = (void *) (phdr->p_vaddr - phdr->p_offset);
+
+    // Allocate user stack
+    void *stack_addr = (void *) (phdr->p_vaddr - phdr->p_offset - PAGESIZE);
+    const struct mem_r_addr stack_r = mem_kernel_alloc_page(MEM_RW);
+    if (stack_r.err != MEM_OK)
+        return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_OOM };
+
+    if (mem_user_map_page(tran_table, stack_addr, MEM_VIRT_TO_PHYS(stack_r.addr), MEM_RW) != MEM_OK)
+        return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_OOM };
 
     for (size_t i = 0; i < ehdr->e_phnum; i++, phdr++) {
         if (phdr->p_type != PT_LOAD)
@@ -69,7 +75,7 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
         }
     }
 
-    return (struct elf_r_addr) { .addr = (void *) (base_address - PAGESIZE), .err = ELF_OK };
+    return (struct elf_r_addr) { .addr = stack_addr, .err = ELF_OK };
 }
 
 enum elf_err elf_validate(const struct elf64_ehdr *ehdr) {

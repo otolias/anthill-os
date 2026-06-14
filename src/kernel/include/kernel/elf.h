@@ -60,12 +60,12 @@ struct elf_r_addr {
 };
 
 /*
-* Parse _file_ header and create process image using the translation table at
-* the virtual address pointed to by _tran_table_.
+* Parse ELF header _ehdr_ and create process image using the translation table
+* at the virtual address pointed to by _tran_table_.
 *
-* Returns struct elf_r_addr:
-* - On success, _addr_ is a pointer to the virtual address of the start of the
-*   process image and _err_ is set to ELF_OK.
+* Returns struct elf_r_img:
+* - On success, _addr_ is a pointer to the virtual address at the start of the
+*   process image (the stack) and _err_ is set to ELF_OK.
 * - On failure, _addr_ is NULL and _err_ is set to indicate the error.
 */
 struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tran_table);

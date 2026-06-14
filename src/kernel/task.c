@@ -92,24 +92,6 @@ enum task_err task_exec(const void *file, char *const args[restrict]) {
             break;
     }
 
-    // Allocate stack
-    const struct mem_r_addr user_stack_r = mem_kernel_alloc_page(MEM_RW);
-    if (user_stack_r.err != MEM_OK) {
-        // TODO: Free process image
-        return TASK_ERR_MEM;
-    }
-
-    // Map stack to userspace
-    if (mem_user_map_page(
-            tran_table, stack_r.addr, MEM_VIRT_TO_PHYS(user_stack_r.addr), MEM_RW)
-        != MEM_OK) {
-        // TODO: Free page_r
-        // TODO: Free process image
-        return TASK_ERR_MEM;
-    }
-
-    // TODO: Unmap previous pages
-
     // Setup process arguments
     char *sp = (char *) stack_r.addr + PAGESIZE;
 
