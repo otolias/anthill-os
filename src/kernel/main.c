@@ -1,6 +1,7 @@
 #include <kernel/arch/io.h>
 #include <kernel/arch/irq.h>
 #include <kernel/assert.h>
+#include <kernel/error.h>
 #include <kernel/io.h>
 #include <kernel/rd.h>
 #include <kernel/task.h>
@@ -19,7 +20,7 @@ void main(uintptr_t *tran_table) {
     io_fmt("Kernel booted successfully...\n");
 
     struct task_r_pid forked_r = task_fork();
-    if (forked_r.err != TASK_OK) {
+    if (forked_r.err != ERR_OK) {
         io_fmt("KERNEL::Fork failed. Error %d\n", forked_r.err);
         return;
     }
@@ -31,8 +32,8 @@ void main(uintptr_t *tran_table) {
             return;
         }
 
-        enum task_err err = task_exec(file, NULL);
-        if (err != TASK_OK) {
+        enum kern_err err = task_exec(file, NULL);
+        if (err != ERR_OK) {
             io_fmt("KERNEL::bin/hello failed to load. Error %d\n", err);
             return;
         }

@@ -1,6 +1,7 @@
 #include "kernel/elf.h"
 
 #include <kernel/arch/mem.h>
+#include <kernel/error.h>
 #include <kernel/string.h>
 #include <kernel/sys/types.h>
 #include <stdint.h>
@@ -11,11 +12,17 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
     // Allocate user stack
     void *stack_addr = (void *) (phdr->p_vaddr - phdr->p_offset - PAGESIZE);
     const struct mem_r_addr stack_r = mem_kernel_alloc_page(MEM_RW);
-    if (stack_r.err != MEM_OK)
-        return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_OOM };
+    if (stack_r.err != ERR_OK)
+        return (struct elf_r_addr) { .addr = NULL, .err = stack_r.err };
 
-    if (mem_user_map_page(tran_table, stack_addr, MEM_VIRT_TO_PHYS(stack_r.addr), MEM_RW) != MEM_OK)
-        return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_OOM };
+    const enum kern_err err = mem_user_map_page(
+        tran_table,
+        stack_addr,
+        MEM_VIRT_TO_PHYS(stack_r.addr),
+        MEM_RW
+    );
+    if (err != ERR_OK)
+        return (struct elf_r_addr) { .addr = NULL, .err = err };
 
     for (size_t i = 0; i < ehdr->e_phnum; i++, phdr++) {
         if (phdr->p_type != PT_LOAD)
@@ -38,7 +45,7 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
                 break;
 
             default:
-                return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_INV };
+                return (struct elf_r_addr) { .addr = NULL, .err = ERR_ELF_INV };
         }
 
         // Allocate pages for the segments
@@ -48,16 +55,21 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
         while (vaddr < vaddr_end) {
             // Allocate page
             const struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
-            if (page_r.err != MEM_OK) {
+            if (page_r.err != ERR_OK) {
                 // TODO: Free previous pages
-                return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_OOM };
+                return (struct elf_r_addr) { .addr = NULL, .err = page_r.err };
             }
 
             // Map page to user space
-            if (mem_user_map_page(tran_table, (void *) vaddr, MEM_VIRT_TO_PHYS(page_r.addr), flags)
-                != MEM_OK) {
+            const enum kern_err err = mem_user_map_page(
+                tran_table,
+                (void *) vaddr,
+                MEM_VIRT_TO_PHYS(page_r.addr),
+                flags
+            );
+            if (err != ERR_OK) {
                 // TODO: Free page_r
-                return (struct elf_r_addr) { .addr = NULL, .err = ELF_ERR_OOM };
+                return (struct elf_r_addr) { .addr = NULL, .err = err };
             }
 
             uintptr_t data_start = vaddr > phdr->p_vaddr ? vaddr : phdr->p_vaddr;
@@ -75,18 +87,18 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
         }
     }
 
-    return (struct elf_r_addr) { .addr = stack_addr, .err = ELF_OK };
+    return (struct elf_r_addr) { .addr = stack_addr, .err = ERR_OK };
 }
 
-enum elf_err elf_validate(const struct elf64_ehdr *ehdr) {
+enum kern_err elf_validate(const struct elf64_ehdr *ehdr) {
     if (memcmp(ehdr->e_ident, "\x7f""ELF", 4) != 0)
-        return ELF_ERR_INV;
+        return ERR_ELF_INV;
 
     if (ehdr->e_type != ET_EXEC)
-        return ELF_ERR_UNS;
+        return ERR_ELF_UNS;
 
     if (ehdr->e_machine != 0xb7)
-        return ELF_ERR_MAC;
+        return ERR_ELF_MAC;
 
-    return ELF_OK;
+    return ERR_OK;
 }

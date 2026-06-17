@@ -16,8 +16,7 @@
 #define EIO         13
 #define ENOEXEC     14
 #define EOVERFLOW   15
-#define EUNKNOWN    16
-#define ENOTSUP     17
-#define ERRNO_TOTAL 18
+#define ENOTSUP     16
+#define ERRNO_TOTAL 17
 
 #endif /* _KERNEL_ERRNO_H */

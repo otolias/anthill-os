@@ -2,6 +2,8 @@
 
 #include <kernel/arch/mem.h>
 #include <kernel/errno.h>
+#include <kernel/io.h>
+#include <kernel/panic.h>
 #include <kernel/task.h>
 
 void* sys_mmap(void *addr, size_t len, int prot, int flags,
@@ -45,14 +47,15 @@ void* sys_mmap(void *addr, size_t len, int prot, int flags,
         // TODO: De-allocate previous if it fails
         struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
         switch (page_r.err) {
-            case MEM_OK:
+            case ERR_OK:
                 break;
 
-            case MEM_ERR_OOM:
+            case ERR_MEM_OOM:
                 return (void *) ENOMEM;
 
             default:
-                return (void *) EUNKNOWN;
+                io_fmt("Unhandled error code %d\n", page_r.err);
+                panic("Unhandled error code");
         }
 
         if (mem_user_map_page(
@@ -60,7 +63,7 @@ void* sys_mmap(void *addr, size_t len, int prot, int flags,
                 vaddr + (i * PAGESIZE),
                 MEM_VIRT_TO_PHYS(page_r.addr),
                 m_flags
-            ) != MEM_OK)
+            ) != ERR_OK)
             return (void *) ENOMEM;
     }
 

@@ -1,10 +1,10 @@
 #ifndef _KERNEL_TASK_H
 #define _KERNEL_TASK_H
 
-#include <stddef.h>
-
 #include <kernel/arch/cpu.h>
+#include <kernel/error.h>
 #include <kernel/sys/types.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /*
@@ -31,20 +31,14 @@ struct task {
     long counter;               /* Execution clock ticks left */
 };
 
-enum task_err {
-    TASK_OK,
-    TASK_ERR_INV, // Invalid ELF file
-    TASK_ERR_MEM, // Out of memory
-};
-
 struct task_r_ptr {
     struct task *ptr;
-    enum task_err err;
+    enum kern_err err;
 };
 
 struct task_r_pid {
     pid_t pid;
-    enum task_err err;
+    enum kern_err err;
 };
 
 /*
@@ -76,9 +70,9 @@ struct task* task_current(void);
 * Load ELF file pointed to by _file_ to memory and execute with _argc_
 * arguments.
 *
-* Returns enum task_err.
+* Returns enum kern_err.
 */
-enum task_err task_exec(const void *file, char *const args[restrict]);
+enum kern_err task_exec(const void *file, char *const args[restrict]);
 
 /*
 * Terminate current running process.

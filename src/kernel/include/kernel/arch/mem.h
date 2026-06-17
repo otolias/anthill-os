@@ -1,6 +1,7 @@
 #ifndef _KERNEL_ARCH_AARCH64_MEM_H
 #define _KERNEL_ARCH_AARCH64_MEM_H
 
+#include <kernel/error.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -24,17 +25,9 @@ enum mem_flags {
     MEM_EX = 5, /* Read and execute permissions */
 };
 
-enum mem_error {
-    MEM_OK,
-    MEM_ERR_OOM, /* Out of memory */
-    MEM_ERR_FLG, /* Invalid permission flags */
-    MEM_ERR_EXS, /* Tried to map already mapped page */
-    MEM_ERR_UNM, /* Tried to unmap already unmapped page */
-};
-
 struct mem_r_addr {
     void* addr;
-    enum mem_error err;
+    enum kern_err err;
 };
 
 /*
@@ -58,9 +51,9 @@ struct mem_r_addr mem_kernel_alloc_page(enum mem_flags flags);
 * De-allocate kernel page starting at virtual address pointed to by _vaddr_ and
 * its corresponding physical memory.
 *
-* Returns enum mem_error.
+* Returns enum kern_err.
 */
-[[nodiscard]] enum mem_error mem_kernel_free_page(void *vaddr);
+[[nodiscard]] enum kern_err mem_kernel_free_page(void *vaddr);
 
 /*
 * Mark all subsequent page and block table entries as copied starting from top
@@ -72,9 +65,9 @@ void mem_table_soft_copy(void *table);
 * Walk translation level table at virtual address pointed to by _table_ and
 * unmark them as copied. Frees their pages if the task is the sole owner.
 *
-* Returns enum mem_error.
+* Returns enum kern_err.
 */
-[[nodiscard]] enum mem_error mem_table_teardown(void *table);
+[[nodiscard]] enum kern_err mem_table_teardown(void *table);
 
 /*
 * Find unallocated virtual memory to hold _cnt_ pages starting from virtual
@@ -92,7 +85,7 @@ void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt);
 *
 * Note: _paddr_ must already be allocated by the kernel
 *
-* Returns enum mem_error
+* Returns enum kern_err
 *
 * Available flags:
 *
@@ -101,7 +94,7 @@ void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt);
 * - MEM_RW Read/write permissions
 * - MEM_EX Read and execute permissions
 */
-[[nodiscard]] enum mem_error mem_user_map_page(void *tran_table, void *vaddr, void *paddr,
+[[nodiscard]] enum kern_err mem_user_map_page(void *tran_table, void *vaddr, void *paddr,
     enum mem_flags flags);
 
 /*
@@ -109,8 +102,8 @@ void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt);
 * translation table at the virtual address pointed to by _tran_table_. Frees
 * their respective kernel pages if the task is the sole owner.
 *
-* Returns enum mem_error.
+* Returns enum kern_err.
 */
-enum mem_error mem_user_free_page(void *tran_table, void *vaddr);
+enum kern_err mem_user_free_page(void *tran_table, void *vaddr);
 
 #endif /* _KERNEL_ARCH_AARCH64_MEM_H */

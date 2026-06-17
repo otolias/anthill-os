@@ -4,6 +4,7 @@
 #include <kernel/arch/irq.h>
 #include <kernel/arch/mem.h>
 #include <kernel/elf.h>
+#include <kernel/error.h>
 #include <kernel/io.h>
 #include <kernel/panic.h>
 #include <kernel/string.h>
@@ -64,33 +65,24 @@ struct task* task_current(void) {
     return current_task;
 }
 
-enum task_err task_exec(const void *file, char *const args[restrict]) {
+enum kern_err task_exec(const void *file, char *const args[restrict]) {
     current_task->preempt_count++;
 
     const struct elf64_ehdr *ehdr = file;
 
-    if (elf_validate(ehdr) != ELF_OK)
-        return TASK_ERR_INV;
+    const enum kern_err err = elf_validate(ehdr);
+    if (err != ERR_OK)
+        return err;
 
     void *tran_table = MEM_PHYS_TO_VIRT(current_task->tran_table);
 
     // Unmark previous table entries
-    if (mem_table_teardown(tran_table) != MEM_OK)
+    if (mem_table_teardown(tran_table) != ERR_OK)
         panic("Failed to teardown table entries");
 
     const struct elf_r_addr stack_r = elf_create_proc_image(file, tran_table);
-    switch (stack_r.err) {
-        case ELF_ERR_INV:
-        case ELF_ERR_UNS:
-        case ELF_ERR_MAC:
-            return TASK_ERR_INV;
-
-        case ELF_ERR_OOM:
-            return TASK_ERR_MEM;
-
-        case ELF_OK:
-            break;
-    }
+    if (stack_r.err != ERR_OK)
+        return err;
 
     // Setup process arguments
     char *sp = (char *) stack_r.addr + PAGESIZE;
@@ -133,7 +125,7 @@ enum task_err task_exec(const void *file, char *const args[restrict]) {
 
     cpu_start_user(ehdr->e_entry, (uintptr_t) sp, current_task->tran_table);
 
-    return TASK_OK;
+    return ERR_OK;
 }
 
 void task_exit(__attribute__((unused)) int status) {
@@ -148,22 +140,22 @@ void task_exit(__attribute__((unused)) int status) {
     task_unblock(current_task->parent->pid);
 
     // Traverse translation tables and free all memory
-    if (mem_table_teardown(MEM_PHYS_TO_VIRT(current_task->tran_table)) != MEM_OK)
+    if (mem_table_teardown(MEM_PHYS_TO_VIRT(current_task->tran_table)) != ERR_OK)
         panic("Failed to teardown table entries");
 
     // Free translation table
-    if (mem_kernel_free_page(MEM_PHYS_TO_VIRT(current_task->tran_table)) != MEM_OK)
+    if (mem_kernel_free_page(MEM_PHYS_TO_VIRT(current_task->tran_table)) != ERR_OK)
         panic("Failed to free translation table");
 
     // Free kernel stack
-    if (mem_kernel_free_page(current_task->kernel_stack) != MEM_OK)
+    if (mem_kernel_free_page(current_task->kernel_stack) != ERR_OK)
         panic("Failed to free kernel stack");
 
     // Remove from task array
     task_remove(current_task);
 
     // Free task struct
-    if (mem_kernel_free_page(current_task) != MEM_OK)
+    if (mem_kernel_free_page(current_task) != ERR_OK)
         panic("Failed to free task struct");
 
     // Switch context to init_task
@@ -175,20 +167,20 @@ struct task_r_pid task_fork(void) {
     current_task->preempt_count++;
 
     struct mem_r_addr task_r = mem_kernel_alloc_page(MEM_RW);
-    if (task_r.err != MEM_OK)
-        return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
+    if (task_r.err != ERR_OK)
+        return (struct task_r_pid) { .pid = -1, .err = task_r.err };
 
     struct mem_r_addr tran_table_r = mem_kernel_alloc_page(MEM_RW);
-    if (tran_table_r.err != MEM_OK) {
+    if (tran_table_r.err != ERR_OK) {
         // TODO: Free task_r
-        return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
+        return (struct task_r_pid) { .pid = -1, .err = tran_table_r.err };
     }
 
     struct mem_r_addr kernel_stack_r = mem_kernel_alloc_page(MEM_RW);
-    if (kernel_stack_r.err != MEM_OK) {
+    if (kernel_stack_r.err != ERR_OK) {
         // TODO: Free task_r
         // TODO: Free tran_table_r
-        return (struct task_r_pid) { .pid = -1, .err = TASK_ERR_MEM };
+        return (struct task_r_pid) { .pid = -1, .err = kernel_stack_r.err };
     }
 
     // Copy kernel stack
@@ -222,7 +214,7 @@ struct task_r_pid task_fork(void) {
     // If child, return
     if (current_task == child) {
         current_task->preempt_count--;
-        return (struct task_r_pid) { .pid = 0, .err = TASK_OK };
+        return (struct task_r_pid) { .pid = 0, .err = ERR_OK };
     }
 
     // If parent, copy stored context to new task
@@ -233,7 +225,7 @@ struct task_r_pid task_fork(void) {
     child->context.ksp = (uintptr_t) child->kernel_stack + ksp_offset;
 
     current_task->preempt_count--;
-    return (struct task_r_pid) { .pid = child->pid, .err = TASK_OK };
+    return (struct task_r_pid) { .pid = child->pid, .err = ERR_OK };
 }
 
 void task_schedule(void) {

@@ -45,7 +45,7 @@ void* mmu_handle_data_abort(uintptr_t table, uintptr_t vaddr) {
     ref = mmu_mark_freed(&level_1[idx[1]]);
     if (ref > 0) {
         struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
-        if (page_r.err != MEM_OK)
+        if (page_r.err != ERR_OK)
             return NULL;
 
         memcpy(page_r.addr, level_1, PAGESIZE);
@@ -65,7 +65,7 @@ void* mmu_handle_data_abort(uintptr_t table, uintptr_t vaddr) {
     ref = mmu_mark_freed(&level_2[idx[2]]);
     if (ref > 0) {
         struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
-        if (page_r.err != MEM_OK)
+        if (page_r.err != ERR_OK)
             return NULL;
 
         memcpy(page_r.addr, level_2, PAGESIZE);
@@ -83,7 +83,7 @@ void* mmu_handle_data_abort(uintptr_t table, uintptr_t vaddr) {
     ref = mmu_mark_freed(&level_3[idx[3]]);
     if (ref > 0) {
         struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
-        if (page_r.err != MEM_OK)
+        if (page_r.err != ERR_OK)
             return NULL;
 
         memcpy(page_r.addr, level_3, PAGESIZE);
@@ -95,7 +95,7 @@ void* mmu_handle_data_abort(uintptr_t table, uintptr_t vaddr) {
     }
 
     struct mem_r_addr page_r = mem_kernel_alloc_page(MEM_RW);
-    if (page_r.err != MEM_OK)
+    if (page_r.err != ERR_OK)
         return NULL;
 
     const void *data = MEM_PHYS_TO_VIRT(level_3[idx[3]] & VADDR_MASK);

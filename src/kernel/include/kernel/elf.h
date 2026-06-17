@@ -1,6 +1,7 @@
 #ifndef _KERNEL_ELF_H
 #define _KERNEL_ELF_H
 
+#include <kernel/error.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -46,17 +47,9 @@ struct elf64_phdr {
 
 struct task;
 
-enum elf_err {
-    ELF_OK,
-    ELF_ERR_INV, /* Invalid ELF file */
-    ELF_ERR_UNS, /* Unsupported ELF file type */
-    ELF_ERR_MAC, /* ELF file is for a different architecture */
-    ELF_ERR_OOM, /* Out of memory */
-};
-
 struct elf_r_addr {
     void *addr;
-    enum elf_err err;
+    enum kern_err err;
 };
 
 /*
@@ -65,7 +58,7 @@ struct elf_r_addr {
 *
 * Returns struct elf_r_img:
 * - On success, _addr_ is a pointer to the virtual address at the start of the
-*   process image (the stack) and _err_ is set to ELF_OK.
+*   process image (the stack) and _err_ is set to KERN_OK.
 * - On failure, _addr_ is NULL and _err_ is set to indicate the error.
 */
 struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tran_table);
@@ -73,8 +66,8 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
 /*
 * Validate ELF header.
 *
-* Returns enum elf_err.
+* Returns enum kern_err.
 */
-enum elf_err elf_validate(const struct elf64_ehdr *ehdr);
+enum kern_err elf_validate(const struct elf64_ehdr *ehdr);
 
 #endif /* _KERNEL_ELF_H */
