@@ -50,5 +50,11 @@ void _test_run_mem(void) {
         panic("Empty user space search failed");
 
     // Unmap user page
-    mem_user_free_page(tran_table, uaddr);
+    struct mem_r_addr k_page_r = mem_user_unmap_page(tran_table, uaddr);
+    if (k_page_r.err != ERR_OK || k_page_r.addr != kaddr_r.addr)
+        panic("User page unmapping failed");
+
+    // De-allocate kernel page
+    if (mem_kernel_free_page(k_page_r.addr) != ERR_OK)
+        panic("Kernel page de-allocation failed");
 }

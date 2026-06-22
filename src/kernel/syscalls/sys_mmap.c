@@ -37,7 +37,7 @@ void* sys_mmap(void *addr, size_t len, int prot, int flags,
     }
 
     void * const tran_table = MEM_PHYS_TO_VIRT(task_current()->tran_table);
-    size_t page_cnt = ((len + PAGESIZE - 1) & ~(PAGESIZE - 1)) / PAGESIZE;
+    size_t page_cnt = MEM_SIZE_TO_PAGES(len);
 
     void * const vaddr = mem_user_find_empty(tran_table, addr, page_cnt);
     if (!vaddr)

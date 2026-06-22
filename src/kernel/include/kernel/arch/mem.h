@@ -19,6 +19,8 @@
 
 #define PAGESIZE 0x1000
 
+#define MEM_SIZE_TO_PAGES(s) ((size_t) ((((s) + PAGESIZE - 1) & ~(PAGESIZE - 1)) / PAGESIZE))
+
 enum mem_flags {
     MEM_RO = 1, /* Read only permissions */
     MEM_RW = 3, /* Read/write permissions */
@@ -99,11 +101,14 @@ void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt);
 
 /*
 * Unmap user page starting at virtual address pointed to by _vaddr_ for the
-* translation table at the virtual address pointed to by _tran_table_. Frees
-* their respective kernel pages if the task is the sole owner.
+* translation table at the virtual address pointed to by _tran_table_.
 *
-* Returns enum kern_err.
+* Returns struct mem_r_addr:
+* - On success, _addr_ is either the kernel virtual address of the unmapped
+*   page, if said page can be freed from the kernel, or NULL if not. _err_ is
+*   set to ERR_OK.
+* - On failure, _addr_ is NULL and _err_ is set to indicate the error.
 */
-enum kern_err mem_user_free_page(void *tran_table, void *vaddr);
+struct mem_r_addr mem_user_unmap_page(void *tran_table, void *vaddr);
 
 #endif /* _KERNEL_ARCH_AARCH64_MEM_H */
