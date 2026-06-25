@@ -1,2 +1,6 @@
+# System libraries. Order is important
+subdir('system')
 subdir('libc')
-subdir('libvfs')
+
+# Rest of the libraries
+# subdir('libvfs')

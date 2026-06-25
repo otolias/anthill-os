@@ -5,7 +5,6 @@ libc_sources = files([
   'dirent' / 'opendir.c',
   'dirent' / 'readdir.c',
   'dirent' / 'rewinddir.c',
-  'errno' / 'errno.c',
   'fcall' / 'fcall_buf_to_msg.c',
   'fcall' / 'fcall_msg_size.c',
   'fcall' / 'fcall_msg_to_buf.c',
@@ -70,7 +69,6 @@ libc_sources = files([
   'string' / 'strrchr.c',
   'string' / 'strspn.c',
   'string' / 'strtok.c',
-  'syscalls.c',
   'sys' / 'mman' / 'mmap.c',
   'sys' / 'mman' / 'munmap.c',
   'sys' / 'stat' / 'fstat.c',
@@ -78,25 +76,6 @@ libc_sources = files([
   'sys' / 'vfs' / 'vfs_msg.c',
   'unistd' / 'getpid.c',
   'unistd' / 'mount.c',
-])
-
-libc_includes = files([
-  'include' / 'ctype.h',
-  'include' / 'errno.h',
-  'include' / 'fcall.h',
-  'include' / 'fcntl.h',
-  'include' / 'limits.h',
-  'include' / 'mqueue.h',
-  'include' / 'pstring.h',
-  'include' / 'stddef.h',
-  'include' / 'stdint.h',
-  'include' / 'stdio.h',
-  'include' / 'stdlib.h',
-  'include' / 'syscalls.h',
-  'include' / 'sys' / 'mman.h',
-  'include' / 'sys' / 'types.h',
-  'include' / 'sys' / 'vfs.h',
-  'include' / 'unistd.h',
 ])
 
 libc_inc_directories = include_directories(
@@ -125,6 +104,7 @@ crt0 = crt.extract_objects('crt' / 'crt0.S')
 libc = static_library('c',
   sources : libc_sources,
   include_directories : libc_inc_directories,
+  dependencies: [ libsystem_dep ],
   objects: crt0,
   c_args : ['-nostdlib'],
   link_args : lib_link_args,
