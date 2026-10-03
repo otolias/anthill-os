@@ -11,8 +11,9 @@
 * Task states
 */
 enum task_state {
-    TASK_RUNNING,
-    TASK_BLOCKED,
+    TASK_RUNNING, /* Task is currently running */
+    TASK_BLOCKED, /* Task is waiting for a message */
+    TASK_WAITING, /* Task is waiting for a process */
 };
 
 /*
@@ -52,14 +53,14 @@ void task_add(struct task *task);
 void task_remove(struct task *task);
 
 /*
-* Block task with _pid_
+* Block task with _pid_ and set its state to _state.
 */
-void task_block(pid_t pid);
+void task_block(pid_t pid, enum task_state state);
 
 /*
-* Unblock task with _pid_
+* Unblock task with _pid_, if its state is currently set to _state_.
 */
-void task_unblock(pid_t pid);
+void task_unblock(pid_t pid, enum task_state state);
 
 /*
 * Get current running task

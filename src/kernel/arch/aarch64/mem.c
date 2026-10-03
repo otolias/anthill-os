@@ -303,6 +303,38 @@ void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt) {
     return addr;
 }
 
+void* mem_user_get_kaddr(void * const tran_table, void * const vaddr) {
+    uintptr_t *levels[4] = { tran_table, 0 };
+    size_t idx[4];
+    mmu_get_table_idx(vaddr, idx);
+    void *kaddr;
+
+    if (!mmu_is_valid(levels[0][idx[0]]))
+        return NULL;
+
+    levels[1] = mmu_get_vaddr(levels[0][idx[0]]);
+    if (!mmu_is_valid(levels[1][idx[1]]))
+        return NULL;
+
+    kaddr = mmu_get_vaddr(levels[1][idx[1]]);
+    if (mmu_is_block(levels[1][idx[1]]))
+        return kaddr;
+
+    levels[2] = kaddr;
+    if (!mmu_is_valid(levels[2][idx[2]]))
+        return NULL;
+
+    kaddr = mmu_get_vaddr(levels[2][idx[2]]);
+    if (mmu_is_block(levels[2][idx[2]]))
+        return kaddr;
+
+    levels[3] = kaddr;
+    if (!mmu_is_valid(levels[3][idx[3]]))
+        return NULL;
+
+    return mmu_get_vaddr(levels[3][idx[3]]);
+}
+
 enum kern_err mem_user_map_page(void *tran_table, void *vaddr, void *paddr, enum mem_flags flags) {
     uint64_t attr = 0;
     switch (flags) {

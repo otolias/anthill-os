@@ -7,5 +7,7 @@
 void test_run_all(void);
 
 void _test_run_mem(void);
+void _test_run_msgbuf(void);
+void _test_run_string(void);
 
 #endif /* _KERNEL_TEST_H */

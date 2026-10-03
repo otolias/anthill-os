@@ -27,7 +27,7 @@ exec_link_args = [ '-nodefaultlibs' ] + \
 
 subdir('src' / 'kernel')
 subdir('src' / 'lib')
-subdir('src' / 'bin')
+# subdir('src' / 'bin')
 # subdir('src' / 'modules')
 
 kernel_bin = custom_target('kernel8.bin',

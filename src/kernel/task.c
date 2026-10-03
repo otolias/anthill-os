@@ -40,10 +40,10 @@ void task_remove(struct task *task) {
     }
 }
 
-void task_block(pid_t pid) {
+void task_block(pid_t pid, enum task_state state) {
     for (size_t i = 0; i < TASK_TOTAL; i++) {
         if (tasks[i]->pid == pid) {
-            tasks[i]->state = TASK_BLOCKED;
+            tasks[i]->state = state;
             tasks[i]->preempt_count--;
             break;
         }
@@ -52,10 +52,11 @@ void task_block(pid_t pid) {
     task_schedule();
 }
 
-void task_unblock(pid_t pid) {
+void task_unblock(pid_t pid, enum task_state state) {
     for (size_t i = 0; i < TASK_TOTAL; i++) {
         if (tasks[i]->pid == pid) {
-            tasks[i]->state = TASK_RUNNING;
+            if (tasks[i]->state == state)
+                tasks[i]->state = TASK_RUNNING;
             break;
         }
     }
@@ -133,11 +134,11 @@ void task_exit(__attribute__((unused)) int status) {
     current_task->preempt_count++;
 
     while (current_task->children_no > 0)
-        task_block(current_task->pid);
+        task_block(current_task->pid, TASK_WAITING);
 
     // Unblock parent
     current_task->parent->children_no--;
-    task_unblock(current_task->parent->pid);
+    task_unblock(current_task->parent->pid, TASK_WAITING);
 
     // Traverse translation tables and free all memory
     if (mem_table_teardown(MEM_PHYS_TO_VIRT(current_task->tran_table)) != ERR_OK)

@@ -4,6 +4,7 @@ kernel_sources = files([
   'elf.c',
   'io.c',
   'main.c',
+  'msgbuf.c',
   'mqueue.c',
   'panic.c',
   'rd.c',
@@ -16,6 +17,8 @@ kernel_sources = files([
   'task.c',
   'test' / 'all.c',
   'test' / 'mem.c',
+  'test' / 'msgbuf.c',
+  'test' / 'string.c',
 ])
 
 subdir('arch' / arch)

@@ -39,6 +39,18 @@ int strncmp(const char *s1, const char *s2, size_t n) {
     return *left - *right;
 }
 
+size_t strlcpy(char *dst, const char * const src, size_t size) {
+    const char *s = src;
+    char *d = dst;
+
+    while (size-- && *s)
+        *d++ = *s++;
+
+    *d = 0;
+
+    return strlen(src);
+}
+
 size_t strlen(const char *s) {
     const char *c = s;
     while (*c) c++;

@@ -82,6 +82,15 @@ void mem_table_soft_copy(void *table);
 void* mem_user_find_empty(void *tran_table, void *addr, size_t page_cnt);
 
 /*
+* Get kernel space virtual address of user space virtual address pointed to by
+* _vaddr_ for the translation table pointed to by _tran_table_.
+*
+* On success, returns a pointer to the kernel space virtual address.
+* On failure, returns NULL.
+*/
+void* mem_user_get_kaddr(void *tran_table, void *vaddr);
+
+/*
 * Map virtual address _vaddr_ to physical address _paddr_ for the translation
 * table at virtual address _tran_table_ with permissions specified by _flags_.
 *

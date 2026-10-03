@@ -37,6 +37,14 @@ void* memset(void *s, int c, size_t n);
 int strncmp(const char *s1, const char *s2, size_t n);
 
 /*
+* Copy up to _size_ - 1 bytes from the string pointed to by _src_ to the string
+* pointed to by _dst_, nul-terminating _dst_.
+*
+* Returns the length of _src_.
+*/
+size_t strlcpy(char *dst, const char *src, size_t size);
+
+/*
 * Calculates the size of string _s_
 */
 size_t strlen(const char *s);

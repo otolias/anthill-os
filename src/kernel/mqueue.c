@@ -85,7 +85,7 @@ static void _unblock_subscribers(struct mqueue *mqueue, int flag) {
     for (size_t i = 0; i < MQ_MAX_SUBSCRIBERS; i++) {
         if (mqueue->subs[i].flags & flag) {
             mqueue->subs[i].flags ^= flag;
-            task_unblock(mqueue->subs[i].pid);
+            task_unblock(mqueue->subs[i].pid, TASK_BLOCKED);
         }
     }
 }
@@ -291,7 +291,7 @@ int mqueue_send(mqd_t id, const char *msg_ptr, size_t msg_len,
         }
 
         mq_task->flags |= BLCK_SEND;
-        task_block(task_current()->pid);
+        task_block(task_current()->pid, TASK_BLOCKED);
     }
 
     return 0;
@@ -321,7 +321,7 @@ ssize_t mqueue_receive(mqd_t id, char *msg_ptr, size_t msg_len,
         }
 
         mq_task->flags |= BLCK_RECV;
-        task_block(task_current()->pid);
+        task_block(task_current()->pid, TASK_BLOCKED);
     }
 
     return result;
