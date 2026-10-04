@@ -297,7 +297,7 @@ enum kern_err msgbuf_close(msgbuf_id id) {
         }
     }
 
-    *msgbuf->name = 0;
+    memset(msgbuf->name, 0, __MSB_NAME_MAX);
 
     // TODO: De-allocate space from arena if needed
 
@@ -305,6 +305,9 @@ enum kern_err msgbuf_close(msgbuf_id id) {
 }
 
 struct msgbuf_r_id msgbuf_create(const char * const name, size_t size, char **send_buf) {
+    if (send_buf && size == 0)
+        return (struct msgbuf_r_id) { .id = -1, .err = ERR_MSB_SIZ };
+
     // Create new message buffer
     struct msgbuf_r_id id_r = _msgbuf_alloc(name);
     if (id_r.err != ERR_OK)
@@ -323,9 +326,6 @@ struct msgbuf_r_id msgbuf_create(const char * const name, size_t size, char **se
 
     // Allocate and map buffer
     if (send_buf) {
-        if (size == 0)
-            return (struct msgbuf_r_id) { .id = -1, .err = ERR_MSB_SIZ };
-
         struct mem_r_addr addr_r = _buffer_alloc(size);
         if (addr_r.err != ERR_OK)
             return (struct msgbuf_r_id) { .id = -1, .err = addr_r.err };
@@ -343,7 +343,7 @@ struct msgbuf_r_id msgbuf_create(const char * const name, size_t size, char **se
 
 struct msgbuf_r_buf msgbuf_recv(msgbuf_id recv_id) {
     struct msgbuf *receiver = _msgbuf_get(recv_id);
-    if (!receiver)
+    if (!receiver || receiver->owner->pid != task_current()->pid)
         return (struct msgbuf_r_buf) { .buf = NULL, .err = ERR_MSB_FND };
 
     msgbuf_id send_id;
@@ -355,6 +355,8 @@ struct msgbuf_r_buf msgbuf_recv(msgbuf_id recv_id) {
         task_block(task_current()->pid, TASK_BLOCKED);
     }
 
+    // TODO: Different error code
+    // The message buffer may have been closed
     struct msgbuf *sender = _msgbuf_get(send_id);
     if (!sender)
         return (struct msgbuf_r_buf) { .buf = NULL, .err = ERR_MSB_FND };
@@ -369,7 +371,7 @@ struct msgbuf_r_buf msgbuf_recv(msgbuf_id recv_id) {
 enum kern_err msgbuf_send(msgbuf_id send_id, const char * const recv_name) {
     // Check if sender exists
     struct msgbuf *sender = _msgbuf_get(send_id);
-    if (!sender || task_current()->pid != sender->owner->pid)
+    if (!sender)
         return ERR_MSB_FND;
 
     const msgbuf_id receiver_id = _msgbuf_get_name(recv_name);
@@ -377,34 +379,34 @@ enum kern_err msgbuf_send(msgbuf_id send_id, const char * const recv_name) {
     if (!receiver)
         return ERR_MSB_FND;
 
-    // TODO: Check if channel already exists
+    if (!_channel_get(sender, receiver_id)) {
+        // Map sender's buffer to receiver owner's process space
+        void *tran_table = MEM_PHYS_TO_VIRT(receiver->owner->tran_table);
+        size_t page_cnt = MEM_SIZE_TO_PAGES(sender->size);
+        void *recv_buf = mem_user_find_empty(tran_table, (void *) 0x200000, page_cnt);
+        if (!recv_buf)
+            return ERR_MEM_OOM;
 
-    // Map sender's buffer to receiver owner's process space
-    void *tran_table = MEM_PHYS_TO_VIRT(receiver->owner->tran_table);
-    size_t page_cnt = MEM_SIZE_TO_PAGES(sender->size);
-    void *recv_buf = mem_user_find_empty(tran_table, (void *) 0x200000, page_cnt);
-    if (!recv_buf)
-        return ERR_MEM_OOM;
+        for (size_t i = 0; i < page_cnt; i++) {
+            void *vaddr = recv_buf + (i * PAGESIZE);
+            void *paddr = MEM_VIRT_TO_PHYS(mem_user_get_kaddr(tran_table, sender->addr));
 
-    for (size_t i = 0; i < page_cnt; i++) {
-        void *vaddr = recv_buf + (i * PAGESIZE);
-        void *paddr = MEM_VIRT_TO_PHYS(mem_user_get_kaddr(tran_table, sender->addr));
-
-        enum kern_err err = mem_user_map_page(
-            tran_table,
-            vaddr,
-            paddr,
-            MEM_RW
-        );
-        if (err != ERR_OK) {
-            // TODO: Unmap previous
-            return err;
+            enum kern_err err = mem_user_map_page(
+                tran_table,
+                vaddr,
+                paddr,
+                MEM_RW
+            );
+            if (err != ERR_OK) {
+                // TODO: Unmap previous
+                return err;
+            }
         }
-    }
 
-    if (!_channel_add(sender, receiver_id, recv_buf)) {
-        // TODO: Unmap previous
-        return ERR_MSB_CHF;
+        if (!_channel_add(sender, receiver_id, recv_buf)) {
+            // TODO: Unmap previous
+            return ERR_MSB_CHF;
+        }
     }
 
     // Append to receiver's queue. If it fails, block and retry

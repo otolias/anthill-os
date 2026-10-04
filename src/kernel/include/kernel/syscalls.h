@@ -12,7 +12,11 @@
 #define SYS_GETPID     8
 #define SYS_SPAWN      9
 #define SYS_FORK       10
-#define TOTAL_SYSCALLS 11
+#define SYS_MSB_CREATE 11
+#define SYS_MSB_SEND   12
+#define SYS_MSB_RECV   13
+#define SYS_MSB_CLOSE  14
+#define TOTAL_SYSCALLS 15
 
 #ifndef __ASSEMBLER__
 
@@ -36,6 +40,10 @@ void sys_exit(int status);
 pid_t sys_fork(void);
 void* sys_mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
 int sys_munmap(void *addr, size_t len);
+long sys_msb_create(const char *name, size_t size, char **send_buf);
+long sys_msb_send(int send_id, const char *recv_name);
+long sys_msb_recv(int recv_id);
+long sys_msb_close(int id);
 
 #endif /* __ASSEMBLER__ */
 #endif /* _KERNEL_SYSCALLS_H */

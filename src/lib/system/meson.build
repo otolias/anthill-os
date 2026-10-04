@@ -1,6 +1,10 @@
 libsystem = static_library('system',
   sources: [
     'errno.c',
+    'msb' / 'msb_close.c',
+    'msb' / 'msb_create.c',
+    'msb' / 'msb_recv.c',
+    'msb' / 'msb_send.c',
     'syscalls.c',
   ],
   include_directories: [ 'include', '..' / '..' / 'kernel' / 'include' ],

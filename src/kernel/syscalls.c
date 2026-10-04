@@ -49,4 +49,8 @@ const void *syscall_table[TOTAL_SYSCALLS] = {
     sys_getpid,
     sys_spawn,
     sys_fork,
+    sys_msb_create,
+    sys_msb_send,
+    sys_msb_recv,
+    sys_msb_close,
 };
