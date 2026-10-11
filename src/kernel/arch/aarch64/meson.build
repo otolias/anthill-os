@@ -1,4 +1,4 @@
-kernel_sources += files([
+kernel_sources += files(
   'boot.S',
   'cpu.S',
   'entry.S',
@@ -11,4 +11,4 @@ kernel_sources += files([
   'pmm.c',
   'timer.c',
   'uart.c',
-])
+)

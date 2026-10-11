@@ -1,4 +1,4 @@
-libc_sources = files([
+libc_sources = files(
   'ctype' / 'isdigit.c',
   'ctype' / 'isspace.c',
   'dirent' / 'closedir.c',
@@ -10,7 +10,6 @@ libc_sources = files([
   'fcall' / 'fcall_msg_to_buf.c',
   'fcall' / 'fcall_path_size.c',
   'fcall' / 'fcall_path_split.c',
-  'init.c',
   'internal' / '_block.c',
   'internal' / '_file.c',
   'internal' / '_formatter.c',
@@ -76,11 +75,12 @@ libc_sources = files([
   'sys' / 'vfs' / 'vfs_msg.c',
   'unistd' / 'getpid.c',
   'unistd' / 'mount.c',
-])
+  'init.c',
+)
 
 libc_inc_directories = include_directories(
-  ['include', '..' / '..' / 'kernel' / 'include'],
-  is_system : true
+  [ 'include', '..' / '..' / 'kernel' / 'include' ],
+  is_system : true,
 )
 
 # ld_sources = [
@@ -95,23 +95,26 @@ libc_inc_directories = include_directories(
 #   name_prefix : '',
 # )
 
-crt = static_library('crt',
+crt = static_library(
+  'crt',
   sources : [ 'crt' / 'crt0.S' ],
   link_args : [ '-nostdlib' ],
 )
 crt0 = crt.extract_objects('crt' / 'crt0.S')
 
-libc = static_library('c',
+libc = static_library(
+  'c',
   sources : libc_sources,
   include_directories : libc_inc_directories,
-  dependencies: [ libsystem_dep ],
-  objects: crt0,
-  c_args : ['-nostdlib'],
+  dependencies : [ libsystem_dep ],
+  objects : crt0,
+  c_args : [ '-nostdlib' ],
   link_args : lib_link_args,
   install : true,
 )
 
 libc_dep = declare_dependency(
   include_directories : libc_inc_directories,
+  dependencies : [ libsystem_dep ],
   link_with : libc,
 )

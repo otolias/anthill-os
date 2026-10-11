@@ -1,3 +1,5 @@
+lib_link_args = [ '-Wl,-pic' ]
+
 # System libraries. Order is important
 subdir('system')
 subdir('c')

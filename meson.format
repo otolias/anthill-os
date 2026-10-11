@@ -1,0 +1,9 @@
+max_line_length = 100
+indent_by = '  '
+space_array = true
+wide_colon = true
+no_single_comma_function = true
+indent_before_comments = ' '
+insert_final_newline = false
+sort_files = true
+use_editor_config = false
