@@ -35,7 +35,7 @@ void _test_run_mem(void) {
     void *tran_table = MEM_PHYS_TO_VIRT(task_current()->tran_table);
     void *uaddr = (void *) 0x400000;
     void *paddr = MEM_VIRT_TO_PHYS(kaddr_r.addr);
-    if (mem_user_map_page(tran_table, uaddr, paddr, MEM_RW) != ERR_OK)
+    if (mem_user_map_page(tran_table, uaddr, paddr, MEM_RW, MEM_NORM) != ERR_OK)
         panic("User page mapping failed");
 
     // Write and read from user page

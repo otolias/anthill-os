@@ -15,11 +15,12 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
     if (stack_r.err != ERR_OK)
         return (struct elf_r_addr) { .addr = NULL, .err = stack_r.err };
 
-    const enum kern_err err = mem_user_map_page(
+    enum kern_err err = mem_user_map_page(
         tran_table,
         stack_addr,
         MEM_VIRT_TO_PHYS(stack_r.addr),
-        MEM_RW
+        MEM_RW,
+        MEM_NORM
     );
     if (err != ERR_OK)
         return (struct elf_r_addr) { .addr = NULL, .err = err };
@@ -29,19 +30,19 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
             continue;
 
         // Parse flags
-        enum mem_flags flags = 0;
+        enum mem_perm perm = 0;
 
         switch (phdr->p_flags) {
             case PF_R:
-                flags = MEM_RO;
+                perm = MEM_RO;
                 break;
 
             case PF_R | PF_X:
-                flags = MEM_EX;
+                perm = MEM_EX;
                 break;
 
             case PF_R | PF_W:
-                flags = MEM_RW;
+                perm = MEM_RW;
                 break;
 
             default:
@@ -65,7 +66,8 @@ struct elf_r_addr elf_create_proc_image(const struct elf64_ehdr *ehdr, void *tra
                 tran_table,
                 (void *) vaddr,
                 MEM_VIRT_TO_PHYS(page_r.addr),
-                flags
+                perm,
+                MEM_NORM
             );
             if (err != ERR_OK) {
                 // TODO: Free page_r

@@ -1,11 +1,15 @@
 #include "kernel/syscalls.h"
 
 #include <kernel/arch/mem.h>
+#include <kernel/errno.h>
 #include <kernel/io.h>
 #include <kernel/panic.h>
 #include <kernel/task.h>
 
 int sys_munmap(void *addr,  size_t len) {
+    if (len == 0)
+        return -EINVAL;
+
     void *page_start = (void *) ((uintptr_t) addr & ~(PAGESIZE - 1));
     void *page_end = (void *) (((uintptr_t) addr + len) & ~(PAGESIZE - 1));
     void *tran_table = MEM_PHYS_TO_VIRT(task_current()->tran_table);

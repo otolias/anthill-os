@@ -21,10 +21,15 @@
 
 #define MEM_SIZE_TO_PAGES(s) ((size_t) ((((s) + PAGESIZE - 1) & ~(PAGESIZE - 1)) / PAGESIZE))
 
-enum mem_flags {
+enum mem_perm {
     MEM_RO = 1, /* Read only permissions */
     MEM_RW = 3, /* Read/write permissions */
     MEM_EX = 5, /* Read and execute permissions */
+};
+
+enum mem_attr {
+    MEM_NORM = 0, /* Normal memory */
+    MEM_DEVC = 1, /* Device memory */
 };
 
 struct mem_r_addr {
@@ -33,21 +38,19 @@ struct mem_r_addr {
 };
 
 /*
-* Allocate kernel page with permissions specified by _flags_.
+* Allocate kernel page with permissions specified by _perm_.
 *
 * Returns struct mem_r_addr:
 * - On success, _addr_ is the virtual address of the page and _err_ is set to
 *   MEM_OK.
 * - On failure, _addr_ is NULL and _err_ is set to indicate the error.
 *
-* Available flags:
-*
-* Mutually exclusive:
+* Available _perm_ (mutually exclusive):
 * - MEM_RO Read only permissions
 * - MEM_RW Read/write permissions
 * - MEM_EX Read and execute permissions
 */
-struct mem_r_addr mem_kernel_alloc_page(enum mem_flags flags);
+struct mem_r_addr mem_kernel_alloc_page(enum mem_perm perm);
 
 /*
 * De-allocate kernel page starting at virtual address pointed to by _vaddr_ and
@@ -92,21 +95,24 @@ void* mem_user_get_kaddr(void *tran_table, void *vaddr);
 
 /*
 * Map virtual address _vaddr_ to physical address _paddr_ for the translation
-* table at virtual address _tran_table_ with permissions specified by _flags_.
+* table at virtual address _tran_table_ with permissions specified by _perm_.
+* Memory attributes may be specified with _attr_.
 *
 * Note: _paddr_ must already be allocated by the kernel
 *
 * Returns enum kern_err
 *
-* Available flags:
-*
-* Mutually exclusive:
+* Available _perm_ (mutually exclusive):
 * - MEM_RO Read only permissions
 * - MEM_RW Read/write permissions
 * - MEM_EX Read and execute permissions
+*
+* Available _attr_ (mutually exclusive):
+* - MEM_NORM Map as normal memory
+* - MEM_DEVC Map as device memory
 */
 [[nodiscard]] enum kern_err mem_user_map_page(void *tran_table, void *vaddr, void *paddr,
-    enum mem_flags flags);
+    enum mem_perm perm, enum mem_attr attr);
 
 /*
 * Unmap user page starting at virtual address pointed to by _vaddr_ for the

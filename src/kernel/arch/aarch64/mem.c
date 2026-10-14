@@ -11,10 +11,10 @@
 #include "mmu.h"
 #include "pmm.h"
 
-struct mem_r_addr mem_kernel_alloc_page(enum mem_flags flags) {
+struct mem_r_addr mem_kernel_alloc_page(enum mem_perm perm) {
     // Parse flags
     uint64_t attr = 0;
-    switch (flags) {
+    switch (perm) {
         case MEM_RO:
             attr = ATT_AP_NA_RO | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
             break;
@@ -335,23 +335,34 @@ void* mem_user_get_kaddr(void * const tran_table, void * const vaddr) {
     return mmu_get_vaddr(levels[3][idx[3]]);
 }
 
-enum kern_err mem_user_map_page(void *tran_table, void *vaddr, void *paddr, enum mem_flags flags) {
-    uint64_t attr = 0;
-    switch (flags) {
+enum kern_err mem_user_map_page(void *tran_table, void *vaddr, void *paddr, enum mem_perm perm,
+    enum mem_attr attr) {
+    uint64_t pattr = 0;
+    switch (perm) {
         case MEM_RO:
-            attr = ATT_AP_RO_RO | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
+            pattr = ATT_AP_RO_RO | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
             break;
 
         case MEM_RW:
-            attr = ATT_AP_RW_RW | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
+            pattr = ATT_AP_RW_RW | ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
             break;
 
         case MEM_EX:
-            attr = ATT_AP_RO_RO | ATT_PXN_NOEXEC | ATT_UXN_EXEC;
+            pattr = ATT_AP_RO_RO | ATT_PXN_NOEXEC | ATT_UXN_EXEC;
             break;
 
         default:
             return ERR_MEM_FLG;
+    }
+
+    switch (attr) {
+        case MEM_NORM:
+            pattr |= ATT_NORMAL;
+            break;
+
+        case MEM_DEVC:
+            pattr |= ATT_DEVICE;
+            break;
     }
 
     size_t idx[4];
@@ -397,7 +408,7 @@ enum kern_err mem_user_map_page(void *tran_table, void *vaddr, void *paddr, enum
         return ERR_MEM_EXS;
     }
 
-    levels[3][idx[3]] = (uintptr_t) paddr | attr | ATT_VALID | ATT_PAGE | ATT_NORMAL | ATT_AF_SET;
+    levels[3][idx[3]] = (uintptr_t) paddr | pattr | ATT_VALID | ATT_PAGE | ATT_AF_SET;
 
     return ERR_OK;
 }

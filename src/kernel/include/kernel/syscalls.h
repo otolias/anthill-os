@@ -31,6 +31,7 @@ extern const void *syscall_table[TOTAL_SYSCALLS];
 #define __PROT_EXEC  4
 
 #define __MAP_ANONYMOUS 1
+#define __MAP_DEVICE    2
 
 #define __MAP_FAILED ((void *) -1)
 

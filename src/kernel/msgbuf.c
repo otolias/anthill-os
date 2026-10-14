@@ -62,7 +62,8 @@ static struct mem_r_addr _buffer_alloc(size_t size) {
             tran_table,
             vaddr + (i * PAGESIZE),
             MEM_VIRT_TO_PHYS(page_r.addr),
-            MEM_RW
+            MEM_RW,
+            MEM_NORM
         );
         if (err != ERR_OK) {
             // TODO: Free previous
@@ -395,7 +396,8 @@ enum kern_err msgbuf_send(msgbuf_id send_id, const char * const recv_name) {
                 tran_table,
                 vaddr,
                 paddr,
-                MEM_RW
+                MEM_RW,
+                MEM_NORM
             );
             if (err != ERR_OK) {
                 // TODO: Unmap previous
