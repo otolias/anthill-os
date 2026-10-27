@@ -83,7 +83,7 @@ enum kern_err task_exec(const void *file, char *const args[restrict]) {
 
     const struct elf_r_addr stack_r = elf_create_proc_image(file, tran_table);
     if (stack_r.err != ERR_OK)
-        return err;
+        return stack_r.err;
 
     // Setup process arguments
     char *sp = (char *) stack_r.addr + PAGESIZE;

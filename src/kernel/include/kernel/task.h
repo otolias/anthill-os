@@ -87,7 +87,7 @@ void task_exit(int status);
 *
 * Returns struct task_r_pid:
 * - On success, _pid_ is either the process ID of the child process (in the case
-*   the caller) or 0 (in the case of the callee), and _err_ is set to TASK_OK.
+*   the caller) or 0 (in the case of the callee), and _err_ is set to ERR_OK.
 * - On failure, _pid_ is -1 and _err_ is set to indicate the error.
 */
 struct task_r_pid task_fork(void);
