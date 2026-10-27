@@ -11,10 +11,10 @@
 static size_t memory_map[MEM_MAP_SIZE];
 
 void pmm_free(void *addr) {
-    const uintptr_t page = ((uintptr_t) addr - MEM_LOW) / PAGESIZE;
+    const size_t page = ((uintptr_t) addr - MEM_LOW) / PAGESIZE;
     const size_t index = page / BITS_OF(size_t);
     const size_t offset = page % BITS_OF(size_t);
-    memory_map[index] &= ~(1 << offset);
+    memory_map[index] &= ~(1UL << offset);
 }
 
 void* pmm_get(void) {
@@ -24,7 +24,7 @@ void* pmm_get(void) {
 
         for (size_t off = 0; off < BITS_OF(size_t); off++) {
             if (!(memory_map[i] & 1UL << off)) {
-                memory_map[i] |= 1 << off;
+                memory_map[i] |= 1UL << off;
                 return (void *) MEM_LOW + ((i * BITS_OF(size_t)) + off) * PAGESIZE;
             }
         }
@@ -34,8 +34,8 @@ void* pmm_get(void) {
 }
 
 void pmm_mark(const void *addr) {
-    const uintptr_t page = ((uintptr_t) addr - MEM_LOW) / PAGESIZE;
+    const size_t page = ((uintptr_t) addr - MEM_LOW) / PAGESIZE;
     const size_t index = page / BITS_OF(size_t);
     const size_t offset = page % BITS_OF(size_t);
-    memory_map[index] |= 1 << offset;
+    memory_map[index] |= 1UL << offset;
 }
