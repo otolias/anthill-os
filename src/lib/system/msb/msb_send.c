@@ -3,8 +3,8 @@
 #include <errno.h>
 #include <syscalls.h>
 
-int msb_send(msb_id send_id, const char *recv_name) {
-    long res = SYSCALL_2(SYS_MSB_SEND, send_id, (long) recv_name);
+int msb_send(msb_id send_id, msb_id recv_id) {
+    long res = SYSCALL_2(SYS_MSB_SEND, send_id, recv_id);
 
     if (res < 0) {
         errno = (int) -res;

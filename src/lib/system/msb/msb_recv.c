@@ -3,13 +3,23 @@
 #include <errno.h>
 #include <syscalls.h>
 
-char* msb_recv(msb_id recv_id) {
-    long res = SYSCALL_1(SYS_MSB_RECV, recv_id);
+void* msb_recv(msb_id id, void * (*callback)(const char *recv_buf)) {
+    const char *buf;
+    msb_id recv_id = SYSCALL_2(SYS_MSB_RECV, id, (long) &buf);
 
-    if (res < ERRNO_TOTAL) {
-        errno = (int) res;
-        return 0;
+    if (recv_id < 0) {
+        errno = (int) -recv_id;
+        return MSB_FAIL;
     }
 
-    return (char *) res;
+    callback(buf);
+
+    long res = SYSCALL_2(SYS_MSB_REPLY, id, recv_id);
+
+    if (res < 0) {
+        errno = (int) -res;
+        return MSB_FAIL;
+    }
+
+    return 0;
 }

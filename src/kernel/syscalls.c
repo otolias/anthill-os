@@ -50,7 +50,10 @@ const void *syscall_table[TOTAL_SYSCALLS] = {
     sys_spawn,
     sys_fork,
     sys_msb_create,
+    sys_msb_connect,
     sys_msb_send,
     sys_msb_recv,
+    sys_msb_reply,
+    sys_msb_disconnect,
     sys_msb_close,
 };

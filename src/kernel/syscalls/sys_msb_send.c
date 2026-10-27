@@ -5,17 +5,14 @@
 #include <kernel/msgbuf.h>
 #include <kernel/panic.h>
 
-long sys_msb_send(const int send_id, const char * const recv_name) {
-    enum kern_err err = msgbuf_send(send_id, recv_name);
+long sys_msb_send(const int send_id, const int recv_id) {
+    enum kern_err err = msgbuf_send(send_id, recv_id, 0);
     switch (err) {
         case ERR_OK:
             return 0;
 
-        case ERR_MEM_OOM:
-            return -ENOMEM;
-
-        case ERR_MSB_CHF:
-            return -EAGAIN;
+        case ERR_MSB_COD:
+            return -ENOENT;
 
         case ERR_MSB_FND:
             return -EACCES;

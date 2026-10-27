@@ -1,22 +1,25 @@
 #ifndef _KERNEL_SYSCALLS_H
 #define _KERNEL_SYSCALLS_H
 
-#define SYS_EXIT       0
-#define SYS_MMAP       1
-#define SYS_MUNMAP     2
-#define SYS_MQ_OPEN    3
-#define SYS_MQ_CLOSE   4
-#define SYS_MQ_UNLINK  5
-#define SYS_MQ_SEND    6
-#define SYS_MQ_RECV    7
-#define SYS_GETPID     8
-#define SYS_SPAWN      9
-#define SYS_FORK       10
-#define SYS_MSB_CREATE 11
-#define SYS_MSB_SEND   12
-#define SYS_MSB_RECV   13
-#define SYS_MSB_CLOSE  14
-#define TOTAL_SYSCALLS 15
+#define SYS_EXIT        0
+#define SYS_MMAP        1
+#define SYS_MUNMAP      2
+#define SYS_MQ_OPEN     3
+#define SYS_MQ_CLOSE    4
+#define SYS_MQ_UNLINK   5
+#define SYS_MQ_SEND     6
+#define SYS_MQ_RECV     7
+#define SYS_GETPID      8
+#define SYS_SPAWN       9
+#define SYS_FORK        10
+#define SYS_MSB_CREATE  11
+#define SYS_MSB_CONN    12
+#define SYS_MSB_SEND    13
+#define SYS_MSB_RECV    14
+#define SYS_MSB_REPLY   15
+#define SYS_MSB_DISCONN 16
+#define SYS_MSB_CLOSE   17
+#define TOTAL_SYSCALLS  18
 
 #ifndef __ASSEMBLER__
 
@@ -42,8 +45,11 @@ pid_t sys_fork(void);
 void* sys_mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
 int sys_munmap(void *addr, size_t len);
 long sys_msb_create(const char *name, size_t size, char **send_buf);
-long sys_msb_send(int send_id, const char *recv_name);
-long sys_msb_recv(int recv_id);
+long sys_msb_connect(int id, const char *name);
+long sys_msb_send(int send_id, int recv_id);
+long sys_msb_recv(int id, char **recv_buf);
+long sys_msb_reply(int id, int reply_id);
+long sys_msb_disconnect(int send_id, int recv_id);
 long sys_msb_close(int id);
 
 #endif /* __ASSEMBLER__ */

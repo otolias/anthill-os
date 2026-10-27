@@ -5,17 +5,17 @@
 #include <kernel/msgbuf.h>
 #include <kernel/panic.h>
 
-long sys_msb_recv(int recv_id) {
-    struct msgbuf_r_buf buf_r = msgbuf_recv(recv_id);
-    switch (buf_r.err) {
+long sys_msb_recv(msgbuf_id id, char **recv_buf) {
+    struct msgbuf_r_id id_r = msgbuf_recv(id, recv_buf);
+    switch (id_r.err) {
         case ERR_OK:
-            return (long) buf_r.buf;
+            return id_r.id;
 
         case ERR_MSB_FND:
-            return EACCES;
+            return -EACCES;
 
         default:
-            io_fmt("Unhandled error code %d\n", buf_r.err);
+            io_fmt("Unhandled error code %d\n", id_r.err);
             panic("Unhandled error code");
     }
 }

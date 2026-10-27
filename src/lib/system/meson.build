@@ -3,7 +3,9 @@ libsystem = static_library(
   sources : [
     'errno.c',
     'msb' / 'msb_close.c',
+    'msb' / 'msb_connect.c',
     'msb' / 'msb_create.c',
+    'msb' / 'msb_disconnect.c',
     'msb' / 'msb_recv.c',
     'msb' / 'msb_send.c',
     'syscalls.c',

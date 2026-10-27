@@ -17,9 +17,7 @@ long sys_msb_create(const char *name, size_t size, char **send_buf) {
         case ERR_MSB_EXS:
             return -EEXIST;
 
-        case ERR_MSB_LNG:
-            return -ENAMETOOLONG;
-
+        case ERR_MSB_NAM:
         case ERR_MSB_SIZ:
             return -EINVAL;
 
