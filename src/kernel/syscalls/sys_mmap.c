@@ -74,10 +74,10 @@ static void* _map_device(void *addr, size_t len, enum mem_perm perm) {
     return vaddr;
 }
 
-void* sys_mmap(void *addr, size_t len, int prot, int flags,
+long sys_mmap(void *addr, size_t len, int prot, int flags,
     __attribute__((unused)) int fildes, __attribute__((unused)) off_t off) {
     if (len == 0)
-        return (void *) EINVAL;
+        return EINVAL;
 
     enum mem_perm perm;
     switch (prot) {
@@ -94,17 +94,17 @@ void* sys_mmap(void *addr, size_t len, int prot, int flags,
             break;
 
         default:
-            return (void *) ENOTSUP;
+            return ENOTSUP;
     }
 
     switch (flags) {
         case __MAP_ANONYMOUS:
-            return _map_anonymous(addr, len, perm);
+            return (long) _map_anonymous(addr, len, perm);
 
         case __MAP_DEVICE:
-            return _map_device(addr, len, perm);
+            return (long) _map_device(addr, len, perm);
 
         default:
-            return (void *) ENOTSUP;
+            return ENOTSUP;
     }
 }

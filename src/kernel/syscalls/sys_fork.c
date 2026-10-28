@@ -6,7 +6,7 @@
 #include <kernel/panic.h>
 #include <kernel/task.h>
 
-pid_t sys_fork(void) {
+long sys_fork(void) {
     struct task_r_pid res = task_fork();
     switch (res.err) {
         case ERR_OK:

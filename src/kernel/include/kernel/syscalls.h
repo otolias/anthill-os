@@ -41,16 +41,23 @@ extern const void *syscall_table[TOTAL_SYSCALLS];
 /* === System calls === */
 
 void sys_exit(int status);
-pid_t sys_fork(void);
-void* sys_mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
-int sys_munmap(void *addr, size_t len);
-long sys_msb_create(const char *name, size_t size, char **send_buf);
+long sys_fork(void);
+long sys_getpid(void);
+long sys_mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
+long sys_msb_close(int id);
 long sys_msb_connect(int id, const char *name);
-long sys_msb_send(int send_id, int recv_id);
+long sys_msb_create(const char *name, size_t size, char **send_buf);
+long sys_msb_disconnect(int send_id, int recv_id);
 long sys_msb_recv(int id, char **recv_buf);
 long sys_msb_reply(int id, int reply_id);
-long sys_msb_disconnect(int send_id, int recv_id);
-long sys_msb_close(int id);
+long sys_msb_send(int send_id, int recv_id);
+long sys_mq_close(int mqdes);
+long sys_mq_open(const char *name, int oflag, mode_t mode, void *attr);
+long sys_mq_receive(int mqdes, char *msg_ptr, size_t msg_len, unsigned *msg_prio);
+long sys_mq_send(int mqdes, const char *msg_ptr, size_t msg_len, unsigned msg_prio);
+long sys_mq_unlink(const char *name);
+long sys_munmap(void *addr, size_t len);
+long sys_spawn(pid_t *pid, void *file, char *const argv[restrict]);
 
 #endif /* __ASSEMBLER__ */
 #endif /* _KERNEL_SYSCALLS_H */

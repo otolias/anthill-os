@@ -6,7 +6,7 @@
 #include <kernel/panic.h>
 #include <kernel/task.h>
 
-int sys_munmap(void *addr,  size_t len) {
+long sys_munmap(void *addr,  size_t len) {
     if (len == 0)
         return -EINVAL;
 
