@@ -22,7 +22,13 @@
 * On success, returns a pointer to the start of the mapping.
 * On failure, returns MAP_FAILED and sets errno to indicate the error.
 *
-* Available flags:
+* Available _prot_ values:
+* - PROT_READ  Data can be read.
+* - PROT_WRITE Data can be written.
+* - PROT_EXEC  Data can be executed.
+* - PROT_NONE  Data cannot be accessed.
+*
+* Available _flags_ values:
 * - MAP_ANONYMOUS The mapping is not backed by any file
 * - MAP_DEVICE    The mapping corresponds to MMIO memory
 *

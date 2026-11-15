@@ -3,15 +3,22 @@
 #include <stddef.h>
 #include <sys/mman.h>
 
-struct block *first_block;
+static struct block *first_block;
 
 /*
 * Get more memory from the allocator for _block_
 */
 static short _expand(struct block *block) {
-    struct block *new_block = mmap(0, MALLOC_BLOCK_SIZE, 0, MAP_ANONYMOUS, 0, 0);
+    struct block *new_block = mmap(
+        NULL,
+        MALLOC_BLOCK_SIZE,
+        PROT_READ | PROT_WRITE,
+        MAP_ANONYMOUS,
+        0,
+        0
+    );
 
-    if(!new_block)
+    if (new_block == MAP_FAILED)
         return 1;
 
     new_block->available = 1;
@@ -57,7 +64,10 @@ static void _split(struct block *block) {
 void block_coalesce(struct block *block) {
     struct block *buddy = (struct block *) ((size_t) block ^ (size_t) (1 << block->k));
 
-    while (buddy && buddy->available && block->k < MALLOC_MAX_ORDER) {
+    while (buddy && block->k < MALLOC_MAX_ORDER) {
+        if (buddy->available != 1)
+            break;
+
         if (buddy < block) {
             struct block *temp = buddy;
             buddy = block;
