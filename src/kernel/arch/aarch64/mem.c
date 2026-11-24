@@ -420,7 +420,7 @@ enum kern_err mem_user_map_page(void *tran_table, void *vaddr, void *paddr, enum
 struct mem_r_addr mem_user_unmap_page(void * const tran_table, void * const vaddr) {
     size_t idx[4];
     mmu_get_table_idx(vaddr, idx);
-    uintptr_t *levels[4] = { tran_table, 0, };
+    uintptr_t *levels[4] = { tran_table, 0 };
 
     if (!mmu_is_valid(levels[0][idx[0]]))
         return (struct mem_r_addr) { .addr = NULL, .err = ERR_MEM_UNM };
@@ -430,13 +430,12 @@ struct mem_r_addr mem_user_unmap_page(void * const tran_table, void * const vadd
         return (struct mem_r_addr) { .addr = NULL, .err = ERR_MEM_UNM };
 
     if (mmu_is_block(levels[1][idx[1]])) {
+        void *kaddr = mmu_get_vaddr(levels[1][idx[1]]);
         uint8_t ref = mmu_mark_freed(&levels[1][idx[1]]);
-        if (ref == 0) {
-            void *kaddr = mmu_get_vaddr(levels[1][idx[1]]);
-            return (struct mem_r_addr) { .addr = kaddr, .err = ERR_OK };
-        }
-
         levels[1][idx[1]] = 0;
+        if (ref == 0)
+            return (struct mem_r_addr) { .addr = kaddr, .err = ERR_OK };
+
         return (struct mem_r_addr) { .addr = NULL, .err = ERR_OK };
     }
 
@@ -445,13 +444,13 @@ struct mem_r_addr mem_user_unmap_page(void * const tran_table, void * const vadd
         return (struct mem_r_addr) { .addr = NULL, .err = ERR_MEM_UNM };
 
     if (mmu_is_block(levels[2][idx[2]])) {
+        void *kaddr = mmu_get_vaddr(levels[2][idx[2]]);
         uint8_t ref = mmu_mark_freed(&levels[2][idx[2]]);
-        if (ref == 0) {
-            void *kaddr = mmu_get_vaddr(levels[2][idx[2]]);
-            return (struct mem_r_addr) { .addr = kaddr, .err = ERR_OK };
-        }
-
         levels[2][idx[2]] = 0;
+
+        if (ref == 0)
+            return (struct mem_r_addr) { .addr = kaddr, .err = ERR_OK };
+
         return (struct mem_r_addr) { .addr = NULL, .err = ERR_OK };
     }
 
@@ -459,12 +458,12 @@ struct mem_r_addr mem_user_unmap_page(void * const tran_table, void * const vadd
     if (!mmu_is_valid(levels[3][idx[3]]))
         return (struct mem_r_addr) { .addr = NULL, .err = ERR_MEM_UNM };
 
+    void *kaddr = mmu_get_vaddr(levels[3][idx[3]]);
     uint8_t ref = mmu_mark_freed(&levels[3][idx[3]]);
-    if (ref == 0) {
-        void *kaddr = mmu_get_vaddr(levels[3][idx[3]]);
-        return (struct mem_r_addr) { .addr = kaddr, .err = ERR_OK };
-    }
-
     levels[3][idx[3]] = 0;
+
+    if (ref == 0)
+        return (struct mem_r_addr) { .addr = kaddr, .err = ERR_OK };
+
     return (struct mem_r_addr) { .addr = NULL, .err = ERR_OK };
 }
