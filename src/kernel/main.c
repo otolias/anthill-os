@@ -6,9 +6,8 @@
 
 #include "test.h"
 
-void main(uintptr_t *tran_table) {
-    // TODO: Unmap kernel segments from user space
-    task_current()->tran_table = tran_table;
+void main() {
+    mem_setup_finish();
 
     irq_enable();
 

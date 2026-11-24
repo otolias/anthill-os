@@ -229,6 +229,10 @@ struct task_r_pid task_fork(void) {
     return (struct task_r_pid) { .pid = child->pid, .err = ERR_OK };
 }
 
+void task_init(uintptr_t *tran_table) {
+    current_task->tran_table = tran_table;
+}
+
 void task_schedule(void) {
     long counter = -1;
     size_t task_index = 0;

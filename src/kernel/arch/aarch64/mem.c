@@ -119,6 +119,10 @@ enum kern_err mem_kernel_free_page(void *vaddr) {
     return ERR_OK;
 }
 
+void mem_setup_finish(void) {
+    mmu_setup_cleanup();
+}
+
 void mem_table_soft_copy(void *table) {
     uintptr_t *levels[4] = { table, 0, };
 

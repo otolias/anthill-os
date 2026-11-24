@@ -48,20 +48,22 @@ bss:
 
 master:
     // Initialise MMU
+    // x0 is the address of the top level user translation table
     bl mmu_setup
+    // Setup init task
+    bl task_init
     // Initialise timer
     bl timer_init
     // Initialise uart
     bl uart_init
 
-    // Jump to kernel
-    // x0 is the address of the top level user translation table
-    ldr x1, =_start
-    mov sp, x1
+    // Setup stack and jump to main in kernel space
+    ldr x0, =_start
+    mov sp, x0
 
-    ldr x1, =main
-    blr x1
+    ldr x0, =main
+    blr x0
 
-    // If it returns, hang
+    // Won't return, but if does, hang
 hang:
     b hang

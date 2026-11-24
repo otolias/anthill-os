@@ -61,6 +61,11 @@ struct mem_r_addr mem_kernel_alloc_page(enum mem_perm perm);
 [[nodiscard]] enum kern_err mem_kernel_free_page(void *vaddr);
 
 /*
+* Finish memory setup.
+*/
+void mem_setup_finish(void);
+
+/*
 * Mark all subsequent page and block table entries as copied starting from top
 * level table at virtual address pointed to by _table_.
 */

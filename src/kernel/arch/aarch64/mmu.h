@@ -128,5 +128,10 @@ uint8_t mmu_mark_freed(uintptr_t *entry);
 */
 uintptr_t* mmu_setup(void);
 
+/**
+* Unmap kernel segments from userspace.
+*/
+void mmu_setup_cleanup(void);
+
 #endif /* __ASSEMBLER__ */
 #endif /* _KERNEL_ARCH_AARCH64_MMU_H */

@@ -6,7 +6,7 @@
 
 #define TOTAL_PAGES ((MEM_HIGH - MEM_LOW) / PAGESIZE)
 #define BITS_OF(t) (sizeof(t) * 8)
-#define MEM_MAP_SIZE (TOTAL_PAGES / BITS_OF(size_t) - 1)
+#define MEM_MAP_SIZE ((TOTAL_PAGES + BITS_OF(size_t) - 1) / BITS_OF(size_t))
 
 static size_t memory_map[MEM_MAP_SIZE];
 

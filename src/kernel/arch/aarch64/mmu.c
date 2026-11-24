@@ -150,11 +150,6 @@ uintptr_t* mmu_setup(void) {
     uintptr_t *kernel_level_2 = (uintptr_t *) &_data_end + (512 * table_cnt++);
     uintptr_t *kernel_level_3 = (uintptr_t *) &_data_end + (512 * table_cnt++);
 
-    pmm_mark(kernel_level_0);
-    pmm_mark(kernel_level_1);
-    pmm_mark(kernel_level_2);
-    pmm_mark(kernel_level_3);
-
     memset(kernel_level_0, 0, PAGESIZE);
     memset(kernel_level_1, 0, PAGESIZE);
     memset(kernel_level_2, 0, PAGESIZE);
@@ -172,11 +167,6 @@ uintptr_t* mmu_setup(void) {
     uintptr_t *user_level_1 = (uintptr_t *) &_data_end + (512 * table_cnt++);
     uintptr_t *user_level_2 = (uintptr_t *) &_data_end + (512 * table_cnt++);
     uintptr_t *user_level_3 = (uintptr_t *) &_data_end + (512 * table_cnt++);
-
-    pmm_mark(user_level_0);
-    pmm_mark(user_level_1);
-    pmm_mark(user_level_2);
-    pmm_mark(user_level_3);
 
     memset(user_level_0, 0, PAGESIZE);
     memset(user_level_1, 0, PAGESIZE);
@@ -199,10 +189,12 @@ uintptr_t* mmu_setup(void) {
         ATT_NORMAL | ATT_AP_NA_RW | ATT_AF_SET |
         ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
 
-    user_level_3[mapped++] = addr |
+    user_level_3[mapped] = addr |
         ATT_VALID | ATT_PAGE |
         ATT_NORMAL | ATT_AP_NA_RW | ATT_AF_SET |
         ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
+
+    mapped++;
 
     // Map kernel text segment
     const size_t text_pages = ((uintptr_t) &_data_start - MEM_LOW) / PAGESIZE;
@@ -249,9 +241,6 @@ uintptr_t* mmu_setup(void) {
             ATT_VALID | ATT_BLOCK |
             ATT_NORMAL | ATT_AP_NA_RW | ATT_AF_SET |
             ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
-
-        for (size_t p = 0; p < (PAGESIZE << 9) / PAGESIZE; p++)
-            pmm_mark(MEM_VIRT_TO_PHYS(MEM_RD) + block * p);
     }
 
     // Map memory mapped peripherals
@@ -261,21 +250,27 @@ uintptr_t* mmu_setup(void) {
             ATT_VALID | ATT_BLOCK |
             ATT_DEVICE | ATT_AP_NA_RW | ATT_AF_SET |
             ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
-
-        for (size_t p = 0; p < (PAGESIZE << 9) / PAGESIZE; p++)
-            pmm_mark(MEM_VIRT_TO_PHYS(MEM_MMIO) + block * p);
     }
 
     // Map these translation tables
-    for (size_t i = 0; i < table_cnt; i++) {
-        kernel_level_3[mapped++] =
-            (uintptr_t) &_data_end + i * PAGESIZE |
+    for (size_t i = 0; i < table_cnt; i++, mapped++) {
+        const uintptr_t addr = (uintptr_t) &_data_end + i * PAGESIZE;
+
+        kernel_level_3[mapped] = addr |
             ATT_VALID | ATT_PAGE |
             ATT_NORMAL | ATT_AP_NA_RW | ATT_AF_SET |
             ATT_PXN_NOEXEC | ATT_UXN_NOEXEC;
+
+        pmm_mark((void *) addr);
     }
 
     mmu_init(kernel_level_0, user_level_0);
 
     return user_level_0;
+}
+
+void mmu_setup_cleanup() {
+    // TODO: Mark as freed in kernel and pmm
+    char *user_tables = MEM_PHYS_TO_VIRT(&_data_end + PAGESIZE * 4UL);
+    memset(user_tables, 0, PAGESIZE * 4UL);
 }

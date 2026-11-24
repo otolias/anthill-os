@@ -93,6 +93,11 @@ void task_exit(int status);
 struct task_r_pid task_fork(void);
 
 /*
+ * Setup init task
+*/
+void task_init(uintptr_t *tran_table);
+
+/*
 * Run scheduler
 */
 void task_schedule(void);
